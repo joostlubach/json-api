@@ -1,0 +1,21 @@
+{
+  "name": "json-api",
+  "version": "1.0.0",
+  "description": "JSON API endpoints based on json-api by Ethan Resnick",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Joost Lubach",
+  "license": "ISC",
+  "dependencies": {
+    "content-type": "^1.0.2",
+    "inflected": "^2.0.4",
+    "url-template": "^2.0.8"
+  },
+  "devDependencies": {
+    "@types/content-type": "^1.1.2",
+    "@types/inflected": "^1.1.29",
+    "@types/url-template": "^2.0.28"
+  }
+}
