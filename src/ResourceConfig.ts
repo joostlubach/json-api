@@ -142,6 +142,14 @@ export interface ResourceConfig<Model, Query> {
   collectionActions?: Array<CustomCollectionAction<AnyResource>>
   documentActions?:   Array<CustomDocumentAction<AnyResource>>
 
+  //------
+  // Extensions
+
+  /**
+   * Libraries built on top of json-api may extend the configuration with arbitrary additional keys.
+   */
+  [extkey: string]: any
+
 }
 
 //------
@@ -327,6 +335,9 @@ export interface CustomDocumentAction<R extends AnyResource> {
 }
 
 export type CustomMetaFunction = (this: AnyResource, pack: Pack, context: RequestContext) => any
+
+export type ModelOf<Cfg extends ResourceConfig<any, any>> = Cfg extends ResourceConfig<infer M, any> ? M : never
+export type QueryOf<Cfg extends ResourceConfig<any, any>> = Cfg extends ResourceConfig<any, infer Q> ? Q : never
 
 //------
 // Utility
