@@ -173,12 +173,6 @@ export type AttributeGetter<M>    = (this: Resource<M, any>, item: M, raw: any, 
 export type AttributeSetter<M>    = (this: Resource<M, any>, item: M, raw: any, context: RequestContext) => any | Promise<any>
 export type AttributeSerializer   = (value: any) => any
 export type AttributeDeserializer = (raw: any) => any
-export type ExportFieldCreator<M> = () => ExportField<M> | ExportField<M>[]
-
-export interface ExportField<M> {
-  prepareBatch?: (attribute: string, models: M[]) => Promise<void>
-  export:        (attribute: string, row: Record<string, any>, model: M, document: Document, exporter: any) => Promise<void>
-}
 
 //------
 // Meta & link types
@@ -338,6 +332,7 @@ export type CustomMetaFunction = (this: AnyResource, pack: Pack, context: Reques
 
 export type ModelOf<Cfg extends ResourceConfig<any, any>> = Cfg extends ResourceConfig<infer M, any> ? M : never
 export type QueryOf<Cfg extends ResourceConfig<any, any>> = Cfg extends ResourceConfig<any, infer Q> ? Q : never
+export type AttributeOf<Cfg extends ResourceConfig<any, any>> = Cfg['attributes'] extends Record<string, boolean | infer A> ? A : never
 
 //------
 // Utility
