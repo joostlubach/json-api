@@ -216,7 +216,7 @@ interface RelationshipConfigCommon<M> {
   type?:     string
   writable?: boolean | 'create'
   detail?:   boolean
-  if?:       (model: M, context: RequestContext) => boolean
+  if?:       (this: Resource<M, any>, model: M, context: RequestContext) => boolean
   include?:  RelationshipIncludeConfig
 }
 
@@ -348,8 +348,8 @@ export function mergeResourceConfig<M, Q>(config: ResourceConfig<M, Q>, defaults
     ...config,
 
     attributes: {
-      ...config.attributes,
       ...defaults.attributes,
+      ...config.attributes,
     },
 
     collectionActions: [
