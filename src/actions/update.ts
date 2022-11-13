@@ -1,6 +1,6 @@
-import Pack from '../Pack'
-import Document from '../Document'
 import APIError from '../APIError'
+import Document from '../Document'
+import Pack from '../Pack'
 import RequestContext from '../RequestContext'
 import { AnyResource, UpdateOptions } from '../types'
 
@@ -10,6 +10,14 @@ export default async function update(this: AnyResource, context: RequestContext,
     throw new APIError(405, `Resource \`${this.type}\` can not be updated`)
   }
 
-  const {pack} = await db.update(document, options)
+  let query = db.query()
+  query = await this.applyScope(query, context)
+
+  if (options.label != null) {
+    query = await this.applyLabel(query, options.label, context)
+  }
+
+
+  const {pack} = await db.update(query, document, options)
   return pack
 }

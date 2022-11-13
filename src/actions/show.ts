@@ -8,7 +8,14 @@ export default async function show(this: AnyResource, context: RequestContext, l
     throw new APIError(405, `Resource \`${this.type}\` can not be shown`)
   }
 
-  const {pack} = await db.get(locator, options)
+  let query = db.query()
+  query = await this.applyScope(query, context)
+
+  if (options.label != null) {
+    query = await this.applyLabel(query, options.label, context)
+  }
+
+  const {pack} = await db.get(query, locator, options)
   Object.assign(pack.meta, await this?.getPackMeta(context))
 
   return pack

@@ -46,13 +46,13 @@ export interface Adapter<Model, Query> {
 
   count(query: Query): Promise<number>
   find(query: Query, pagination: PaginationSpec, options: Omit<ListOptions, 'pagination'>): Promise<Pack>
-  get(locator: ResourceLocator, options: ActionOptions): Promise<{pack: Pack, models: Model[]}>
+  get(query: Query, locator: ResourceLocator, options: ActionOptions): Promise<{pack: Pack, models: Model[]}>
   create(document: Document, options: ActionOptions): Promise<{pack: Pack, model: Model}>
-  update(Document: Document, options: UpdateOptions<Model>): Promise<{pack: Pack, model: Model}>
+  update(query: Query, Document: Document, options: UpdateOptions<Model>): Promise<{pack: Pack, model: Model}>
   delete(query: Query, options: ActionOptions): Promise<Pack>
 
-  loadModel(id: any): Promise<Model>
-  getRelated(parentResource: AnyResource, relationship: RelationshipConfig<any>, name: string, parentID: string, options: ActionOptions): Promise<{pack: Pack, models: Model[]}>
+  loadModel(query: Query, id: any): Promise<Model>
+  getRelated(query: Query, parentResource: AnyResource, relationship: RelationshipConfig<any>, name: string, parentID: string, options: ActionOptions): Promise<{pack: Pack, models: Model[]}>
 
   modelToDocument(model: Model, detail?: boolean): Document | Promise<Document>
   modelsToCollection(models: Model[], detail?: boolean): Collection | Promise<Collection>
@@ -91,6 +91,7 @@ export interface JSONAPIError {
 }
 
 export interface ActionOptions {
+  label?:        string
   detail?:       boolean
   include?:      Include[]
   links?:        Links
@@ -101,7 +102,6 @@ export interface ActionOptions {
 export type Include = string
 
 export interface ListOptions extends ActionOptions {
-  label?:      string
   filters?:    Filters
   search?:     string
   sorts?:      Sort[]

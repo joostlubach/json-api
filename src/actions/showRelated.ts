@@ -1,6 +1,6 @@
-import APIError from '../APIError'
-import { RequestContext, AnyResource, Pack } from '..'
 import { ActionOptions } from 'json-api'
+import { AnyResource, Pack, RequestContext } from '../'
+import APIError from '../APIError'
 
 export default async function showRelated(
   this:             AnyResource,
@@ -28,6 +28,14 @@ export default async function showRelated(
     throw new APIError(405, `Resource \`${this.type}\` can not be shown`)
   }
 
-  const {pack} = await db.getRelated(this, relationship, relationshipName, parentID, options)
+  let query = db.query()
+  query = await this.applyScope(query, context)
+
+  if (options.label != null) {
+    query = await this.applyLabel(query, options.label, context)
+  }
+
+
+  const {pack} = await db.getRelated(this, query, relationship, relationshipName, parentID, options)
   return pack
 }
