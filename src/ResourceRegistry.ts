@@ -5,19 +5,20 @@ import Resource from './Resource'
 
 export default class ResourceRegistry {
 
-  constructor(configs: ResourceConfigMap, defaults: Partial<ResourceConfig<any, any>>) {
+  constructor(configs: ResourceConfigMap, defaults: Partial<ResourceConfig<any, any>>, afterCreate?: (resource: AnyResource) => any) {
     ResourceRegistry.instance = this
-    this.createResources(configs, defaults)
+    this.createResources(configs, defaults, afterCreate)
   }
 
   public static instance: ResourceRegistry
 
   public resources: Map<string, Resource<any, any>> = new Map()
 
-  public createResources(configs: ResourceConfigMap, defaults: Partial<ResourceConfig<any, any>>) {
+  public createResources(configs: ResourceConfigMap, defaults: Partial<ResourceConfig<any, any>>, afterCreate?: (resource: AnyResource) => any) {
     for (const name of Object.keys(configs)) {
       const mergedConfig = mergeResourceConfig(configs[name], defaults)
       const resource = new Resource(this, name, mergedConfig)
+      afterCreate?.(resource)
       this.resources.set(name, resource)
 
       config.logger.info(chalk`-> Registered resource {yellow ${resource.plural}}\n`)
