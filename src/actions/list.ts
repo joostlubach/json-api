@@ -9,18 +9,11 @@ export default async function list(this: AnyResource, context: RequestContext, o
     throw new APIError(405, `Resource \`${this.type}\` can not be listed`)
   }
 
-  let query = db.query()
-  query = await this.applyScope(query, context)
-
-  if (options.label != null) {
-    query = await this.applyLabel(query, options.label, context)
-  }
+  let query = await this.query(context)
+  const grandTotal = this.totals ? await db.count(query) : null
   if (options.filters != null) {
     query = await db.applyFilters(query, options.filters)
   }
-
-  const grandTotal = this.totals ? await db.count(query) : null
-
   if (options.search != null) {
     query = await db.applySearch(query, options.search)
   }

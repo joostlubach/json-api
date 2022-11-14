@@ -28,14 +28,7 @@ export default async function showRelated(
     throw new APIError(405, `Resource \`${this.type}\` can not be shown`)
   }
 
-  let query = db.query()
-  query = await this.applyScope(query, context)
-
-  if (options.label != null) {
-    query = await this.applyLabel(query, options.label, context)
-  }
-
-
+  const query  = await this.query(context)
   const {pack} = await db.getRelated(this, query, relationship, relationshipName, parentID, options)
   return pack
 }

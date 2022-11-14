@@ -84,6 +84,19 @@ export default class Resource<Model, Query> {
     return this.config.adapter.call(this, this.registry, context)
   }
 
+  public async query(context: RequestContext, adapter: Adapter<any, any> = this.adapter(context), options: QueryOptions = {}): Promise<Query> {
+    let query = adapter.query()
+    query = await this.applyScope(query, context)
+    if (options.label != null) {
+      query = await this.applyLabel(query, options.label, context)
+    }
+    if (options.filters != null) {
+      query = await adapter.applyFilters(query, options.filters)
+    }
+
+    return query
+  }
+
   //------
   // Data retrieval
 
@@ -545,6 +558,11 @@ export default class Resource<Model, Query> {
     return new Collection(documents)
   }
 
+}
+
+export interface QueryOptions {
+  label?:   string
+  filters?: Record<string, any>
 }
 
 export interface BuildCollectionConfig<T> {

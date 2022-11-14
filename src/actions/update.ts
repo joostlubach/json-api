@@ -10,14 +10,7 @@ export default async function update(this: AnyResource, context: RequestContext,
     throw new APIError(405, `Resource \`${this.type}\` can not be updated`)
   }
 
-  let query = db.query()
-  query = await this.applyScope(query, context)
-
-  if (options.label != null) {
-    query = await this.applyLabel(query, options.label, context)
-  }
-
-
+  const query  = await this.query(context)
   const {pack} = await db.update(query, document, options)
   return pack
 }

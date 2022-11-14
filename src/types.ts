@@ -47,7 +47,7 @@ export interface Adapter<Model, Query> {
   count(query: Query): Promise<number>
   find(query: Query, pagination: PaginationSpec, options: Omit<ListOptions, 'pagination'>): Promise<Pack>
   get(query: Query, locator: ResourceLocator, options: ActionOptions): Promise<{pack: Pack, models: Model[]}>
-  create(document: Document, options: ActionOptions): Promise<{pack: Pack, model: Model}>
+  create(query: Query, document: Document, options: ActionOptions): Promise<{pack: Pack, model: Model}>
   update(query: Query, Document: Document, options: UpdateOptions<Model>): Promise<{pack: Pack, model: Model}>
   delete(query: Query, options: ActionOptions): Promise<Pack>
 

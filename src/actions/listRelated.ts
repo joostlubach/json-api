@@ -1,7 +1,7 @@
+import APIError from '../APIError'
 import Pack from '../Pack'
 import RequestContext from '../RequestContext'
 import { AnyResource, ListOptions } from '../types'
-import APIError from '../APIError'
 
 export default async function listRelated(
   this:             AnyResource,
@@ -30,7 +30,6 @@ export default async function listRelated(
   }
 
   let query = await db.relatedQuery(this, relationship, relationshipName, parentID)
-  query = await this.applyScope(query, context)
   if (options.filters != null) {
     query = await db.applyFilters(query, options.filters)
   }

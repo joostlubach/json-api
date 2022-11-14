@@ -10,6 +10,7 @@ export default async function create(this: AnyResource, context: RequestContext,
     throw new APIError(405, `Resource \`${this.type}\` cannot be created`)
   }
 
-  const {pack} = await db.create(document, options)
+  const query  = await this.query(context)
+  const {pack} = await db.create(query, document, options)
   return pack
 }
