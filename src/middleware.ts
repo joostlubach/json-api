@@ -2,7 +2,7 @@ import Pack from './Pack'
 import RequestContext from './RequestContext'
 import { AfterHandler, BeforeHandler, ResourceConfig } from './ResourceConfig'
 
-export function before<Cfg extends ResourceConfig<any, any> = ResourceConfig<any, any>>(handler: BeforeMiddlewareHandler): Middleware<Cfg> {
+export function before<Cfg extends ResourceConfig<any, any> = any>(handler: BeforeMiddlewareHandler): Middleware<Cfg> {
   return config => {
     const before: BeforeHandler = context => {
       handler(context, () => {
@@ -14,7 +14,7 @@ export function before<Cfg extends ResourceConfig<any, any> = ResourceConfig<any
   }
 }
 
-export function after<Cfg extends ResourceConfig<any, any> = ResourceConfig<any, any>>(handler: AfterMiddlewareHandler): Middleware<Cfg> {
+export function after<Cfg extends ResourceConfig<any, any> = any>(handler: AfterMiddlewareHandler): Middleware<Cfg> {
   return config => {
     const after: AfterHandler = (pack, context) => {
       handler(pack, context, () => {
