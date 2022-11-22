@@ -84,19 +84,6 @@ export default class Resource<Model, Query> {
     return this.config.adapter.call(this, this.registry, context)
   }
 
-  public async query(context: RequestContext, adapter: Adapter<any, any> = this.adapter(context), options: QueryOptions = {}): Promise<Query> {
-    let query = adapter.query()
-    query = await this.applyScope(query, context)
-    if (options.label != null) {
-      query = await this.applyLabel(query, options.label, context)
-    }
-    if (options.filters != null) {
-      query = await adapter.applyFilters(query, options.filters)
-    }
-
-    return query
-  }
-
   //------
   // Data retrieval
 
@@ -318,11 +305,11 @@ export default class Resource<Model, Query> {
    * @param pack The resulting pack.
    * @param request The request.
    */
-  public injectPackSelfLinks(pack: Pack, request: Request<any>) {
+  public injectPackSelfLinks(pack: Pack, request: Request) {
     // Start by interpolating current request parameters in our base. This is useful in case resources
     // use interpolation values in their base (e.g. `scripts/:scriptID/messages`).
     const base = this.formatResourceURL(request)
-    const baseWithQuery = this.formatResourceURL(request, {query: request.query as any})
+    const baseWithQuery = this.formatResourceURL(request, {query: request.query})
 
     if (pack.data == null || pack.data instanceof Collection) {
       // This is a request for some collection, the self link is the base.
@@ -428,11 +415,6 @@ export default class Resource<Model, Query> {
 
   //------
   // Actions
-
-  public async authenticateRequest(request: Request, context: RequestContext) {
-    if (this.config.authenticateRequest == null) { return }
-    await this.config.authenticateRequest.call(this, request, context)
-  }
 
   public async emitBefore(context: RequestContext) {
     if (this.config.before == null) { return }
@@ -558,11 +540,6 @@ export default class Resource<Model, Query> {
     return new Collection(documents)
   }
 
-}
-
-export interface QueryOptions {
-  label?:   string
-  filters?: Record<string, any>
 }
 
 export interface BuildCollectionConfig<T> {
