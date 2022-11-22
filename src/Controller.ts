@@ -23,23 +23,24 @@ export default class Controller {
   // ------
   // Mounting
 
-  private app?: Application | Router
+  private app?: Application
   private afterMountListeners = new Set<AfterMountListener>()
 
-  public mount(app: Application | Router) {
+  public mount(appOrRouter: Application | Router) {
     if (this.app != null) {
       throw new Error("This controller is already mounted.")
     }
-    this.app = app
+    const app = appOrRouter as Application
+    this.app  = app
 
     app.get('/openapi.json', this.openAPI.bind(this))
 
     for (const resource of this.registry.resources.values()) {
       for (const spec of resource.collectionActions) {
-        this.defineCustomCollectionAction(spec, resource)
+        this.defineCollectionAction(spec, resource)
       }
       for (const spec of resource.documentActions) {
-        this.defineCustomDocumentAction(spec, resource)
+        this.defineDocumentAction(spec, resource)
       }
 
       app.get(`/${resource.plural}`, this.createResourceAction(resource, 'list', this.list))
@@ -78,7 +79,7 @@ export default class Controller {
     }
   }
 
-  public defineCustomCollectionAction(spec: CustomCollectionAction<AnyResource>, resource?: AnyResource) {
+  public defineCollectionAction(spec: CustomCollectionAction<AnyResource>, resource?: AnyResource) {
     if (this.app == null) {
       throw new Error("Mount the controller before defining actions")
     }
@@ -86,12 +87,12 @@ export default class Controller {
     const resources = resource ? [resource] : this.registry.resources.values()
 
     for (const resource of resources) {
-      const action = this.createResourceAction(resource, spec.name, this.customCollectionAction(spec), false)
+      const action = this.createResourceAction(resource, spec.name, this.customCollectionAction(spec), false, spec.authenticate !== false)
       this.app[spec.method](`/${resource.plural}/${spec.endpoint || spec.name}`, action)
     }
   }
 
-  public defineCustomDocumentAction(spec: CustomDocumentAction<AnyResource>, resource?: AnyResource) {
+  public defineDocumentAction(spec: CustomDocumentAction<AnyResource>, resource?: AnyResource) {
     if (this.app == null) {
       throw new Error("Mount the controller before defining actions")
     }
@@ -99,16 +100,16 @@ export default class Controller {
     const resources = resource ? [resource] : this.registry.resources.values()
 
     for (const resource of resources) {
-      const action = this.createResourceAction(resource, spec.name, this.customDocumentAction(spec), false)
+      const action = this.createResourceAction(resource, spec.name, this.customDocumentAction(spec), false, spec.authenticate !== false)
       this.app[spec.method](`/${resource.singular}/:id/${spec.endpoint || spec.name}`, action)
     }
   }
 
-  private createResourceAction(resource: AnyResource, name: string, action: ResourceActionHandler, enforceContentType = true) {
+  private createResourceAction(resource: AnyResource, name: string, action: ResourceActionHandler, enforceContentType = true, authenticate = true) {
     return async (request: Request, response: Response, next: NextFunction) => {
       try {
         const context = await this.options.getContext?.(name, request) ?? RequestContext.fromRequest(name, request)
-        await this.preAction(resource, request, response, context, enforceContentType)
+        await this.preAction(resource, request, response, context, enforceContentType, authenticate)
 
         const pack = await action.call(this, resource, request, response, context)
         await this.postAction(resource, pack || new Pack(null), request, response, context)
@@ -137,11 +138,16 @@ export default class Controller {
     response: Response,
     context: RequestContext,
     enforceContentType: boolean,
+    authenticate: boolean
   ) {
-    validateRequest(request)
+    validateRequest(request, context, resource)
+
     if (enforceContentType) {
       negotiateContentType(request, response)
       validateContentType(request)
+    }
+    if (authenticate) {
+      await resource.authenticateRequest(request, context)
     }
     await resource.emitBefore(context)
   }
@@ -162,7 +168,7 @@ export default class Controller {
     return pack
   }
 
-  public async show(resource: AnyResource, request: Request, response: Response, context: RequestContext) {
+  public async show(resource: AnyResource, request: Request<any>, response: Response, context: RequestContext) {
     const pack = await resource.show(context, request.params, this.extractOptions(context))
     resource.injectPackSelfLinks(pack, request)
     return pack
@@ -262,8 +268,8 @@ export default class Controller {
 
   private extractIndexParameters(request: Request) {
     const {query}    = request
-    const filters    = {...query.filter}
-    const sorts      = this.parseSorts(query.sort)
+    const filters    = {...query.filter as any}
+    const sorts      = this.parseSorts(query.sort as any)
     const pagination = this.parsePagination(query)
 
     return {filters, sorts, pagination}
