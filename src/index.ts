@@ -8,12 +8,12 @@ export { default as RequestContext } from './RequestContext'
 export { default as Resource } from './Resource'
 export { default as ResourceRegistry } from './ResourceRegistry'
 export { default as OpenAPIGenerator } from './OpenAPIGenerator'
-export * from './defineUtil'
 export { configure } from './config'
 
 export * from './ResourceConfig'
 export * from './types'
 export * from './util'
 
-import * as actions from './actions'
-export { actions }
+export * from './defineUtil'
+export * as middleware from './middleware'
+export * as actions from './actions'
