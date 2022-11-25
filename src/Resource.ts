@@ -84,14 +84,20 @@ export default class Resource<Model, Query> {
     return this.config.adapter.call(this, this.registry, context)
   }
 
-  public async query(context: RequestContext, adapter: Adapter<any, any> = this.adapter(context), options: QueryOptions = {}): Promise<Query> {
+  public async query(context: RequestContext, options: QueryOptions = {}): Promise<Query> {
+    const {
+      adapter = this.adapter(context),
+      label,
+      filters,
+    } = options
+
     let query = adapter.query()
     query = await this.applyScope(query, context)
-    if (options.label != null) {
-      query = await this.applyLabel(query, options.label, context)
+    if (label != null) {
+      query = await this.applyLabel(query, label, context)
     }
-    if (options.filters != null) {
-      query = await adapter.applyFilters(query, options.filters)
+    if (filters != null) {
+      query = await adapter.applyFilters(query, filters)
     }
 
     return query
@@ -449,7 +455,7 @@ export default class Resource<Model, Query> {
       throw new APIError(405, `Action \`list\` not available`)
     }
 
-    const action = this.config.list || actions.list
+    const action = this.config.list ?? actions.list
     const pack = await action.call(this, context, options)
 
     await this.injectPaginationMeta(
@@ -561,6 +567,7 @@ export default class Resource<Model, Query> {
 }
 
 export interface QueryOptions {
+  adapter?: Adapter<any, any>
   label?:   string
   filters?: Record<string, any>
 }
