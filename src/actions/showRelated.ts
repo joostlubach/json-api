@@ -1,4 +1,5 @@
 import { ActionOptions } from 'json-api'
+import { pick } from 'lodash'
 import { AnyResource, Pack, RequestContext } from '../'
 import APIError from '../APIError'
 
@@ -28,7 +29,7 @@ export default async function showRelated(
     throw new APIError(405, `Resource \`${this.type}\` can not be shown`)
   }
 
-  const query  = await this.query(context)
+  const query  = await this.query(context, pick(options, 'label'))
   const {pack} = await db.getRelated(this, query, relationship, relationshipName, parentID, options)
   return pack
 }

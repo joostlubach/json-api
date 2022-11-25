@@ -1,3 +1,4 @@
+import { pick } from 'lodash'
 import APIError from '../APIError'
 import Pack from '../Pack'
 import RequestContext from '../RequestContext'
@@ -9,7 +10,7 @@ export default async function list(this: AnyResource, context: RequestContext, o
     throw new APIError(405, `Resource \`${this.type}\` can not be listed`)
   }
 
-  let query = await this.query(context, {label: options.label})
+  let query = await this.query(context, pick(options, 'label'))
   const grandTotal = this.totals ? await db.count(query) : null
   if (options.filters != null) {
     query = await db.applyFilters(query, options.filters)

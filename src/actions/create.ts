@@ -1,3 +1,4 @@
+import { pick } from 'lodash'
 import APIError from '../APIError'
 import Document from '../Document'
 import Pack from '../Pack'
@@ -10,7 +11,7 @@ export default async function create(this: AnyResource, context: RequestContext,
     throw new APIError(405, `Resource \`${this.type}\` cannot be created`)
   }
 
-  const query  = await this.query(context)
+  const query  = await this.query(context, pick(options, 'label'))
   const {pack} = await db.create(query, document, options)
   return pack
 }
