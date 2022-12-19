@@ -148,7 +148,7 @@ export interface ResourceConfig<Model, Query> {
   /**
    * Libraries built on top of json-api may extend the configuration with arbitrary additional keys.
    */
-  [extkey: string]: any
+  [extkey: string | symbol]: any
 
 }
 

@@ -10,7 +10,7 @@ export function compose<M, Q>(config: ResourceConfig<M, Q>, ...post: ComposeFunc
 export function compose<M, Q>(...args: any[]) {
   const pre:  ComposeFunction<ResourceConfig<M, Q>>[] = isArray(args[0]) ? args.shift() : []
   const root: ResourceConfig<M, Q> = args.shift()
-  const post: ComposeFunction<ResourceConfig<M, Q>>[] = isArray(args[0]) ? args.shift() : []
+  const post: ComposeFunction<ResourceConfig<M, Q>>[] = args
 
   let config = root
 
