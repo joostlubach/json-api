@@ -11,10 +11,11 @@ export default async function list(this: AnyResource, context: RequestContext, o
   }
 
   let query = await this.query(context, pick(options, 'label'))
-  const grandTotal = this.totals ? await db.count(query) : null
   if (options.filters != null) {
     query = await db.applyFilters(query, options.filters)
   }
+
+  const grandTotal = this.totals ? await db.count(query) : null
   if (options.search != null) {
     query = await db.applySearch(query, options.search)
   }
