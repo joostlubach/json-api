@@ -157,7 +157,7 @@ export interface ResourceConfig<Model, Query> {
 
 export type AttributeMap<M> = Record<string, AttributeConfig<M> | boolean>
 export interface AttributeConfig<M> {
-  writable?:    boolean | 'create'
+  writable?:    boolean | AttributeIf<M> | 'create'
   detail?:      boolean
   if?:          AttributeIf<M>
   collect?:     AttributeCollector<M>

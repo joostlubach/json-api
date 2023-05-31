@@ -230,6 +230,19 @@ export default class Resource<Model, Query> {
     return query
   }
 
+  public attributeAvailable(attribute: AttributeConfig<Model>, model: Model, context: RequestContext) {
+    if (attribute.if == null) { return true }
+    return attribute.if.call(this, model, context)
+  }
+
+  public attributeWritable(attribute: AttributeConfig<Model>, model: Model, create: boolean, context: RequestContext) {
+    if (!this.attributeAvailable(attribute, model, context)) { return false }
+    if (attribute.writable == null) { return true }
+    if (isFunction(attribute.writable)) { return attribute.writable.call(this, model, context) }
+    if (attribute.writable === 'create') { return create }
+    return attribute.writable
+  }
+
   //------
   // Serialization
 
