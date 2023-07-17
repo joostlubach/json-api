@@ -1,6 +1,9 @@
 import { Request } from 'express'
-import { Relationship } from 'json-api'
-import { Document, Pack, RequestContext, Resource, ResourceRegistry } from './'
+import Document from './Document'
+import Pack from './Pack'
+import RequestContext from './RequestContext'
+import Resource from './Resource'
+import ResourceRegistry from './ResourceRegistry'
 import {
   ActionOptions,
   Adapter,
@@ -9,6 +12,7 @@ import {
   Linkage,
   ListOptions,
   RelatedQuery,
+  Relationship,
   ResourceID,
   ResourceLocator,
 } from './types'

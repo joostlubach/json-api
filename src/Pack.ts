@@ -1,6 +1,6 @@
 import { Response } from 'express'
-import { APIError } from 'json-api'
 import { isArray, isPlainObject } from 'lodash'
+import APIError from './APIError'
 import Collection from './Collection'
 import Document from './Document'
 import ResourceRegistry from './ResourceRegistry'

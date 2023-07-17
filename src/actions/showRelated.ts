@@ -1,6 +1,6 @@
-import { Pack } from 'json-api'
 import { pick } from 'lodash'
 import APIError from '../APIError'
+import Pack from '../Pack'
 import RequestContext from '../RequestContext'
 import { ActionOptions, AnyResource } from '../types'
 

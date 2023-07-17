@@ -1,7 +1,10 @@
 import { Request } from 'express'
-import { APIError, BulkSelector, Collection, Pack } from 'json-api'
 import { isPlainObject } from 'lodash'
 import { AnyResource } from './'
+import APIError from './APIError'
+import Collection from './Collection'
+import Pack from './Pack'
+import { BulkSelector } from './types'
 
 export default class RequestContext {
 
