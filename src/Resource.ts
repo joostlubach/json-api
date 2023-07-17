@@ -162,7 +162,7 @@ export default class Resource<Model, Query> {
     return await this.config.scope(query, context)
   }
 
-  public async getDefaults(context: RequestContext): Promise<AnyObject | null> {
+  public async getDefaults(context: RequestContext): Promise<Record<string, any> | null> {
     return this.config.defaults?.(context) ?? null
   }
 
@@ -337,7 +337,7 @@ export default class Resource<Model, Query> {
    * @param pack The resulting pack.
    * @param request The request.
    */
-  public injectPackSelfLinks(pack: Pack, request: Request<any>) {
+  public injectPackSelfLinks(pack: Pack, request: Request) {
     // Start by interpolating current request parameters in our base. This is useful in case resources
     // use interpolation values in their base (e.g. `scripts/:scriptID/messages`).
     const base = this.formatResourceURL(request)

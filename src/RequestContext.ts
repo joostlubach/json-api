@@ -1,13 +1,13 @@
 import { Request } from 'express'
-import { AnyResource } from '.'
-import { Pack, APIError, Collection, BulkSelector } from 'json-api'
+import { APIError, BulkSelector, Collection, Pack } from 'json-api'
 import { isPlainObject } from 'lodash'
+import { AnyResource } from './'
 
 export default class RequestContext {
 
   constructor(
     public readonly action: string,
-    extra?: AnyObject
+    extra?: Record<string, any>
   ) {
     Object.assign(this, extra)
   }
@@ -27,7 +27,7 @@ export default class RequestContext {
   [name: string]: any
 
   public readonly request?: Request
-  public readonly params:   AnyObject = {}
+  public readonly params:   Record<string, any> = {}
   public model: any = null
 
   public extractBulkSelector(requestPack: Pack, resource: AnyResource): BulkSelector {

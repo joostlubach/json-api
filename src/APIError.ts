@@ -9,7 +9,7 @@ export default class APIError extends Error {
     public readonly status:  number = 500,
     message = "An error occurred",
     public readonly errors?: JSONAPIError[],
-    public readonly extra:   AnyObject = {}
+    public readonly extra:   Record<string, any> = {}
   ) {
     super(message)
   }

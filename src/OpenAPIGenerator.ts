@@ -25,7 +25,7 @@ export default class OpenAPIGenerator {
     return await this.loadFile('openapi.yml', {
       version: this.version,
       baseURL: this.baseURL,
-    }) as AnyObject
+    }) as Record<string, any>
   }
 
   private async loadResources() {
@@ -43,7 +43,7 @@ export default class OpenAPIGenerator {
   //------
   // Support
 
-  private async loadFile(path: string, interpolation: AnyObject = {}) {
+  private async loadFile(path: string, interpolation: Record<string, any> = {}) {
     const fullPath = Path.isAbsolute(path) ? path : Path.join(this.dir, path)
 
     let yaml = await FS.readFile(fullPath, 'utf8')

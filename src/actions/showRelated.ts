@@ -1,7 +1,8 @@
-import { ActionOptions } from 'json-api'
+import { Pack } from 'json-api'
 import { pick } from 'lodash'
-import { AnyResource, Pack, RequestContext } from '../'
 import APIError from '../APIError'
+import RequestContext from '../RequestContext'
+import { ActionOptions, AnyResource } from '../types'
 
 export default async function showRelated(
   this:             AnyResource,

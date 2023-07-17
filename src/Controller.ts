@@ -1,4 +1,5 @@
 import { Application, NextFunction, Request, Response, Router } from 'express'
+import { safeParseInt } from 'ytil'
 import APIError from './APIError'
 import Collection from './Collection'
 import Document from './Document'
@@ -8,7 +9,14 @@ import { negotiateContentType, validateContentType, validateRequest } from './pr
 import RequestContext from './RequestContext'
 import { CustomCollectionAction, CustomDocumentAction } from './ResourceConfig'
 import ResourceRegistry from './ResourceRegistry'
-import { ActionOptions, AnyResource, PaginationSpec, Sort } from './types'
+import {
+  ActionOptions,
+  AnyResource,
+  PaginationSpec,
+  ResourceLocator,
+  Serialized,
+  Sort,
+} from './types'
 
 export default class Controller {
 
@@ -168,8 +176,13 @@ export default class Controller {
     return pack
   }
 
-  public async show(resource: AnyResource, request: Request<any>, response: Response, context: RequestContext) {
-    const pack = await resource.show(context, request.params, this.extractOptions(context))
+  public async show(resource: AnyResource, request: Request, response: Response, context: RequestContext) {
+    const locator = ResourceLocator.fromRequest(request)
+    if (locator == null) {
+      throw new APIError(400, "Invalid resource locator, specify either `id` or `singleton`.")
+    }
+
+    const pack = await resource.show(context, locator, this.extractOptions(context))
     resource.injectPackSelfLinks(pack, request)
     return pack
   }
@@ -335,12 +348,12 @@ export default class Controller {
   //------
   // Pagination
 
-  private parsePagination(query: AnyObject): PaginationSpec {
+  private parsePagination(query: Record<string, any>): PaginationSpec {
     const {limit, offset} = query
 
     return {
-      offset: offset == null ? 0 : parseInt(offset, 10),
-      limit:  limit == null ? null : parseInt(limit, 10),
+      offset: safeParseInt(offset, 0),
+      limit:  safeParseInt(limit),
     }
   }
 
@@ -368,7 +381,7 @@ export default class Controller {
     model:        T,
     detail:       boolean = true,
     context:      RequestContext = RequestContext.empty,
-  ): Promise<AnyObject> {
+  ): Promise<Serialized> {
     const document = await this.buildDocument(resourceType, model, detail, context)
     return document.serialize()
   }
@@ -378,7 +391,7 @@ export default class Controller {
     models:       T[],
     detail:       boolean = false,
     context:      RequestContext = RequestContext.empty,
-  ): Promise<AnyObject> {
+  ): Promise<Serialized> {
     const collection = await this.buildCollection(resourceType, models, detail, context)
     return collection.serialize()
   }

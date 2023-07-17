@@ -1,7 +1,7 @@
-import { ActionOptions } from 'json-api'
 import { pick } from 'lodash'
-import { AnyResource, RequestContext, ResourceLocator } from '../'
 import APIError from '../APIError'
+import RequestContext from '../RequestContext'
+import { ActionOptions, AnyResource, ResourceLocator } from '../types'
 
 export default async function show(this: AnyResource, context: RequestContext, locator: ResourceLocator, options: ActionOptions) {
   const db = this.adapter(context)

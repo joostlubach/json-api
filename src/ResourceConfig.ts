@@ -1,6 +1,5 @@
 import { Request } from 'express'
 import { Relationship } from 'json-api'
-import { ID } from 'mongoid'
 import { Document, Pack, RequestContext, Resource, ResourceRegistry } from './'
 import {
   ActionOptions,
@@ -10,6 +9,7 @@ import {
   Linkage,
   ListOptions,
   RelatedQuery,
+  ResourceID,
   ResourceLocator,
 } from './types'
 
@@ -134,7 +134,7 @@ export interface ResourceConfig<Model, Query> {
   //------
   // Low level interface
 
-  include?: (ids: ID[]) => Promise<Model[]>
+  include?: (ids: ResourceID[]) => Promise<Model[]>
 
   //------
   // Custom

@@ -1,7 +1,7 @@
-import ResourceRegistry from './ResourceRegistry'
-import APIError from './APIError'
-import { AttributeBag, RelationshipBag, Links, Meta, AnyResource } from './types'
 import { isFunction } from 'lodash'
+import APIError from './APIError'
+import ResourceRegistry from './ResourceRegistry'
+import { AnyResource, AttributeBag, Links, Meta, RelationshipBag } from './types'
 
 export default class Document {
 
@@ -19,7 +19,7 @@ export default class Document {
   }
 
   public serialize(): any {
-    const serialized: AnyObject = {
+    const serialized: Record<string, any> = {
       id:            this.id,
       type:          this.resource.type,
       attributes:    this.serializeAttributes(this.attributes),
@@ -32,7 +32,7 @@ export default class Document {
     return serialized
   }
 
-  public static deserialize(registry: ResourceRegistry, serialized: AnyObject, detail: boolean = true): Document {
+  public static deserialize(registry: ResourceRegistry, serialized: Record<string, any>, detail: boolean = true): Document {
     if (serialized.type == null) {
       throw new APIError(400, "missing 'type' node")
     }
@@ -51,10 +51,10 @@ export default class Document {
     return document
   }
 
-  private serializeAttributes(attributes: AttributeBag): AnyObject {
+  private serializeAttributes(attributes: AttributeBag): Record<string, any> {
     if (this.resource == null) { return attributes }
 
-    const serialized: AnyObject = {}
+    const serialized: Record<string, any> = {}
     for (const [name, attribute] of this.resource.attributes) {
       if (!this.detail && attribute.detail) { continue }
 
@@ -63,10 +63,10 @@ export default class Document {
     return serialized
   }
 
-  private deserializeAttributes(attributes: AttributeBag): AnyObject {
+  private deserializeAttributes(attributes: AttributeBag): Record<string, any> {
     if (this.resource == null) { return attributes }
 
-    const deserialized: AnyObject = {}
+    const deserialized: Record<string, any> = {}
     for (const name of Object.keys(attributes)) {
       const attribute = this.resource.attributes.get(name)
       if (attribute == null) {
@@ -78,8 +78,8 @@ export default class Document {
     return deserialized
   }
 
-  private serializeRelationships(relationships: RelationshipBag): AnyObject | undefined {
-    const serialized: AnyObject = {}
+  private serializeRelationships(relationships: RelationshipBag): Record<string, any> | undefined {
+    const serialized: Record<string, any> = {}
     for (const name of Object.keys(relationships)) {
       if (isFunction(this.resource.config.relationships)) {
         serialized[name] = relationships[name]
@@ -95,8 +95,8 @@ export default class Document {
     return serialized
   }
 
-  private deserializeRelationships(relationships: RelationshipBag): AnyObject {
-    const deserialized: AnyObject = {}
+  private deserializeRelationships(relationships: RelationshipBag): Record<string, any> {
+    const deserialized: Record<string, any> = {}
     for (const name of Object.keys(relationships)) {
       const relConfig = this.resource.relationship(name)
       if (relConfig == null) {

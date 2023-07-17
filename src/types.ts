@@ -1,12 +1,27 @@
-import { RelationshipConfig } from '../'
+import { Request } from 'express'
 import Collection from './Collection'
 import Document from './Document'
 import Pack from './Pack'
 import Resource from './Resource'
+import { RelationshipConfig } from './ResourceConfig'
 
 export type AnyResource = Resource<any, any>
 
 export type ResourceLocator = IDLocator | SingletonLocator
+
+export const ResourceLocator: {
+  fromRequest(request: Request): ResourceLocator | null
+} = {
+  fromRequest(request: Request): ResourceLocator | null {
+    if (typeof request.params.id === 'string') {
+      return {id: request.params.id}
+    } else if (typeof request.params.singleton === 'string') {
+      return {singleton: request.params.singleton}
+    } else {
+      return null
+    }
+  }
+}
 
 export interface IDLocator {
   id: string
@@ -30,8 +45,6 @@ export interface PaginationSpec {
 }
 
 export type Constructor<T> = new (...args: any[]) => T
-export type AnyObject      = Record<string, any>
-
 export type RelatedQuery = any
 
 export interface Adapter<Model, Query> {
@@ -58,8 +71,8 @@ export interface Adapter<Model, Query> {
   modelsToCollection(models: Model[], detail?: boolean): Collection | Promise<Collection>
 }
 
-export type Meta            = AnyObject
-export type AttributeBag    = AnyObject
+export type Meta            = Record<string, any>
+export type AttributeBag    = Record<string, any>
 
 export type RelationshipBag = Record<string, Relationship>
 
@@ -109,15 +122,18 @@ export interface ListOptions extends ActionOptions {
 }
 
 export interface CreateOptions<M> extends ActionOptions {
-  assign?: (model: M, attributes: AnyObject, relationships: AnyObject) => void
+  assign?: (model: M, attributes: Record<string, any>, relationships: Record<string, any>) => void
 }
 
 export interface UpdateOptions<M> extends ActionOptions {
-  assign?: (model: M, attributes: AnyObject, relationships: AnyObject) => void
+  assign?: (model: M, attributes: Record<string, any>, relationships: Record<string, any>) => void
 }
 
 export interface BulkSelector {
   ids?:         string[]
-  filters?:     AnyObject
+  filters?:     Record<string, any>
   search?:      string
 }
+
+export type ResourceID = string | number
+export type Serialized = Record<string, any>
