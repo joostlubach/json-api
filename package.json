@@ -35,6 +35,10 @@
     "@types/fs-extra": "^11.0.1",
     "@types/inflected": "^1.1.29",
     "@types/js-yaml": "^4.0.5",
-    "@types/url-template": "^2.0.28"
+    "@types/url-template": "^2.0.28",
+    "copyfiles": "^2.4.1",
+    "rimraf": "^5.0.1",
+    "tsc-alias": "^1.8.7",
+    "typescript": "^5.0.4"
   }
 }
