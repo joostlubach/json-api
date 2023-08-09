@@ -27,7 +27,7 @@ export default class RequestContext {
   }
 
   // Allow other properties.
-  [name: string]: any
+  [_name: string]: any
 
   public readonly request?: Request
   public readonly params:   Record<string, any> = {}
