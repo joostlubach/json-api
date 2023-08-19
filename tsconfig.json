@@ -3,6 +3,7 @@
     "target": "ESNext",
     "outDir": "dist",
     "declaration": true,
+    "declarationMap": true,
     "useDefineForClassFields": true,
     "allowJs": false,
     "skipLibCheck": true,
