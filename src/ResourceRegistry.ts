@@ -5,12 +5,9 @@ import Resource from './Resource'
 
 export default class ResourceRegistry {
 
-  constructor(configs: ResourceConfigMap, defaults: Partial<ResourceConfig<any, any>>, afterCreate?: (resource: AnyResource) => any) {
-    ResourceRegistry.instance = this
+  constructor(configs: ResourceConfigMap = {}, defaults: Partial<ResourceConfig<any, any>> = {}, afterCreate?: (resource: AnyResource) => any) {
     this.createResources(configs, defaults, afterCreate)
   }
-
-  public static instance: ResourceRegistry
 
   public resources: Map<string, Resource<any, any>> = new Map()
 
