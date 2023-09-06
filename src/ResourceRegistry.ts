@@ -1,26 +1,36 @@
 import chalk from 'chalk'
-import { AnyResource, mergeResourceConfig, ResourceConfig, ResourceConfigMap } from './'
-import config from './config'
+import { AnyResource, mergeResourceConfig, ResourceConfig } from './'
 import Resource from './Resource'
 
 export default class ResourceRegistry {
 
-  constructor(configs: ResourceConfigMap = {}, defaults: Partial<ResourceConfig<any, any>> = {}, afterCreate?: (resource: AnyResource) => any) {
-    this.createResources(configs, defaults, afterCreate)
-  }
+  constructor(
+    private readonly defaults: Partial<ResourceConfig<any, any>> = {},
+    private readonly afterCreate?: (resource: AnyResource) => any
+  ) {}
 
-  public resources: Map<string, Resource<any, any>> = new Map()
+  private readonly resources: Map<string, Resource<any, any>> = new Map()
 
-  public createResources(configs: ResourceConfigMap, defaults: Partial<ResourceConfig<any, any>>, afterCreate?: (resource: AnyResource) => any) {
-    for (const name of Object.keys(configs)) {
-      const mergedConfig = mergeResourceConfig(configs[name], defaults)
-      const resource = new Resource(this, name, mergedConfig)
-      afterCreate?.(resource)
-      this.resources.set(name, resource)
+  // #region Registering
 
-      config.logger.info(chalk`-> Registered resource {yellow ${resource.plural}}\n`)
+  public registerMany(configs: Record<string, ResourceConfig<any, any>>) {
+    for (const [type, config] of Object.entries(configs)) {
+      this.register(type, config)
     }
   }
+
+  public register(type: string, config: ResourceConfig<any, any>) {
+    const mergedConfig = mergeResourceConfig(config, this.defaults)
+    const resource = new Resource(this, type, mergedConfig)
+    this.afterCreate?.(resource)
+    this.resources.set(type, resource)
+
+    config.logger.info(chalk`-> Registered resource {yellow ${resource.plural}}\n`)
+  }
+
+  // #endregion
+
+  // #region Retrieval
 
   public get(name: string): AnyResource | null {
     return this.resources.get(name) ?? null
@@ -34,5 +44,7 @@ export default class ResourceRegistry {
     }
     return null
   }
+
+  // #endregion
 
 }
