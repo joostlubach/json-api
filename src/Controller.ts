@@ -43,7 +43,7 @@ export default class Controller {
 
     app.get('/openapi.json', this.openAPI.bind(this))
 
-    for (const resource of this.registry.resources.values()) {
+    for (const resource of this.registry.all()) {
       for (const spec of resource.collectionActions) {
         this.defineCollectionAction(spec, resource)
       }
@@ -92,7 +92,7 @@ export default class Controller {
       throw new Error("Mount the controller before defining actions")
     }
 
-    const resources = resource ? [resource] : this.registry.resources.values()
+    const resources = resource ? [resource] : this.registry.all()
 
     for (const resource of resources) {
       const action = this.createResourceAction(resource, spec.name, this.customCollectionAction(spec), false, spec.authenticate !== false)
@@ -105,7 +105,7 @@ export default class Controller {
       throw new Error("Mount the controller before defining actions")
     }
 
-    const resources = resource ? [resource] : this.registry.resources.values()
+    const resources = resource ? [resource] : this.registry.all()
 
     for (const resource of resources) {
       const action = this.createResourceAction(resource, spec.name, this.customDocumentAction(spec), false, spec.authenticate !== false)

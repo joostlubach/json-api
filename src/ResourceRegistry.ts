@@ -36,6 +36,10 @@ export default class ResourceRegistry {
     return this.resources.get(name) ?? null
   }
 
+  public all(): AnyResource[] {
+    return Array.from(this.resources.values())
+  }
+
   public findResourceForModel(modelName: string): AnyResource | null {
     for (const [, resource] of this.resources) {
       if (!resource.config.auxiliary && resource.config.modelName === modelName) {
