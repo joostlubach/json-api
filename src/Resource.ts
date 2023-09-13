@@ -1,9 +1,8 @@
 import { Request } from 'express'
 import { singularize } from 'inflected'
 import { isFunction } from 'lodash'
-import URL, { Url } from 'url'
-import URLTemplate from 'url-template'
 import * as actions from './actions'
+import Adapter from './Adapter'
 import APIError from './APIError'
 import Collection from './Collection'
 import config from './config'
@@ -23,7 +22,6 @@ import {
 import ResourceRegistry from './ResourceRegistry'
 import {
   ActionOptions,
-  Adapter,
   AttributeBag,
   BulkSelector,
   Links,
@@ -34,16 +32,15 @@ import {
   ResourceLocator,
 } from './types'
 
-export default class Resource<Model, Query> {
+export default class Resource<Model, Query, A extends Adapter<Model, Query>> {
 
   constructor(
-    public readonly registry: ResourceRegistry,
+    public readonly registry: ResourceRegistry<Model, Query, A>,
     public readonly type:     string,
-    public readonly config:   ResourceConfig<Model, Query>
+    public readonly config:   ResourceConfig<Model, Query, A>
   ) {}
 
-  //------
-  // Naming
+  // #region Naming
 
   public get plural(): string {
     return this.config.plural || this.type
@@ -53,38 +50,15 @@ export default class Resource<Model, Query> {
     return this.config.singular || singularize(this.type)
   }
 
-  //------
-  // Overall
+  // #endregion
 
-  /**
-   * Builds a proper URL to this resource.
-   *
-   * @param request The Express request object, to get a proper hostname.
-   * @param overrides An URL object that serves as a base, if not found from the request.
-   */
-  public formatResourceURL(request: Request, overrides: Partial<Url> = {}) {
-    return URL.format({
-      ...overrides,
-      protocol: overrides.protocol || request.protocol,
-      host:     overrides.host || request.get('Host'),
-      pathname: overrides.pathname || URLTemplate.parse(this.type).expand(request.params),
-    })
+  // #region Data access
+
+  public adapter(context: RequestContext) {
+    return this.config.adapter(context)
   }
 
-  /**
-   * Obtains an adapter to handle this resource.
-   *
-   * @param context A request context.
-   */
-  public adapter(context: RequestContext): Adapter<Model, Query> {
-    if (this.config.adapter == null) {
-      throw new Error(`Resource \`${this.type}\` has no defined adapter`)
-    }
-
-    return this.config.adapter.call(this, this.registry, context)
-  }
-
-  public async query(context: RequestContext, options: QueryOptions = {}): Promise<Query> {
+  public async query(context: RequestContext, options: QueryOptions<A> = {}): Promise<Query> {
     const {
       adapter = this.adapter(context),
       label,
@@ -102,6 +76,8 @@ export default class Resource<Model, Query> {
 
     return query
   }
+
+  // #endregion
 
   //------
   // Data retrieval
@@ -337,32 +313,35 @@ export default class Resource<Model, Query> {
    * @param pack The resulting pack.
    * @param request The request.
    */
-  public injectPackSelfLinks(pack: Pack, request: Request) {
+  public injectPackSelfLinks(pack: Pack, context: RequestContext) {
     // Start by interpolating current request parameters in our base. This is useful in case resources
     // use interpolation values in their base (e.g. `scripts/:scriptID/messages`).
-    const base = this.formatResourceURL(request)
-    const baseWithQuery = this.formatResourceURL(request, {query: request.query as any})
+    if (context.requestURI == null) { return null }
+
+    const base        = context.requestURI
+    const baseNoQuery = new URL({...context.requestURI, search: ''})
+    if (base == null || baseNoQuery == null) { return }
 
     if (pack.data == null || pack.data instanceof Collection) {
       // This is a request for some collection, the self link is the base.
-      pack.links.self = baseWithQuery
+      pack.links.self = `${base}`
     }
     if (pack.data instanceof Document && pack.data.id != null) {
-      pack.links.self = `${baseWithQuery}/${pack.data.id}`
+      pack.links.self = `${base}/${pack.data.id}`
     }
 
     if (pack.data instanceof Collection) {
       // Insert a self link for each document in the collection.
       for (const document of pack.data.documents) {
-        this.injectDocumentSelfLinks(document, base)
+        this.injectDocumentSelfLinks(document, baseNoQuery)
       }
     }
     if (pack.data instanceof Document) {
-      this.injectDocumentSelfLinks(pack.data, base)
+      this.injectDocumentSelfLinks(pack.data, baseNoQuery)
     }
   }
 
-  private injectDocumentSelfLinks(document: Document, base: string) {
+  private injectDocumentSelfLinks(document: Document, base: URL) {
     const {id} = document
     if (id == null) { return }
 
@@ -419,8 +398,14 @@ export default class Resource<Model, Query> {
       ? pack.meta.total
       : null
 
-    if (context.request != null) {
-      pack.links.first = this.formatResourceURL(context.request, {query: {offset: '0'}})
+    if (context.requestURI != null) {
+      const url = new URL({
+        ...context.requestURI,
+        searchParams: new URLSearchParams({offset: '0'}),
+      })
+      if (url != null) {
+        pack.links.first = url.toString()
+      }
     }
 
     if (total == null) {
@@ -439,8 +424,14 @@ export default class Resource<Model, Query> {
         isLast:  nextOffset == null,
       })
 
-      if (context.request != null) {
-        pack.links.next = this.formatResourceURL(context.request, {query: {offset: `${nextOffset}`}})
+      if (context.requestURI != null) {
+        const url = new URL({
+          ...context.requestURI,
+          searchParams: new URLSearchParams({offset: `${nextOffset}`})
+        })
+        if (url != null) {
+          pack.links.next = url.toString()
+        }
       }
     }
   }
@@ -579,10 +570,10 @@ export default class Resource<Model, Query> {
 
 }
 
-export interface QueryOptions {
-  adapter?: Adapter<any, any>
+export interface QueryOptions<A extends Adapter<any, any>> {
   label?:   string
   filters?: Record<string, any>
+  adapter?: A
 }
 
 export interface BuildCollectionConfig<T> {

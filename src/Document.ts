@@ -32,7 +32,7 @@ export default class Document {
     return serialized
   }
 
-  public static deserialize(registry: ResourceRegistry, serialized: Record<string, any>, detail: boolean = true): Document {
+  public static deserialize(registry: ResourceRegistry<any, any, any>, serialized: Record<string, any>, detail: boolean = true): Document {
     if (serialized.type == null) {
       throw new APIError(400, "missing 'type' node")
     }

@@ -1,12 +1,11 @@
 import { Request } from 'express'
+import Adapter from './Adapter'
 import Document from './Document'
 import Pack from './Pack'
 import RequestContext from './RequestContext'
 import Resource from './Resource'
-import ResourceRegistry from './ResourceRegistry'
 import {
   ActionOptions,
-  Adapter,
   AnyResource,
   BulkSelector,
   Linkage,
@@ -17,9 +16,9 @@ import {
   ResourceLocator,
 } from './types'
 
-export type ResourceConfigMap = Record<string, ResourceConfig<any, any>>
+export type ResourceConfigMap = Record<string, ResourceConfig<any, any, any>>
 
-export interface ResourceConfig<Model, Query> {
+export interface ResourceConfig<Model, Query, A extends Adapter<Model, Query>> {
 
   //------
   // Naming
@@ -39,9 +38,6 @@ export interface ResourceConfig<Model, Query> {
   /// If true, this resource won't be resolved as the default resource for the given model class.
   auxiliary?:  boolean
 
-  /// A function that creates an adapter for this resource.
-  adapter?: (this: Resource<Model, Query>, registry: ResourceRegistry, context: RequestContext) => Adapter<Model, Query>
-
   /// Whether to include totals.
   totals?: boolean
 
@@ -59,6 +55,8 @@ export interface ResourceConfig<Model, Query> {
 
   //------
   // Data retrieval
+
+  adapter(context: RequestContext): A
 
   /// A scope configuration.
   scope?:  ScopeFunction<Query>
@@ -110,9 +108,6 @@ export interface ResourceConfig<Model, Query> {
 
   /// A function called before any request for this resource is executed.
   before?: BeforeHandler
-
-  /// A function called after any request for this resource is executed.
-  after?:  AfterHandler
 
   /// A custom `list` action or `false` to disable this action.
   list?:   false | ListAction<AnyResource>
@@ -171,10 +166,10 @@ export interface AttributeConfig<M> {
   deserialize?: AttributeDeserializer
 }
 
-export type AttributeIf<M>        = (this: Resource<M, any>, item: M, context: RequestContext) => boolean | Promise<boolean>
-export type AttributeCollector<M> = (this: Resource<M, any>, items: M[], context: RequestContext) => any | Promise<any>
-export type AttributeGetter<M>    = (this: Resource<M, any>, item: M, raw: any, context: RequestContext) => any | Promise<any>
-export type AttributeSetter<M>    = (this: Resource<M, any>, item: M, raw: any, context: RequestContext) => any | Promise<any>
+export type AttributeIf<M>        = (this: Resource<M, any, any>, item: M, context: RequestContext) => boolean | Promise<boolean>
+export type AttributeCollector<M> = (this: Resource<M, any, any>, items: M[], context: RequestContext) => any | Promise<any>
+export type AttributeGetter<M>    = (this: Resource<M, any, any>, item: M, raw: any, context: RequestContext) => any | Promise<any>
+export type AttributeSetter<M>    = (this: Resource<M, any, any>, item: M, raw: any, context: RequestContext) => any | Promise<any>
 export type AttributeSerializer   = (value: any) => any
 export type AttributeDeserializer = (raw: any) => any
 
@@ -214,7 +209,7 @@ interface RelationshipConfigCommon<M> {
   type?:     string
   writable?: boolean | 'create'
   detail?:   boolean
-  if?:       (this: Resource<M, any>, model: M, context: RequestContext) => boolean
+  if?:       (this: Resource<M, any, any>, model: M, context: RequestContext) => boolean
   include?:  RelationshipIncludeConfig
 }
 
@@ -263,7 +258,6 @@ export type FilterModifier<Q> = (query: Q, value: any, context: RequestContext) 
 
 export type AuthenticateHandler = (request: Request, context: RequestContext) => void | Promise<void>
 export type BeforeHandler       = (context: RequestContext) => void | Promise<void>
-export type AfterHandler        = (responsePack: Pack, context: RequestContext) => void | Promise<void>
 
 export type ListAction<R extends AnyResource>  = (
   this: R,
@@ -334,14 +328,15 @@ export interface CustomDocumentAction<R extends AnyResource> {
 
 export type CustomMetaFunction = (this: AnyResource, pack: Pack, context: RequestContext) => any
 
-export type ModelOf<Cfg extends ResourceConfig<any, any>> = Cfg extends ResourceConfig<infer M, any> ? M : never
-export type QueryOf<Cfg extends ResourceConfig<any, any>> = Cfg extends ResourceConfig<any, infer Q> ? Q : never
-export type AttributeOf<Cfg extends ResourceConfig<any, any>> = Cfg['attributes'] extends Record<string, boolean | infer A> ? A : never
+export type ModelOf<Cfg extends ResourceConfig<any, any, any>> = Cfg extends ResourceConfig<infer M, any, any> ? M : never
+export type QueryOf<Cfg extends ResourceConfig<any, any, any>> = Cfg extends ResourceConfig<any, infer Q, any> ? Q : never
+export type AdapterOf<Cfg extends ResourceConfig<any, any, any>> = Cfg extends ResourceConfig<any, any, infer A> ? A : never
+export type AttributesOf<Cfg extends ResourceConfig<any, any, any>> = Cfg['attributes'] extends Record<string, boolean | infer A> ? A : never
 
 //------
 // Utility
 
-export function mergeResourceConfig<M, Q>(config: ResourceConfig<M, Q>, defaults: ResourceConfig<any, any>): ResourceConfig<M, Q> {
+export function mergeResourceConfig<M, Q, A extends Adapter<M, Q>>(config: ResourceConfig<M, Q, A>, defaults: Partial<ResourceConfig<M, Q, A>>): ResourceConfig<M, Q, A> {
   return {
     ...defaults,
     ...config,

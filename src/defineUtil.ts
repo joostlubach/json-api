@@ -1,16 +1,17 @@
 import { isArray } from 'lodash'
+import Adapter from './Adapter'
 import { ResourceConfig } from './ResourceConfig'
 
-export function resource<M, Q>(config: ResourceConfig<M, Q>) {
+export function resource<M, Q, A extends Adapter<M, Q>>(config: ResourceConfig<M, Q, A>) {
   return config
 }
 
-export function compose<M, Q>(pre: ComposeFunction<ResourceConfig<M, Q>>[], config: ResourceConfig<M, Q>, ...post: ComposeFunction<ResourceConfig<M, Q>>[]): ResourceConfig<M, Q>
-export function compose<M, Q>(config: ResourceConfig<M, Q>, ...post: ComposeFunction<ResourceConfig<M, Q>>[]): ResourceConfig<M, Q>
-export function compose<M, Q>(...args: any[]) {
-  const pre:  ComposeFunction<ResourceConfig<M, Q>>[] = isArray(args[0]) ? args.shift() : []
-  const root: ResourceConfig<M, Q> = args.shift()
-  const post: ComposeFunction<ResourceConfig<M, Q>>[] = args
+export function compose<M, Q, A extends Adapter<M, Q>>(pre: ComposeFunction<ResourceConfig<M, Q, A>>[], config: ResourceConfig<M, Q, A>, ...post: ComposeFunction<ResourceConfig<M, Q, A>>[]): ResourceConfig<M, Q, A>
+export function compose<M, Q, A extends Adapter<M, Q>>(config: ResourceConfig<M, Q, A>, ...post: ComposeFunction<ResourceConfig<M, Q, A>>[]): ResourceConfig<M, Q, A>
+export function compose<M, Q, A extends Adapter<M, Q>>(...args: any[]) {
+  const pre:  ComposeFunction<ResourceConfig<M, Q, A>>[] = isArray(args[0]) ? args.shift() : []
+  const root: ResourceConfig<M, Q, A> = args.shift()
+  const post: ComposeFunction<ResourceConfig<M, Q, A>>[] = args
 
   let config = root
 

@@ -1,4 +1,3 @@
-import { Request } from 'express'
 import { isPlainObject } from 'lodash'
 import { AnyResource } from './'
 import APIError from './APIError'
@@ -10,34 +9,15 @@ export default class RequestContext {
 
   constructor(
     public readonly action: string,
-    extra?: Record<string, any>
-  ) {
-    Object.assign(this, extra)
-  }
+    public readonly params: Record<string, any>,
+    public readonly requestURI?: URL,
+  ) {}
 
-  public static get empty(): RequestContext {
-    return new RequestContext('')
-  }
+  // #region Bulk selector
 
-  public static fromRequest(action: string, request: Request) {
-    return new RequestContext(action, {
-      request: request,
-      params:  {...request.query, ...request.params},
-    })
-  }
-
-  // Allow other properties.
-  [_name: string]: any
-
-  public readonly request?: Request
-  public readonly params:   Record<string, any> = {}
-  public model: any = null
-
-  public extractBulkSelector(requestPack: Pack, resource: AnyResource): BulkSelector {
-    if (this.request != null) {
-      const {params: {id}} = this.request
-      if (id != null) { return {ids: [id]} }
-    }
+  public extractBulkSelector(this: RequestContext, requestPack: Pack, resource: AnyResource): BulkSelector {
+    const {id} = this.params
+    if (id != null) { return {ids: [id]} }
 
     const {data, meta: {filters, search}} = requestPack
 
@@ -80,5 +60,7 @@ export default class RequestContext {
 
     return ids
   }
+
+  // #endregion
 
 }

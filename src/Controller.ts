@@ -1,30 +1,24 @@
 import { Application, NextFunction, Request, Response, Router } from 'express'
 import { safeParseInt } from 'ytil'
+import Adapter from './Adapter'
 import APIError from './APIError'
-import Collection from './Collection'
 import Document from './Document'
 import OpenAPIGenerator from './OpenAPIGenerator'
 import Pack from './Pack'
 import { negotiateContentType, validateContentType, validateRequest } from './pre'
 import RequestContext from './RequestContext'
+import Resource from './Resource'
 import { CustomCollectionAction, CustomDocumentAction } from './ResourceConfig'
 import ResourceRegistry from './ResourceRegistry'
-import {
-  ActionOptions,
-  AnyResource,
-  PaginationSpec,
-  ResourceLocator,
-  Serialized,
-  Sort,
-} from './types'
+import { ActionOptions, PaginationSpec, ResourceLocator, Sort } from './types'
 
-export default class Controller {
+export default class Controller<Model, Query, A extends Adapter<Model, Query>> {
 
   // ------
   // Constructor
 
   constructor(
-    public readonly registry: ResourceRegistry,
+    public readonly registry: ResourceRegistry<Model, Query, A>,
     private readonly options: ControllerOptions = {}
   ) {}
 
@@ -32,7 +26,6 @@ export default class Controller {
   // Mounting
 
   private app?: Application
-  private afterMountListeners = new Set<AfterMountListener>()
 
   public mount(appOrRouter: Application | Router) {
     if (this.app != null) {
@@ -74,20 +67,9 @@ export default class Controller {
         }
       }
     }
-
-    for (const listener of this.afterMountListeners) {
-      listener.call(this)
-    }
   }
 
-  public afterMount(listener: AfterMountListener) {
-    this.afterMountListeners.add(listener)
-    return () => {
-      this.afterMountListeners.delete(listener)
-    }
-  }
-
-  public defineCollectionAction(spec: CustomCollectionAction<AnyResource>, resource?: AnyResource) {
+  public defineCollectionAction(spec: CustomCollectionAction<Resource<Model, Query, A>>, resource?: Resource<Model, Query, A>) {
     if (this.app == null) {
       throw new Error("Mount the controller before defining actions")
     }
@@ -100,7 +82,7 @@ export default class Controller {
     }
   }
 
-  public defineDocumentAction(spec: CustomDocumentAction<AnyResource>, resource?: AnyResource) {
+  public defineDocumentAction(spec: CustomDocumentAction<Resource<Model, Query, A>>, resource?: Resource<Model, Query, A>) {
     if (this.app == null) {
       throw new Error("Mount the controller before defining actions")
     }
@@ -113,16 +95,12 @@ export default class Controller {
     }
   }
 
-  private createResourceAction(resource: AnyResource, name: string, action: ResourceActionHandler, enforceContentType = true, authenticate = true) {
+  private createResourceAction(resource: Resource<Model, Query, A>, name: string, action: ResourceActionHandler<Model, Query, A>, enforceContentType = true, authenticate = true) {
     return async (request: Request, response: Response, next: NextFunction) => {
       try {
-        const context = await this.options.getContext?.(name, request) ?? RequestContext.fromRequest(name, request)
+        const context = await this.options.getContext?.(name, request) ?? this.requestContext(name, request)
         await this.preAction(resource, request, response, context, enforceContentType, authenticate)
-
-        const pack = await action.call(this, resource, request, response, context)
-        await this.postAction(resource, pack || new Pack(null), request, response, context)
-
-        pack?.serializeToResponse(response)
+        await action.call(this, resource, request, response, context)
       } catch (error: any) {
         if (error instanceof APIError) {
           const pack = error.toErrorPack()
@@ -140,8 +118,13 @@ export default class Controller {
     }
   }
 
+  private requestContext(action: string, request: Request) {
+    const uri = new URL(request.originalUrl)
+    return new RequestContext(action, request.params, uri)
+  }
+
   private async preAction(
-    resource: AnyResource,
+    resource: Resource<Model, Query, A>,
     request: Request,
     response: Response,
     context: RequestContext,
@@ -160,104 +143,104 @@ export default class Controller {
     await resource.emitBefore(context)
   }
 
-  private async postAction(resource: AnyResource, pack: Pack, request: Request, response: Response, context: RequestContext) {
-    await resource.emitAfter(pack, context)
-  }
-
   // ------
   // Actions
 
-  public async list(resource: AnyResource, request: Request, response: Response, context: RequestContext) {
-    const {filters, sorts, pagination} = this.extractIndexParameters(request)
+  public async list(resource: Resource<Model, Query, A>, request: Request, response: Response, context: RequestContext) {
+    const {filters, sorts, pagination} = this.extractIndexParameters(context)
     const options = {filters, sorts, pagination, ...this.extractOptions(context)}
 
     const pack = await resource.list(context, options)
-    resource.injectPackSelfLinks(pack, request)
-    return pack
+    resource.injectPackSelfLinks(pack, context)
+    response.json(pack.serialize())
   }
 
-  public async show(resource: AnyResource, request: Request, response: Response, context: RequestContext) {
-    const locator = ResourceLocator.fromRequest(request)
+  public async show(resource: Resource<Model, Query, A>, request: Request, response: Response, context: RequestContext) {
+    const locator = ResourceLocator.fromRequestContext(context)
     if (locator == null) {
       throw new APIError(400, "Invalid resource locator, specify either `id` or `singleton`.")
     }
 
     const pack = await resource.show(context, locator, this.extractOptions(context))
-    resource.injectPackSelfLinks(pack, request)
-    return pack
+    resource.injectPackSelfLinks(pack, context)
+    response.json(pack.serialize())
   }
 
-  public async create(resource: AnyResource, request: Request, response: Response, context: RequestContext) {
-    const pack = this.extractRequestPack(request)
-    const document = await this.extractRequestDocument(resource, request, pack, false)
-    const responsePack = await resource.create(context, document, pack, this.extractOptions(context))
-    resource.injectPackSelfLinks(responsePack, request)
+  public async create(resource: Resource<Model, Query, A>, request: Request, response: Response, context: RequestContext) {
+    const requestPack  = Pack.deserialize(this.registry, request.body)
+    const document     = await this.extractRequestDocument(resource, requestPack, false, context)
+
+    const responsePack = await resource.create(context, document, requestPack, this.extractOptions(context))
+    resource.injectPackSelfLinks(responsePack, context)
+
     response.statusCode = 201
-    return responsePack
+    response.json(responsePack.serialize())
   }
 
-  public async update(resource: AnyResource, request: Request, response: Response, context: RequestContext) {
-    const pack = this.extractRequestPack(request)
-    const document = await this.extractRequestDocument(resource, request, pack, true)
-    const responsePack = await resource.update(context, document, pack, this.extractOptions(context))
-    resource.injectPackSelfLinks(responsePack, request)
-    return responsePack
+  public async update(resource: Resource<Model, Query, A>, request: Request, response: Response, context: RequestContext) {
+    const requestPack  = Pack.deserialize(this.registry, request.body)
+    const document     = await this.extractRequestDocument(resource, requestPack, true, context)
+
+    const responsePack = await resource.update(context, document, requestPack, this.extractOptions(context))
+    resource.injectPackSelfLinks(responsePack, context)
+
+    response.json(responsePack.serialize())
   }
 
-  public async delete(resource: AnyResource, request: Request, response: Response, context: RequestContext) {
+  public async delete(resource: Resource<Model, Query, A>, request: Request, response: Response, context: RequestContext) {
     const requestPack  = request.body?.data != null ? Pack.deserialize(this.registry, request.body) : new Pack(null)
     const selector     = context.extractBulkSelector(requestPack, resource)
+
     const responsePack = await resource.delete(context, selector)
-    resource.injectPackSelfLinks(responsePack, request)
+    resource.injectPackSelfLinks(responsePack, context)
     await resource.injectPaginationMeta(responsePack, context)
 
-    return responsePack
+    response.json(responsePack.serialize())
   }
 
-  public async listRelated(resource: AnyResource, request: Request, response: Response, context: RequestContext) {
-    const relationship = request.params.relationship as string
-    const {filters, sorts, pagination} = this.extractIndexParameters(request)
+  public async listRelated(resource: Resource<Model, Query, A>, request: Request, response: Response, context: RequestContext) {
+    const relationship = context.params.relationship as string
+    const {filters, sorts, pagination} = this.extractIndexParameters(context)
     const options = {filters, sorts, pagination, ...this.extractOptions(context)}
 
-    const {id} = request.params
+    const {id} = context.params
     const pack = await resource.listRelated(context, relationship, id, options)
 
-    // TODO: Look at these two
-    // resource.injectPackSelfLinks(pack, request)
+    resource.injectPackSelfLinks(pack, context)
     await resource.injectPaginationMeta(pack, context, pagination)
-
-    return pack
+    response.json(pack.serialize())
   }
 
-  public async showRelated(resource: AnyResource, request: Request, response: Response, context: RequestContext) {
-    const relationship = request.params.relationship as string
+  public async showRelated(resource: Resource<Model, Query, A>, request: Request, response: Response, context: RequestContext) {
+    const relationship = context.params.relationship as string
 
-    const {id} = request.params
+    const {id} = context.params
     const pack = await resource.showRelated(context, relationship, id, this.extractOptions(context))
-
-    return pack
+    response.json(pack.serialize())
   }
 
   //------
   // Custom actions
 
-  private customCollectionAction<R extends AnyResource>(spec: CustomCollectionAction<R>) {
+  private customCollectionAction<R extends Resource<Model, Query, A>>(spec: CustomCollectionAction<R>) {
     return async (resource: R, request: Request, response: Response, context: RequestContext) => {
       const requestPack = spec.deserialize !== false
         ? Pack.tryDeserialize(this.registry, request.body) ?? new Pack(null)
         : request.body
 
-      return await spec.action.call(resource, requestPack, context, this.extractOptions(context))
+      const pack = await spec.action.call(resource, requestPack, context, this.extractOptions(context))
+      response.json(pack.serialize())
     }
   }
 
-  private customDocumentAction<R extends AnyResource>(spec: CustomDocumentAction<R>) {
+  private customDocumentAction<R extends Resource<Model, Query, A>>(spec: CustomDocumentAction<R>) {
     return async (resource: R, request: Request, response: Response, context: RequestContext) => {
       const requestPack = spec.deserialize !== false
         ? Pack.tryDeserialize(this.registry, request.body) ?? new Pack(null)
         : request.body
 
-      return await spec.action.call(resource, request.params.id, requestPack, context, this.extractOptions(context))
+      const pack = await spec.action.call(resource, request.params.id, requestPack, context, this.extractOptions(context))
+      response.json(pack.serialize())
     }
   }
 
@@ -279,20 +262,16 @@ export default class Controller {
   //------
   // Request extracters
 
-  private extractIndexParameters(request: Request) {
-    const {query}    = request
-    const filters    = {...query.filter as any}
-    const sorts      = this.parseSorts(query.sort as any)
-    const pagination = this.parsePagination(query)
+  private extractIndexParameters(context: RequestContext) {
+    const params     = context.params
+    const filters    = {...params.filter as any}
+    const sorts      = this.parseSorts(params.sort as any)
+    const pagination = this.parsePagination(params)
 
     return {filters, sorts, pagination}
   }
 
-  private extractRequestPack(request: Request) {
-    return Pack.deserialize(this.registry, request.body)
-  }
-
-  public async extractRequestDocument(resource: AnyResource, request: Request, pack: Pack, requireID: boolean) {
+  public async extractRequestDocument(resource: Resource<Model, Query, A>, pack: Pack, requireID: boolean, context: RequestContext) {
     const document = pack.data
 
     if (document == null) {
@@ -304,7 +283,7 @@ export default class Controller {
     if (requireID && document.id == null) {
       throw new APIError(400, "Document ID required")
     }
-    if (document.id != null && document.id !== request.params.id) {
+    if (document.id != null && document.id !== context.params.id) {
       throw new APIError(409, "Document ID does not match endpoint ID")
     }
     if (document.resource.type !== resource.type) {
@@ -357,45 +336,6 @@ export default class Controller {
     }
   }
 
-  //------
-  // Serialization API
-
-  public async buildDocument<T>(resourceType: string, model: T, detail: boolean = true, context: RequestContext = RequestContext.empty): Promise<Document> {
-    const resource = this.registry.get(resourceType)
-    if (resource == null) {
-      throw new ReferenceError(`Resource \`${resourceType}\` not found`)
-    }
-
-    const db = resource.adapter(context)
-    return await db.modelToDocument(model, detail)
-  }
-
-  public async buildCollection<T>(resourceType: string, models: T[], detail: boolean = false, context: RequestContext = RequestContext.empty): Promise<Collection> {
-    const promises = models.map(model => this.buildDocument(resourceType, model, detail, context))
-    const documents = await Promise.all(promises)
-    return new Collection(documents)
-  }
-
-  public async serializeDocument<T>(
-    resourceType: string,
-    model:        T,
-    detail:       boolean = true,
-    context:      RequestContext = RequestContext.empty,
-  ): Promise<Serialized> {
-    const document = await this.buildDocument(resourceType, model, detail, context)
-    return document.serialize()
-  }
-
-  public async serializeCollection<T>(
-    resourceType: string,
-    models:       T[],
-    detail:       boolean = false,
-    context:      RequestContext = RequestContext.empty,
-  ): Promise<Serialized> {
-    const collection = await this.buildCollection(resourceType, models, detail, context)
-    return collection.serialize()
-  }
-
 }
 
 export interface ControllerOptions {
@@ -403,5 +343,9 @@ export interface ControllerOptions {
   openAPI?:    OpenAPIGenerator
 }
 
-export type AfterMountListener    = (this: Controller) => void
-export type ResourceActionHandler = (resource: AnyResource, request: Request, response: Response, context: RequestContext) => Pack | Promise<Pack>
+export type ResourceActionHandler<M, Q, A extends Adapter<M, Q>> = (
+  resource: Resource<M, Q, A>,
+  request:  Request,
+  response: Response,
+  context:  RequestContext
+) => void | Promise<void>

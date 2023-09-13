@@ -1,22 +1,18 @@
-import { Request } from 'express'
-import Collection from './Collection'
-import Document from './Document'
-import Pack from './Pack'
+import RequestContext from './RequestContext'
 import Resource from './Resource'
-import { RelationshipConfig } from './ResourceConfig'
 
-export type AnyResource = Resource<any, any>
+export type AnyResource = Resource<any, any, any>
 
 export type ResourceLocator = IDLocator | SingletonLocator
 
 export const ResourceLocator: {
-  fromRequest(request: Request): ResourceLocator | null
+  fromRequestContext: (context: RequestContext) => ResourceLocator | null
 } = {
-  fromRequest(request: Request): ResourceLocator | null {
-    if (typeof request.params.id === 'string') {
-      return {id: request.params.id}
-    } else if (typeof request.params.singleton === 'string') {
-      return {singleton: request.params.singleton}
+  fromRequestContext: context => {
+    if (typeof context.params.id === 'string') {
+      return {id: context.params.id}
+    } else if (typeof context.params.singleton === 'string') {
+      return {singleton: context.params.singleton}
     } else {
       return null
     }
@@ -46,30 +42,6 @@ export interface PaginationSpec {
 
 export type Constructor<T> = new (...args: any[]) => T
 export type RelatedQuery = any
-
-export interface Adapter<Model, Query> {
-  Model: Constructor<Model>
-
-  query(): Query
-  relatedQuery(parentResource: AnyResource, relationship: RelationshipConfig<any>, name: string, parentID: string): Promise<Query>
-
-  applyFilters(query: Query, filters: Filters): Query | Promise<Query>
-  applySearch(query: Query, search: string): Query | Promise<Query>
-  applySorts(query: Query, sorts: Sort[]): Query | Promise<Query>
-
-  count(query: Query): Promise<number>
-  find(query: Query, pagination: PaginationSpec, options: Omit<ListOptions, 'pagination'>): Promise<Pack>
-  get(query: Query, locator: ResourceLocator, options: ActionOptions): Promise<{pack: Pack, models: Model[]}>
-  create(query: Query, document: Document, options: ActionOptions): Promise<{pack: Pack, model: Model}>
-  update(query: Query, Document: Document, options: UpdateOptions<Model>): Promise<{pack: Pack, model: Model}>
-  delete(query: Query, options: ActionOptions): Promise<Pack>
-
-  loadModel(query: Query, id: any): Promise<Model>
-  getRelated(query: Query, parentResource: AnyResource, relationship: RelationshipConfig<any>, name: string, parentID: string, options: ActionOptions): Promise<{pack: Pack, models: Model[]}>
-
-  modelToDocument(model: Model, detail?: boolean): Document | Promise<Document>
-  modelsToCollection(models: Model[], detail?: boolean): Collection | Promise<Collection>
-}
 
 export type Meta            = Record<string, any>
 export type AttributeBag    = Record<string, any>
