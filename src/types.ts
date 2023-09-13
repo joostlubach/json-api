@@ -1,26 +1,11 @@
-import RequestContext from './RequestContext'
 import Resource from './Resource'
 
-export type AnyResource = Resource<any, any, any>
+export type AnyResource = Resource<any, any>
 
 export type ResourceLocator = IDLocator | SingletonLocator
 
-export const ResourceLocator: {
-  fromRequestContext: (context: RequestContext) => ResourceLocator | null
-} = {
-  fromRequestContext: context => {
-    if (typeof context.params.id === 'string') {
-      return {id: context.params.id}
-    } else if (typeof context.params.singleton === 'string') {
-      return {singleton: context.params.singleton}
-    } else {
-      return null
-    }
-  }
-}
-
 export interface IDLocator {
-  id: string
+  id: string | string[]
 }
 
 export interface SingletonLocator {
@@ -34,10 +19,6 @@ export interface Filters {
 export interface Sort {
   field:     string
   direction: -1 | 1
-}
-export interface PaginationSpec {
-  limit:  number | null
-  offset: number
 }
 
 export type Constructor<T> = new (...args: any[]) => T
@@ -86,19 +67,12 @@ export interface ActionOptions {
 
 export type Include = string
 
-export interface ListOptions extends ActionOptions {
-  filters?:    Filters
-  search?:     string
-  sorts?:      Sort[]
-  pagination?: PaginationSpec
-}
-
-export interface CreateOptions<M> extends ActionOptions {
-  assign?: (model: M, attributes: Record<string, any>, relationships: Record<string, any>) => void
-}
-
-export interface UpdateOptions<M> extends ActionOptions {
-  assign?: (model: M, attributes: Record<string, any>, relationships: Record<string, any>) => void
+export interface ListParams {
+  filters:     Filters
+  search:      string | null
+  sorts:       Sort[]
+  offset:      number
+  limit:       number | null
 }
 
 export interface BulkSelector {
@@ -109,3 +83,4 @@ export interface BulkSelector {
 
 export type ResourceID = string | number
 export type Serialized = Record<string, any>
+export type Primitive = string | number | boolean

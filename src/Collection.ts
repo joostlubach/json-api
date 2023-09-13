@@ -27,7 +27,7 @@ export default class Collection {
     return this.documents.map(doc => doc.serialize())
   }
 
-  public static deserialize(registry: ResourceRegistry<any, any, any>, objects: any[]): Collection {
+  public static deserialize(registry: ResourceRegistry<any, any>, objects: any[]): Collection {
     const documents = objects.map(obj => Document.deserialize(registry, obj, false))
     return new Collection(documents)
   }

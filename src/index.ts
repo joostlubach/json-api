@@ -14,6 +14,4 @@ export * from './ResourceConfig'
 export { type default as Adapter } from './Adapter'
 export * from './types'
 export * from './util'
-
 export * from './defineUtil'
-export * as actions from './actions'

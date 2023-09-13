@@ -26,14 +26,14 @@ export default class Pack {
     }
   }
 
-  public static tryDeserialize(registry: ResourceRegistry<any, any, any>, serialized: any): Pack | null {
+  public static tryDeserialize(registry: ResourceRegistry<any, any>, serialized: any): Pack | null {
     if (!isPlainObject(serialized)) { return null }
     if (!('data' in serialized)) { return null }
 
     return this.deserialize(registry, serialized)
   }
 
-  public static deserialize(registry: ResourceRegistry<any, any, any>, serialized: any): Pack {
+  public static deserialize(registry: ResourceRegistry<any, any>, serialized: any): Pack {
     const {data: dataRaw, meta = {}, links = {}, included: includedRaw = [], ...rest} = serialized
     if (dataRaw === undefined) {
       throw new APIError(400, "Malformed pack: missing `data` node")

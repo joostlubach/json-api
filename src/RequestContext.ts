@@ -1,66 +1,29 @@
-import { isPlainObject } from 'lodash'
-import { AnyResource } from './'
+import Validator, { INVALID, RequiredType, Type, TypeOptions } from 'validator'
 import APIError from './APIError'
-import Collection from './Collection'
-import Pack from './Pack'
-import { BulkSelector } from './types'
 
 export default class RequestContext {
 
   constructor(
     public readonly action: string,
-    public readonly params: Record<string, any>,
+    private readonly params: Record<string, any>,
     public readonly requestURI?: URL,
   ) {}
 
-  // #region Bulk selector
+  private readonly validator = new Validator()
 
-  public extractBulkSelector(this: RequestContext, requestPack: Pack, resource: AnyResource): BulkSelector {
-    const {id} = this.params
-    if (id != null) { return {ids: [id]} }
-
-    const {data, meta: {filters, search}} = requestPack
-
-    if (data != null && (filters != null || search != null)) {
-      throw new APIError(400, "Mix of explicit linkages and filters/search specified")
+  public param<T>(name: string, type: RequiredType<T, TypeOptions<T>>): T
+  public param<T>(name: string, type: Type<T>): T | null
+  public param<T>(name: string, type: Type<T>) {
+    const value = this.params[name]
+    const coerced = this.validator.coerce(value, type, false)
+    if (coerced == null) {
+      throw new APIError(400, `Parameter \`${name}\`: required`)
+    }
+    if (coerced === INVALID) {
+      throw new APIError(400, `Parameter \`${name}\`: invalid`)
     }
 
-    if (data != null) {
-      return {ids: this.extractBulkSelectorIDs(data, resource)}
-    } else {
-      if (filters != null && !isPlainObject(filters)) {
-        throw new APIError(400, "Node `meta.filters`: must be a plain object")
-      }
-      if (search != null && typeof search !== 'string') {
-        throw new APIError(400, "Node `meta.search`: must be a string")
-      }
-
-      return {
-        filters: filters,
-        search:  search,
-      }
-    }
+    return coerced
   }
-
-  private extractBulkSelectorIDs(data: any, resource: AnyResource) {
-    if (!(data instanceof Collection)) {
-      throw new APIError(400, "Collection expected")
-    }
-
-    const ids: string[] = []
-    for (const linkage of data) {
-      if (linkage.resource.type !== resource.type) {
-        throw new APIError(409, "Linkage type does not match endpoint type")
-      }
-      if (linkage.id == null) {
-        throw new APIError(400, "ID required in linkage")
-      }
-      ids.push(linkage.id)
-    }
-
-    return ids
-  }
-
-  // #endregion
 
 }

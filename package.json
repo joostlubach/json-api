@@ -35,6 +35,7 @@
     "inflected": "^2.0.4",
     "js-yaml": "^4.1.0",
     "url-template": "^2.0.8",
+    "validator": "workspace:^",
     "ytil": "workspace:^"
   },
   "devDependencies": {
