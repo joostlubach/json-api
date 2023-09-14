@@ -50,7 +50,7 @@ export default class ResourceRegistry<Model, Query> {
     return Array.from(this.resources.values())
   }
 
-  public findResourceForModel<M extends Model, Q extends Query>(modelName: string): Resource<M, Q> {
+  public forModel<M extends Model, Q extends Query>(modelName: string): Resource<M, Q> {
     for (const [, resource] of this.resources) {
       if (!resource.config.auxiliary && resource.config.modelName === modelName) {
         return resource
