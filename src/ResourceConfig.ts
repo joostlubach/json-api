@@ -59,7 +59,7 @@ export interface ResourceConfig<Model, Query> {
   scope?:  ScopeFunction<Query>
 
   /// Defaults for a new object.
-  defaults?: DefaultsFunction
+  defaults?: DefaultsFunction<Query>
 
   /// A search configuration.
   search?: SearchModifier<Query>
@@ -224,17 +224,17 @@ export type PluralRelationshipConfig<M> = RelationshipConfigCommon<M> & {
 //------
 // Scope & search
 
-export type ScopeFunction<Q>  = (query: Q, context: RequestContext) => Q | Promise<Q>
-export type DefaultsFunction  = (query: Q, context: RequestContext) => Record<string, any> | Promise<Record<string, any>>
-export type ScopeOption       = (request: Request) => any
-export type SearchModifier<Q> = (query: Q, term: string, context: RequestContext) => Q | Promise<Q>
+export type ScopeFunction<Q>    = (query: Q, context: RequestContext) => Q | Promise<Q>
+export type DefaultsFunction<Q> = (query: Q, context: RequestContext) => Record<string, any> | Promise<Record<string, any>>
+export type ScopeOption         = (request: Request) => any
+export type SearchModifier<Q>   = (query: Q, term: string, context: RequestContext) => Q | Promise<Q>
 
 export type LabelMap<Q>              = Record<string, LabelModifier<Q>>
 export type LabelModifier<Q>         = (query: Q, context: RequestContext) => Q | Promise<Q>
 export type WildcardLabelModifier<Q> = (label: string, query: Q, context: RequestContext) => Q
 
 export type SingletonMap<Q, M> = Record<string, Singleton<Q, M>>
-export type Singleton<Q, M>  = (query: Q, context: RequestContext) => Promise<M> | null
+export type Singleton<Q, M>    = (query: Q, include: string[], context: RequestContext) => Promise<[M | null, any[]]>
 
 export type SortMap<Q>      = Record<string, SortModifier<Q>>
 export type SortModifier<Q> = (query: Q, direction: 1 | -1, context: RequestContext) => Q

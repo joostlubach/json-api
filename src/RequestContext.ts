@@ -12,8 +12,8 @@ export default class RequestContext {
   private readonly validator = new Validator()
 
   public param<T>(name: string, type: RequiredType<T, TypeOptions<T>>): T
-  public param<T>(name: string, type: Type<T>): T | null
-  public param<T>(name: string, type: Type<T>) {
+  public param<T>(name: string, type: Type<T, any>): T | null
+  public param<T>(name: string, type: Type<T, any>) {
     const value = this.params[name]
     const coerced = this.validator.coerce(value, type, false)
     if (coerced == null) {

@@ -78,11 +78,11 @@ export default class Resource<Model, Query> {
    * Loads a singleton.
    * @param name The defined name of the singleton.
    */
-  public async loadSingleton(name: string, query: Query, context: RequestContext): Promise<Model | null> {
+  public async loadSingleton(name: string, query: Query, include: string[], context: RequestContext): Promise<[Model | null, Model[]]> {
     const singleton = this.singletons[name]
-    if (singleton == null) { return null }
+    if (singleton == null) { return [null, []] }
 
-    return await singleton(query, context)
+    return await singleton(query, include, context)
   }
 
   /**

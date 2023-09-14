@@ -12,7 +12,17 @@ import RequestContext from './RequestContext'
 import Resource from './Resource'
 import { CustomCollectionAction, CustomDocumentAction } from './ResourceConfig'
 import ResourceRegistry from './ResourceRegistry'
-import { ActionOptions, BulkSelector, ListParams, Sort } from './types'
+import {
+  ActionOptions,
+  BulkSelector,
+  CountActionOptions,
+  DeleteActionOptions,
+  ListParams,
+  ResourceLocator,
+  RetrievalActionOptions,
+  Sort,
+  UpdateActionOptions,
+} from './types'
 
 export default class Controller<Model, Query extends Adapter> {
 
@@ -149,7 +159,7 @@ export default class Controller<Model, Query extends Adapter> {
   public async list(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
     const adapter = this.adapter(resource, context)
     const params  = this.extractListParams(context)
-    const options = this.extractActionOptions(context)
+    const options = this.extractRetrievalActionOptions(request, context)
 
     const pack = await resource.list(adapter, params, context, options)
     response.json(pack.serialize())
@@ -157,7 +167,7 @@ export default class Controller<Model, Query extends Adapter> {
 
   public async show(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
     const adapter = this.adapter(resource, context)
-    const options = this.extractActionOptions(context)
+    const options = this.extractRetrievalActionOptions(request, context)
     const locator = this.extractResourceLocator(context)
 
     const pack = await resource.get(adapter, locator, context, options)
@@ -168,7 +178,7 @@ export default class Controller<Model, Query extends Adapter> {
     const adapter     = this.adapter(resource, context)
     const requestPack = Pack.deserialize(this.registry, request.body)
     const document    = await this.extractRequestDocument(resource, requestPack, false, context)
-    const options     = this.extractActionOptions(context)
+    const options     = this.extractUpdateActionOptions(request, context)
 
     const responsePack = await resource.create(adapter, document, requestPack, context, options)
 
@@ -178,20 +188,21 @@ export default class Controller<Model, Query extends Adapter> {
 
   public async update(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
     const adapter     = this.adapter(resource, context)
-    const requestPack  = Pack.deserialize(this.registry, request.body)
-    const document     = await this.extractRequestDocument(resource, requestPack, true, context)
-    const options     = this.extractActionOptions(context)
+    const requestPack = Pack.deserialize(this.registry, request.body)
+    const document    = await this.extractRequestDocument(resource, requestPack, true, context)
+    const options     = this.extractUpdateActionOptions(request, context)
 
     const responsePack = await resource.update(adapter, document, requestPack, context, options)
     response.json(responsePack.serialize())
   }
 
   public async delete(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
-    const adapter      = this.adapter(resource, context)
-    const requestPack  = request.body?.data != null ? Pack.deserialize(this.registry, request.body) : new Pack(null)
-    const selector     = this.extractBulkSelector(resource, requestPack, context)
+    const adapter     = this.adapter(resource, context)
+    const requestPack = request.body?.data != null ? Pack.deserialize(this.registry, request.body) : new Pack(null)
+    const selector    = this.extractBulkSelector(resource, requestPack, context)
+    const options     = this.extractDeleteActionOptions(request, context)
 
-    const responsePack = await resource.delete(adapter, selector, context)
+    const responsePack = await resource.delete(adapter, selector, context, options)
     response.json(responsePack.serialize())
   }
 
@@ -200,7 +211,7 @@ export default class Controller<Model, Query extends Adapter> {
     const locator      = this.extractResourceLocator(context)
     const relationship = context.param('relationship', string())
     const params       = this.extractListParams(context)
-    const options      = this.extractActionOptions(context)
+    const options      = this.extractRetrievalActionOptions(request, context)
 
     const responsePack = await resource.listRelated(adapter, locator, relationship, params, context, options)
     response.json(responsePack.serialize())
@@ -210,7 +221,7 @@ export default class Controller<Model, Query extends Adapter> {
     const adapter      = this.adapter(resource, context)
     const locator      = this.extractResourceLocator(context)
     const relationship = context.param('relationship', string())
-    const options      = this.extractActionOptions(context)
+    const options      = this.extractRetrievalActionOptions(request, context)
 
     const responsePack = await resource.getRelated(adapter, locator, relationship, context, options)
     response.json(responsePack.serialize())
@@ -225,7 +236,8 @@ export default class Controller<Model, Query extends Adapter> {
         ? Pack.tryDeserialize(this.registry, request.body) ?? new Pack(null)
         : request.body
 
-      const pack = await spec.action.call(resource, requestPack, context, this.extractActionOptions(context))
+      const options = this.extractActionOptions(request, context)
+      const pack = await spec.action.call(resource, requestPack, context, options)
       response.json(pack.serialize())
     }
   }
@@ -236,7 +248,8 @@ export default class Controller<Model, Query extends Adapter> {
         ? Pack.tryDeserialize(this.registry, request.body) ?? new Pack(null)
         : request.body
 
-      const pack = await spec.action.call(resource, request.params.id, requestPack, context, this.extractActionOptions(context))
+      const options = this.extractActionOptions(request, context)
+      const pack = await spec.action.call(resource, request.params.id, requestPack, context, options)
       response.json(pack.serialize())
     }
   }
@@ -289,10 +302,30 @@ export default class Controller<Model, Query extends Adapter> {
     return document
   }
 
-  private extractActionOptions(context: RequestContext): ActionOptions {
+  private extractActionOptions(request: Request, context: RequestContext): ActionOptions {
+    const pack = Pack.deserialize(this.registry, request.body)
+    return {
+      meta: pack.meta,
+    }
+  }
+
+  private extractRetrievalActionOptions(request: Request, context: RequestContext): RetrievalActionOptions {
     const include = context.param('include', string({default: ''})).split(',').map(it => it.trim()).filter(it => it !== '')
     const detail  = context.param('detail', boolean({default: false}))
-    return {include, detail}
+
+    return {
+      ...this.extractActionOptions(request, context),
+      include,
+      detail
+    }
+  }
+
+  private extractUpdateActionOptions(request: Request, context: RequestContext): UpdateActionOptions {
+    return this.extractActionOptions(request, context)
+  }
+
+  private extractDeleteActionOptions(request: Request, context: RequestContext): DeleteActionOptions {
+    return this.extractActionOptions(request, context)
   }
 
   private extractFilters(context: RequestContext) {
@@ -331,7 +364,7 @@ export default class Controller<Model, Query extends Adapter> {
     return {offset, limit}
   }
 
-  private extractResourceLocator(context: RequestContext) {
+  private extractResourceLocator(context: RequestContext): ResourceLocator {
     const id        = context.param('id', string({required: false}))
     const singleton = context.param('singleton', string({required: false}))
 

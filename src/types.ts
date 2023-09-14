@@ -5,7 +5,7 @@ export type AnyResource = Resource<any, any>
 export type ResourceLocator = IDLocator | SingletonLocator
 
 export interface IDLocator {
-  id: string | string[]
+  id: string
 }
 
 export interface SingletonLocator {
@@ -58,12 +58,21 @@ export interface JSONAPIError {
 
 export interface ActionOptions {
   label?:        string
-  detail?:       boolean
-  include?:      Include[]
-  links?:        Links
   meta?:         Meta
   sendProgress?: (current: number, total: number) => any
 }
+
+export interface CountActionOptions {}
+
+export interface RetrievalActionOptions extends ActionOptions {
+  include?: Include[]
+  detail?:  boolean
+}
+
+export interface UpdateActionOptions extends ActionOptions {
+  detail?: boolean
+}
+export interface DeleteActionOptions extends ActionOptions {}
 
 export type Include = string
 

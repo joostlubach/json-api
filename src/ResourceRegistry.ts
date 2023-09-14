@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import APIError from '../dist/esm/APIError'
 import config from './config'
 import Resource from './Resource'
 import { mergeResourceConfig, ResourceConfig } from './ResourceConfig'
@@ -33,21 +34,30 @@ export default class ResourceRegistry<Model, Query> {
 
   // #region Retrieval
 
-  public get(name: string): Resource<Model, Query> | null {
-    return this.resources.get(name) ?? null
+  public has(name: string) {
+    return this.resources.has(name)
+  }
+
+  public get<M extends Model, Q extends Query>(name: string): Resource<M, Q> {
+    const resource = this.resources.get(name)
+    if (resource == null) {
+      throw new APIError(404, `No resource found for name '${name}'`)
+    }
+    return resource
   }
 
   public all(): Resource<Model, Query>[] {
     return Array.from(this.resources.values())
   }
 
-  public findResourceForModel(modelName: string): Resource<Model, Query> | null {
+  public findResourceForModel<M extends Model, Q extends Query>(modelName: string): Resource<M, Q> {
     for (const [, resource] of this.resources) {
       if (!resource.config.auxiliary && resource.config.modelName === modelName) {
         return resource
       }
     }
-    return null
+
+    throw new APIError(404, `No resource found for model '${modelName}'`)
   }
 
   // #endregion
