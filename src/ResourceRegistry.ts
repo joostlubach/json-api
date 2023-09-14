@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import APIError from '../dist/esm/APIError'
+import APIError from './APIError'
 import config from './config'
 import Resource from './Resource'
 import { mergeResourceConfig, ResourceConfig } from './ResourceConfig'
