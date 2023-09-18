@@ -1,5 +1,6 @@
 import { singularize } from 'inflected'
-import { isFunction } from 'lodash'
+import { isFunction, isPlainObject } from 'lodash'
+import { any, boolean, dictionary, number, string } from 'validator/types'
 import { objectEntries } from 'ytil'
 import Adapter from './Adapter'
 import APIError from './APIError'
@@ -23,12 +24,15 @@ import {
   ActionOptions,
   AttributeBag,
   BulkSelector,
+  DeleteActionOptions,
   Links,
   ListParams,
   Meta,
   RelationshipBag,
   ResourceLocator,
+  RetrievalActionOptions,
   Sort,
+  UpdateActionOptions,
 } from './types'
 
 export default class Resource<Model, Query> {
@@ -56,7 +60,7 @@ export default class Resource<Model, Query> {
   /**
    * Gets all defined labels.
    */
-  public get labels(): LabelMap<Query> {
+  public get labels(): LabelMap<Model, Query> {
     return this.config.labels ?? {}
   }
 
@@ -78,9 +82,11 @@ export default class Resource<Model, Query> {
    * Loads a singleton.
    * @param name The defined name of the singleton.
    */
-  public async loadSingleton(name: string, query: Query, include: string[], context: RequestContext): Promise<[Model | null, Model[]]> {
+  public async loadSingleton(name: string, query: Query, include: string[], context: RequestContext): Promise<[Model, Model[]]> {
     const singleton = this.singletons[name]
-    if (singleton == null) { return [null, []] }
+    if (singleton == null) {
+      throw new APIError(404, `Singleton \`${name}\` (of ${this.type}) not found`)
+    }
 
     return await singleton(query, include, context)
   }
@@ -106,11 +112,11 @@ export default class Resource<Model, Query> {
 
   public async applyScope(query: Query, context: RequestContext): Promise<Query> {
     if (this.config.scope == null) { return query }
-    return await this.config.scope(query, context)
+    return await this.config.scope.call(this, query, context)
   }
 
-  public async getDefaults(query: Query, context: RequestContext): Promise<Record<string, any> | null> {
-    return this.config.defaults?.(query, context) ?? null
+  public async getDefaults(context: RequestContext): Promise<Record<string, any> | null> {
+    return this.config.defaults?.call(this, context) ?? null
   }
 
   public async applyFilters(query: Query, filters: Record<string, any>, apply: (query: Query, name: string, value: any) => Query | Promise<Query>, context: RequestContext): Promise<Query> {
@@ -137,7 +143,7 @@ export default class Resource<Model, Query> {
   public async applyLabel(query: Query, label: string, context: RequestContext): Promise<Query> {
     let labelModifier = this.labels[label]
     if (labelModifier == null && this.config.wildcardLabel != null) {
-      labelModifier = this.config.wildcardLabel.bind(null, label)
+      labelModifier = this.config.wildcardLabel.bind(this, label)
     }
 
     if (labelModifier == null) {
@@ -160,12 +166,12 @@ export default class Resource<Model, Query> {
     return query
   }
 
-  public attributeAvailable(attribute: AttributeConfig<Model>, model: Model, context: RequestContext) {
+  public attributeAvailable(attribute: AttributeConfig<Model, Query>, model: Model, context: RequestContext) {
     if (attribute.if == null) { return true }
     return attribute.if.call(this, model, context)
   }
 
-  public attributeWritable(attribute: AttributeConfig<Model>, model: Model, create: boolean, context: RequestContext) {
+  public attributeWritable(attribute: AttributeConfig<Model, Query>, model: Model, create: boolean, context: RequestContext) {
     if (!this.attributeAvailable(attribute, model, context)) { return false }
     if (attribute.writable == null) { return true }
     if (isFunction(attribute.writable)) { return attribute.writable.call(this, model, context) }
@@ -180,7 +186,7 @@ export default class Resource<Model, Query> {
   /**
    * Obtains a full list of all attributes and their configuration.
    */
-  public get attributes(): Map<string, Required<AttributeConfig<Model>>> {
+  public get attributes(): Map<string, Required<AttributeConfig<Model, Query>>> {
     const {attributes} = this.config
     if (attributes == null) { return new Map() }
 
@@ -195,7 +201,7 @@ export default class Resource<Model, Query> {
     return result
   }
 
-  public get relationships(): RelationshipMap<Model> {
+  public get relationships(): RelationshipMap<Model, Query> {
     if (isFunction(this.config.relationships)) { return {} }
     return this.config.relationships ?? {}
   }
@@ -207,7 +213,7 @@ export default class Resource<Model, Query> {
   /**
    * Obtains a relationship by name.
    */
-  public relationship(name: string): RelationshipConfig<Model> | null {
+  public relationship(name: string): RelationshipConfig<Model, Query> | null {
     if (this.config.relationships == null) { return null }
     if (isFunction(this.config.relationships)) { return null }
     return this.config.relationships[name] ?? null
@@ -227,7 +233,7 @@ export default class Resource<Model, Query> {
     const meta: Record<string, any> = {}
 
     for (const [key, config] of objectEntries(this.config.meta ?? {})) {
-      meta[key] = await config.get(context)
+      meta[key] = await config.get.call(this, context)
     }
 
     return meta
@@ -237,7 +243,7 @@ export default class Resource<Model, Query> {
     const meta: Record<string, any> = {}
 
     for (const [key, config] of objectEntries(this.config.documentMeta ?? {})) {
-      meta[key] = await config.get(model, context)
+      meta[key] = await config.get.call(this, model, context)
     }
 
     return meta
@@ -247,7 +253,7 @@ export default class Resource<Model, Query> {
     const links: Record<string, any> = {}
 
     for (const [key, config] of objectEntries(this.config.links ?? {})) {
-      links[key] = await config.get(context)
+      links[key] = await config.get.call(this, context)
     }
 
     return links
@@ -257,7 +263,7 @@ export default class Resource<Model, Query> {
     const links: Record<string, any> = {}
 
     for (const [key, config] of objectEntries(this.config.documentLinks ?? {})) {
-      links[key] = await config.get(model, context)
+      links[key] = await config.get.call(this, model, context)
     }
 
     return links
@@ -389,7 +395,7 @@ export default class Resource<Model, Query> {
     await this.config.before.call(this, context)
   }
 
-  public async list(adapter: Adapter, params: ListParams, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
+  public async list(params: ListParams, adapter: Adapter, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
     if (this.config.list === false) {
       throw new APIError(405, `Action \`list\` not available`)
     }
@@ -399,7 +405,7 @@ export default class Resource<Model, Query> {
     }
 
     const pack = this.config.list != null
-      ? await this.config.list.call(this, params, context, options)
+      ? await this.config.list.call(this, params, adapter, context, options)
       : await adapter.list(params, options)
 
     this.injectPackSelfLinks(pack, context)
@@ -407,52 +413,52 @@ export default class Resource<Model, Query> {
     return pack
   }
 
-  public async get(adapter: Adapter, locator: ResourceLocator, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
+  public async get(locator: ResourceLocator, adapter: Adapter, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
     if (this.config.get === false) {
       throw new APIError(405, `Action \`show\` not available`)
     }
 
     const responsePack = this.config.get != null
-      ? await this.config.get.call(this, locator, context, options)
+      ? await this.config.get.call(this, locator, adapter, context, options)
       : await adapter.get(locator, options)
 
     this.injectPackSelfLinks(responsePack, context)
     return responsePack
   }
 
-  public async create(adapter: Adapter, document: Document, requestPack: Pack, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
+  public async create(document: Document, requestPack: Pack, adapter: Adapter, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
     if (this.config.create === false) {
       throw new APIError(405, `Action \`show\` not available`)
     }
 
     const responsePack = this.config.create != null
-      ? await this.config.create.call(this, document, requestPack, context, options)
+      ? await this.config.create.call(this, document, requestPack, adapter, context, options)
       : await adapter.create(document, requestPack, options)
 
     this.injectPackSelfLinks(responsePack, context)
     return responsePack
   }
 
-  public async update(adapter: Adapter, document: Document, requestPack: Pack, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
+  public async update(locator: ResourceLocator, document: Document, requestPack: Pack, adapter: Adapter, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
     if (this.config.update === false) {
       throw new APIError(405, `Action \`update\` not available`)
     }
 
     const responsePack = this.config.update != null
-      ? await this.config.update.call(this, document, requestPack, context, options)
-      : await adapter.update(document, requestPack, options)
+      ? await this.config.update.call(this, document, requestPack, adapter, context, options)
+      : await adapter.update(locator, document, requestPack, options)
 
     this.injectPackSelfLinks(responsePack, context)
     return responsePack
   }
 
-  public async delete(adapter: Adapter, selector: BulkSelector, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
+  public async delete(selector: BulkSelector, adapter: Adapter, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
     if (this.config.delete === false) {
       throw new APIError(405, `Action \`delete\` not available`)
     }
 
     const responsePack = this.config.delete != null
-      ? await this.config.delete.call(this, selector, context, options)
+      ? await this.config.delete.call(this, selector, adapter, context, options)
       : await adapter.delete(selector, options)
 
     this.injectPackSelfLinks(responsePack, context)
@@ -460,10 +466,10 @@ export default class Resource<Model, Query> {
   }
 
   public async listRelated(
-    adapter:      Adapter,
     locator:      ResourceLocator,
     relationship: string,
     params:       ListParams,
+    adapter:      Adapter,
     context:      RequestContext,
     options:      ActionOptions,
   ): Promise<Pack> {
@@ -475,7 +481,7 @@ export default class Resource<Model, Query> {
       params.limit = this.pageSize
     }
     const pack = this.config.listRelated != null
-      ? await this.config.listRelated.call(this, locator, relationship, params, context, options)
+      ? await this.config.listRelated.call(this, locator, relationship, params, adapter, context, options)
       : await adapter.listRelated(locator, relationship, params, options)
 
     this.injectPackSelfLinks(pack, context)
@@ -484,9 +490,9 @@ export default class Resource<Model, Query> {
   }
 
   public async getRelated(
-    adapter:      Adapter,
     locator:      ResourceLocator,
     relationship: string,
+    adapter:      Adapter,
     context:      RequestContext,
     options:      ActionOptions
   ): Promise<Pack> {
@@ -495,15 +501,12 @@ export default class Resource<Model, Query> {
     }
 
     const pack = this.config.getRelated != null
-      ? await this.config.getRelated.call(this, locator, relationship, context, options)
+      ? await this.config.getRelated.call(this, locator, relationship, adapter, context, options)
       : await adapter.getRelated(locator, relationship, options)
 
     this.injectPackSelfLinks(pack, context)
     return pack
   }
-
-  //------
-  // Custom actions
 
   public get collectionActions() {
     return this.config.collectionActions ?? []
@@ -512,6 +515,163 @@ export default class Resource<Model, Query> {
   public get documentActions() {
     return this.config.documentActions ?? []
   }
+
+  // #endregion
+
+  // #region Request extracters
+
+  public async extractRequestDocument(resource: Resource<Model, Query>, pack: Pack, requireID: boolean, context: RequestContext) {
+    const document = pack.data
+
+    if (document == null) {
+      throw new APIError(400, "No document sent")
+    }
+    if (!(document instanceof Document)) {
+      throw new APIError(400, "Expected Document")
+    }
+    if (requireID && document.id == null) {
+      throw new APIError(400, "Document ID required")
+    }
+    if (document.id != null && document.id !== context.param('id', string({required: false}))) {
+      throw new APIError(409, "Document ID does not match endpoint ID")
+    }
+    if (document.resource.type !== resource.type) {
+      throw new APIError(409, "Document type does not match endpoint type")
+    }
+
+    return document
+  }
+
+  public extractActionOptions(context: RequestContext): ActionOptions {
+    const label = context.param('label', string())
+    return {label}
+  }
+
+  public extractRetrievalActionOptions(context: RequestContext): RetrievalActionOptions {
+    const include = context.param('include', string({default: ''})).split(',').map(it => it.trim()).filter(it => it !== '')
+    const detail  = context.param('detail', boolean({default: false}))
+
+    return {
+      ...this.extractActionOptions(context),
+      include,
+      detail
+    }
+  }
+
+  public extractUpdateActionOptions(context: RequestContext): UpdateActionOptions {
+    return this.extractActionOptions(context)
+  }
+
+  public extractDeleteActionOptions(context: RequestContext): DeleteActionOptions {
+    return this.extractActionOptions(context)
+  }
+
+  public extractListParams(context: RequestContext): ListParams {
+    const filters         = this.extractFilters(context)
+    const search          = this.extractSearch(context)
+    const sorts           = this.extractSorts(context)
+    const {limit, offset} = this.extractPagination(context)
+
+    return {filters, search, sorts, limit, offset}
+  }
+
+  public extractFilters(context: RequestContext) {
+    return context.param('filter', dictionary({
+      valueType: any(),
+      default:   () => ({})
+    }))
+  }
+
+  public extractSearch(context: RequestContext) {
+    return context.param('search', string({required: false}))
+  }
+
+  public extractSorts(context: RequestContext) {
+    const sort = context.param('sort', string({required: false}))
+    if (sort == null) { return [] }
+
+    const parts = sort.split(',')
+    const sorts: Sort[] = []
+
+    for (const part of parts) {
+      if (part.charAt(0) === '-') {
+        sorts.push({field: part.slice(1), direction: -1})
+      } else {
+        sorts.push({field: part, direction: 1})
+      }
+    }
+
+    return sorts
+  }
+
+  public extractPagination(context: RequestContext): {offset: number, limit: number | null} {
+    const offset = context.param('limit', number({integer: true, defaultValue: 0}))
+    const limit  = context.param('limit', number({integer: true, required: false}))
+
+    return {offset, limit}
+  }
+
+  public extractResourceLocator(context: RequestContext): ResourceLocator {
+    const id        = context.param('id', string({required: false}))
+    const singleton = context.param('singleton', string({required: false}))
+
+    if (id != null) {
+      return {id}
+    } else if (singleton != null) {
+      return {singleton}
+    } else {
+      throw new APIError(400, "Invalid resource locator, specify either `id` or `singleton`.")
+    }
+  }
+
+  public extractBulkSelector(requestPack: Pack, context: RequestContext): BulkSelector {
+    const id = context.param('id', string({required: false}))
+    if (id != null) { return {ids: [id]} }
+
+    const {data, meta: {filters, search}} = requestPack
+
+    if (data != null && (filters != null || search != null)) {
+      throw new APIError(400, "Mix of explicit linkages and filters/search specified")
+    }
+
+    if (data != null) {
+      return {ids: this.extractBulkSelectorIDs(data, this)}
+    } else {
+      if (filters != null && !isPlainObject(filters)) {
+        throw new APIError(400, "Node `meta.filters`: must be a plain object")
+      }
+      if (search != null && typeof search !== 'string') {
+        throw new APIError(400, "Node `meta.search`: must be a string")
+      }
+
+      return {
+        filters: filters,
+        search:  search,
+      }
+    }
+  }
+
+  private extractBulkSelectorIDs<M, Q>(data: any, resource: Resource<M, Q>) {
+    if (!(data instanceof Collection)) {
+      throw new APIError(400, "Collection expected")
+    }
+
+    const ids: string[] = []
+    for (const linkage of data) {
+      if (linkage.resource.type !== resource.type) {
+        throw new APIError(409, "Linkage type does not match endpoint type")
+      }
+      if (linkage.id == null) {
+        throw new APIError(400, "ID required in linkage")
+      }
+      ids.push(linkage.id)
+    }
+
+    return ids
+  }
+
+  // #endregion
+
 
 }
 
@@ -528,7 +688,7 @@ export interface BuildCollectionConfig<T> {
   links?:         (item: T, index: number) => Links
 }
 
-const defaultAttribute: AttributeConfig<any> = {
+const defaultAttribute: AttributeConfig<any, any> = {
   writable:    true,
   serialize:   value => value,
   deserialize: raw => raw,

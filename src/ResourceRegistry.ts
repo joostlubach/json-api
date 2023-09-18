@@ -15,13 +15,7 @@ export default class ResourceRegistry<Model, Query> {
 
   // #region Registering
 
-  public registerMany(configs: Record<string, ResourceConfig<Model, Query>>) {
-    for (const [type, config] of Object.entries(configs)) {
-      this.register(type, config)
-    }
-  }
-
-  public register(type: string, resourceConfig: ResourceConfig<Model, Query>) {
+  public register<M extends Model, Q extends Query>(type: string, resourceConfig: ResourceConfig<M, Q>) {
     const mergedConfig = mergeResourceConfig(resourceConfig, this.defaults)
     const resource = new Resource(this, type, mergedConfig)
     this.afterCreate?.(resource)

@@ -58,11 +58,8 @@ export interface JSONAPIError {
 
 export interface ActionOptions {
   label?:        string
-  meta?:         Meta
   sendProgress?: (current: number, total: number) => any
 }
-
-export interface CountActionOptions {}
 
 export interface RetrievalActionOptions extends ActionOptions {
   include?: Include[]

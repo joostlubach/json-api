@@ -1,10 +1,8 @@
 import { Application, NextFunction, Request, Response, Router } from 'express'
-import { isPlainObject } from 'lodash'
-import { any, boolean, dictionary, number, string } from 'validator/types'
+import { string } from 'validator/types'
+import { objectEntries } from 'ytil'
 import Adapter from './Adapter'
 import APIError from './APIError'
-import Collection from './Collection'
-import Document from './Document'
 import OpenAPIGenerator from './OpenAPIGenerator'
 import Pack from './Pack'
 import { negotiateContentType, validateContentType, validateRequest } from './pre'
@@ -12,17 +10,6 @@ import RequestContext from './RequestContext'
 import Resource from './Resource'
 import { CustomCollectionAction, CustomDocumentAction } from './ResourceConfig'
 import ResourceRegistry from './ResourceRegistry'
-import {
-  ActionOptions,
-  BulkSelector,
-  CountActionOptions,
-  DeleteActionOptions,
-  ListParams,
-  ResourceLocator,
-  RetrievalActionOptions,
-  Sort,
-  UpdateActionOptions,
-} from './types'
 
 export default class Controller<Model, Query extends Adapter> {
 
@@ -69,7 +56,7 @@ export default class Controller<Model, Query extends Adapter> {
       app.delete(`/${resource.plural}`, this.createResourceAction(resource, 'delete', this.delete))
       app.delete(`/${resource.singular}/:id?`, this.createResourceAction(resource, 'delete', this.delete))
 
-      for (const [name, relationship] of Object.entries(resource.relationships)) {
+      for (const [name, relationship] of objectEntries(resource.relationships)) {
         if (relationship.plural) {
           app.get(`/${resource.singular}/:id/:relationship(${name})`, this.createResourceAction(resource, 'list-related', this.listRelated))
         } else {
@@ -79,7 +66,7 @@ export default class Controller<Model, Query extends Adapter> {
     }
   }
 
-  public defineCollectionAction(spec: CustomCollectionAction<Resource<Model, Query>>, resource?: Resource<Model, Query>) {
+  public defineCollectionAction(spec: CustomCollectionAction<Resource<Model, Query>, any>, resource?: Resource<Model, Query>) {
     if (this.app == null) {
       throw new Error("Mount the controller before defining actions")
     }
@@ -92,7 +79,7 @@ export default class Controller<Model, Query extends Adapter> {
     }
   }
 
-  public defineDocumentAction(spec: CustomDocumentAction<Resource<Model, Query>>, resource?: Resource<Model, Query>) {
+  public defineDocumentAction(spec: CustomDocumentAction<Resource<Model, Query>, any>, resource?: Resource<Model, Query>) {
     if (this.app == null) {
       throw new Error("Mount the controller before defining actions")
     }
@@ -158,29 +145,29 @@ export default class Controller<Model, Query extends Adapter> {
 
   public async list(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
     const adapter = this.adapter(resource, context)
-    const params  = this.extractListParams(context)
-    const options = this.extractRetrievalActionOptions(request, context)
+    const params  = resource.extractListParams(context)
+    const options = resource.extractRetrievalActionOptions(context)
 
-    const pack = await resource.list(adapter, params, context, options)
+    const pack = await resource.list(params, adapter, context, options)
     response.json(pack.serialize())
   }
 
   public async show(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
     const adapter = this.adapter(resource, context)
-    const options = this.extractRetrievalActionOptions(request, context)
-    const locator = this.extractResourceLocator(context)
+    const options = resource.extractRetrievalActionOptions(context)
+    const locator = resource.extractResourceLocator(context)
 
-    const pack = await resource.get(adapter, locator, context, options)
+    const pack = await resource.get(locator, adapter, context, options)
     response.json(pack.serialize())
   }
 
   public async create(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
     const adapter     = this.adapter(resource, context)
     const requestPack = Pack.deserialize(this.registry, request.body)
-    const document    = await this.extractRequestDocument(resource, requestPack, false, context)
-    const options     = this.extractUpdateActionOptions(request, context)
+    const document    = await resource.extractRequestDocument(resource, requestPack, false, context)
+    const options     = resource.extractUpdateActionOptions(context)
 
-    const responsePack = await resource.create(adapter, document, requestPack, context, options)
+    const responsePack = await resource.create(document, requestPack, adapter, context, options)
 
     response.statusCode = 201
     response.json(responsePack.serialize())
@@ -188,68 +175,71 @@ export default class Controller<Model, Query extends Adapter> {
 
   public async update(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
     const adapter     = this.adapter(resource, context)
+    const locator     = resource.extractResourceLocator(context)
     const requestPack = Pack.deserialize(this.registry, request.body)
-    const document    = await this.extractRequestDocument(resource, requestPack, true, context)
-    const options     = this.extractUpdateActionOptions(request, context)
+    const document    = await resource.extractRequestDocument(resource, requestPack, true, context)
+    const options     = resource.extractUpdateActionOptions(context)
 
-    const responsePack = await resource.update(adapter, document, requestPack, context, options)
+    const responsePack = await resource.update(locator, document, requestPack, adapter, context, options)
     response.json(responsePack.serialize())
   }
 
   public async delete(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
     const adapter     = this.adapter(resource, context)
     const requestPack = request.body?.data != null ? Pack.deserialize(this.registry, request.body) : new Pack(null)
-    const selector    = this.extractBulkSelector(resource, requestPack, context)
-    const options     = this.extractDeleteActionOptions(request, context)
+    const selector    = resource.extractBulkSelector(requestPack, context)
+    const options     = resource.extractDeleteActionOptions(context)
 
-    const responsePack = await resource.delete(adapter, selector, context, options)
+    const responsePack = await resource.delete(selector, adapter, context, options)
     response.json(responsePack.serialize())
   }
 
   public async listRelated(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
     const adapter      = this.adapter(resource, context)
-    const locator      = this.extractResourceLocator(context)
+    const locator      = resource.extractResourceLocator(context)
     const relationship = context.param('relationship', string())
-    const params       = this.extractListParams(context)
-    const options      = this.extractRetrievalActionOptions(request, context)
+    const params       = resource.extractListParams(context)
+    const options      = resource.extractRetrievalActionOptions(context)
 
-    const responsePack = await resource.listRelated(adapter, locator, relationship, params, context, options)
+    const responsePack = await resource.listRelated(locator, relationship, params, adapter, context, options)
     response.json(responsePack.serialize())
   }
 
   public async getRelated(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
     const adapter      = this.adapter(resource, context)
-    const locator      = this.extractResourceLocator(context)
+    const locator      = resource.extractResourceLocator(context)
     const relationship = context.param('relationship', string())
-    const options      = this.extractRetrievalActionOptions(request, context)
+    const options      = resource.extractRetrievalActionOptions(context)
 
-    const responsePack = await resource.getRelated(adapter, locator, relationship, context, options)
+    const responsePack = await resource.getRelated(locator, relationship, adapter, context, options)
     response.json(responsePack.serialize())
   }
 
   //------
   // Custom actions
 
-  private customCollectionAction<R extends Resource<Model, Query>>(spec: CustomCollectionAction<R>) {
+  private customCollectionAction<R extends Resource<Model, Query>>(spec: CustomCollectionAction<R, any>) {
     return async (resource: R, request: Request, response: Response, context: RequestContext) => {
       const requestPack = spec.deserialize !== false
         ? Pack.tryDeserialize(this.registry, request.body) ?? new Pack(null)
         : request.body
 
-      const options = this.extractActionOptions(request, context)
-      const pack = await spec.action.call(resource, requestPack, context, options)
+      const adapter = this.adapter(resource, context)
+      const options = resource.extractActionOptions(context)
+      const pack    = await spec.action.call(resource, requestPack, adapter, context, options)
       response.json(pack.serialize())
     }
   }
 
-  private customDocumentAction<R extends Resource<Model, Query>>(spec: CustomDocumentAction<R>) {
+  private customDocumentAction<R extends Resource<Model, Query>>(spec: CustomDocumentAction<R, any>) {
     return async (resource: R, request: Request, response: Response, context: RequestContext) => {
       const requestPack = spec.deserialize !== false
         ? Pack.tryDeserialize(this.registry, request.body) ?? new Pack(null)
         : request.body
 
-      const options = this.extractActionOptions(request, context)
-      const pack = await spec.action.call(resource, request.params.id, requestPack, context, options)
+      const adapter = this.adapter(resource, context)
+      const options = resource.extractActionOptions(context)
+      const pack    = await spec.action.call(resource, requestPack, adapter, context, options)
       response.json(pack.serialize())
     }
   }
@@ -268,162 +258,6 @@ export default class Controller<Model, Query extends Adapter> {
       next(error)
     }
   }
-
-  // #region Request extracters
-
-  private extractListParams(context: RequestContext): ListParams {
-    const filters         = this.extractFilters(context)
-    const search          = this.extractSearch(context)
-    const sorts           = this.extractSorts(context)
-    const {limit, offset} = this.extractPagination(context)
-
-    return {filters, search, sorts, limit, offset}
-  }
-
-  private async extractRequestDocument(resource: Resource<Model, Query>, pack: Pack, requireID: boolean, context: RequestContext) {
-    const document = pack.data
-
-    if (document == null) {
-      throw new APIError(400, "No document sent")
-    }
-    if (!(document instanceof Document)) {
-      throw new APIError(400, "Expected Document")
-    }
-    if (requireID && document.id == null) {
-      throw new APIError(400, "Document ID required")
-    }
-    if (document.id != null && document.id !== context.param('id', string({required: false}))) {
-      throw new APIError(409, "Document ID does not match endpoint ID")
-    }
-    if (document.resource.type !== resource.type) {
-      throw new APIError(409, "Document type does not match endpoint type")
-    }
-
-    return document
-  }
-
-  private extractActionOptions(request: Request, context: RequestContext): ActionOptions {
-    const pack = Pack.deserialize(this.registry, request.body)
-    return {
-      meta: pack.meta,
-    }
-  }
-
-  private extractRetrievalActionOptions(request: Request, context: RequestContext): RetrievalActionOptions {
-    const include = context.param('include', string({default: ''})).split(',').map(it => it.trim()).filter(it => it !== '')
-    const detail  = context.param('detail', boolean({default: false}))
-
-    return {
-      ...this.extractActionOptions(request, context),
-      include,
-      detail
-    }
-  }
-
-  private extractUpdateActionOptions(request: Request, context: RequestContext): UpdateActionOptions {
-    return this.extractActionOptions(request, context)
-  }
-
-  private extractDeleteActionOptions(request: Request, context: RequestContext): DeleteActionOptions {
-    return this.extractActionOptions(request, context)
-  }
-
-  private extractFilters(context: RequestContext) {
-    return context.param('filter', dictionary({
-      valueType: any(),
-      default:   () => ({})
-    }))
-  }
-
-  private extractSearch(context: RequestContext) {
-    return context.param('search', string({required: false}))
-  }
-
-  private extractSorts(context: RequestContext) {
-    const sort = context.param('sort', string({required: false}))
-    if (sort == null) { return [] }
-
-    const parts = sort.split(',')
-    const sorts: Sort[] = []
-
-    for (const part of parts) {
-      if (part.charAt(0) === '-') {
-        sorts.push({field: part.slice(1), direction: -1})
-      } else {
-        sorts.push({field: part, direction: 1})
-      }
-    }
-
-    return sorts
-  }
-
-  private extractPagination(context: RequestContext): {offset: number, limit: number | null} {
-    const offset = context.param('limit', number({integer: true, defaultValue: 0}))
-    const limit  = context.param('limit', number({integer: true, required: false}))
-
-    return {offset, limit}
-  }
-
-  private extractResourceLocator(context: RequestContext): ResourceLocator {
-    const id        = context.param('id', string({required: false}))
-    const singleton = context.param('singleton', string({required: false}))
-
-    if (id != null) {
-      return {id}
-    } else if (singleton != null) {
-      return {singleton}
-    } else {
-      throw new APIError(400, "Invalid resource locator, specify either `id` or `singleton`.")
-    }
-  }
-
-  public extractBulkSelector<M, Q>(resource: Resource<M, Q>, requestPack: Pack, context: RequestContext): BulkSelector {
-    const id = context.param('id', string({required: false}))
-    if (id != null) { return {ids: [id]} }
-
-    const {data, meta: {filters, search}} = requestPack
-
-    if (data != null && (filters != null || search != null)) {
-      throw new APIError(400, "Mix of explicit linkages and filters/search specified")
-    }
-
-    if (data != null) {
-      return {ids: this.extractBulkSelectorIDs(data, resource)}
-    } else {
-      if (filters != null && !isPlainObject(filters)) {
-        throw new APIError(400, "Node `meta.filters`: must be a plain object")
-      }
-      if (search != null && typeof search !== 'string') {
-        throw new APIError(400, "Node `meta.search`: must be a string")
-      }
-
-      return {
-        filters: filters,
-        search:  search,
-      }
-    }
-  }
-
-  private extractBulkSelectorIDs<M, Q>(data: any, resource: Resource<M, Q>) {
-    if (!(data instanceof Collection)) {
-      throw new APIError(400, "Collection expected")
-    }
-
-    const ids: string[] = []
-    for (const linkage of data) {
-      if (linkage.resource.type !== resource.type) {
-        throw new APIError(409, "Linkage type does not match endpoint type")
-      }
-      if (linkage.id == null) {
-        throw new APIError(400, "ID required in linkage")
-      }
-      ids.push(linkage.id)
-    }
-
-    return ids
-  }
-
-  // #endregion
 
 }
 
