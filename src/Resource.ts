@@ -1,7 +1,6 @@
 import { singularize } from 'inflected'
 import { isFunction } from 'lodash'
 import { objectEntries } from 'ytil'
-import { Sort } from '../dist/cjs/types'
 import Adapter from './Adapter'
 import APIError from './APIError'
 import Collection from './Collection'
@@ -29,6 +28,7 @@ import {
   Meta,
   RelationshipBag,
   ResourceLocator,
+  Sort,
 } from './types'
 
 export default class Resource<Model, Query> {
