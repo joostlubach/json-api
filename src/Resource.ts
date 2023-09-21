@@ -24,7 +24,6 @@ import {
   ActionOptions,
   AttributeBag,
   BulkSelector,
-  DeleteActionOptions,
   Links,
   ListParams,
   Meta,
@@ -32,13 +31,12 @@ import {
   ResourceLocator,
   RetrievalActionOptions,
   Sort,
-  UpdateActionOptions,
 } from './types'
 
 export default class Resource<Model, Query> {
 
   constructor(
-    public readonly registry: ResourceRegistry<Model, Query>,
+    public readonly registry: ResourceRegistry<any, any>,
     public readonly type:     string,
     public readonly config:   ResourceConfig<Model, Query>
   ) {}
@@ -338,11 +336,13 @@ export default class Resource<Model, Query> {
    * @param context The request context.
    * @param pagination Supplied pagination parameters.
    */
-  private async injectPaginationMeta(pack: Pack, context: RequestContext, offset: number, limit: number | null) {
+  private async injectPaginationMeta(pack: Pack, context: RequestContext, offset: number | undefined) {
     const count = pack.data instanceof Collection ? pack.data.length : 1
     const total = typeof pack.meta.total === 'number'
       ? pack.meta.total
       : null
+
+    offset ??= 0
 
     if (context.requestURI != null) {
       const url = new URL({
@@ -390,12 +390,13 @@ export default class Resource<Model, Query> {
     await this.config.authenticateRequest?.call(this, context)
   }
 
-  public async emitBefore(context: RequestContext) {
-    if (this.config.before == null) { return }
-    await this.config.before.call(this, context)
+  public async runBeforeHandlers(context: RequestContext) {
+    for (const handler of this.config.before ?? []) {
+      await handler.call(this, context)
+    }
   }
 
-  public async list(params: ListParams, adapter: Adapter, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
+  public async list(params: ListParams, adapter: Adapter, context: RequestContext, options: RetrievalActionOptions = {}): Promise<Pack> {
     if (this.config.list === false) {
       throw new APIError(405, `Action \`list\` not available`)
     }
@@ -409,11 +410,11 @@ export default class Resource<Model, Query> {
       : await adapter.list(params, options)
 
     this.injectPackSelfLinks(pack, context)
-    await this.injectPaginationMeta(pack, context, params.offset, params.limit)
+    await this.injectPaginationMeta(pack, context, params.offset)
     return pack
   }
 
-  public async get(locator: ResourceLocator, adapter: Adapter, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
+  public async get(locator: ResourceLocator, adapter: Adapter, context: RequestContext, options: RetrievalActionOptions = {}): Promise<Pack> {
     if (this.config.get === false) {
       throw new APIError(405, `Action \`show\` not available`)
     }
@@ -452,14 +453,14 @@ export default class Resource<Model, Query> {
     return responsePack
   }
 
-  public async delete(selector: BulkSelector, adapter: Adapter, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
+  public async delete(selector: BulkSelector, adapter: Adapter, context: RequestContext): Promise<Pack> {
     if (this.config.delete === false) {
       throw new APIError(405, `Action \`delete\` not available`)
     }
 
     const responsePack = this.config.delete != null
-      ? await this.config.delete.call(this, selector, adapter, context, options)
-      : await adapter.delete(selector, options)
+      ? await this.config.delete.call(this, selector, adapter, context)
+      : await adapter.delete(selector)
 
     this.injectPackSelfLinks(responsePack, context)
     return responsePack
@@ -485,7 +486,7 @@ export default class Resource<Model, Query> {
       : await adapter.listRelated(locator, relationship, params, options)
 
     this.injectPackSelfLinks(pack, context)
-    await this.injectPaginationMeta(pack, context, params.offset, params.limit)
+    await this.injectPaginationMeta(pack, context, params.offset)
     return pack
   }
 
@@ -520,7 +521,7 @@ export default class Resource<Model, Query> {
 
   // #region Request extracters
 
-  public async extractRequestDocument(resource: Resource<Model, Query>, pack: Pack, requireID: boolean, context: RequestContext) {
+  public async extractRequestDocument(pack: Pack, requireID: boolean, context: RequestContext) {
     const document = pack.data
 
     if (document == null) {
@@ -535,7 +536,7 @@ export default class Resource<Model, Query> {
     if (document.id != null && document.id !== context.param('id', string({required: false}))) {
       throw new APIError(409, "Document ID does not match endpoint ID")
     }
-    if (document.resource.type !== resource.type) {
+    if (document.resource.type !== this.type) {
       throw new APIError(409, "Document type does not match endpoint type")
     }
 
@@ -543,8 +544,7 @@ export default class Resource<Model, Query> {
   }
 
   public extractActionOptions(context: RequestContext): ActionOptions {
-    const label = context.param('label', string())
-    return {label}
+    return {}
   }
 
   public extractRetrievalActionOptions(context: RequestContext): RetrievalActionOptions {
@@ -558,21 +558,14 @@ export default class Resource<Model, Query> {
     }
   }
 
-  public extractUpdateActionOptions(context: RequestContext): UpdateActionOptions {
-    return this.extractActionOptions(context)
-  }
-
-  public extractDeleteActionOptions(context: RequestContext): DeleteActionOptions {
-    return this.extractActionOptions(context)
-  }
-
   public extractListParams(context: RequestContext): ListParams {
+    const label           = context.param('label', string({required: false}))
     const filters         = this.extractFilters(context)
     const search          = this.extractSearch(context)
     const sorts           = this.extractSorts(context)
     const {limit, offset} = this.extractPagination(context)
 
-    return {filters, search, sorts, limit, offset}
+    return {filters, label, search, sorts, limit, offset}
   }
 
   public extractFilters(context: RequestContext) {

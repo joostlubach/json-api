@@ -11,6 +11,9 @@ import Resource from './Resource'
 import { CustomCollectionAction, CustomDocumentAction } from './ResourceConfig'
 import ResourceRegistry from './ResourceRegistry'
 
+/**
+ * A controller to use with Express. For an API interface, use {@link JSONAPI}.
+ */
 export default class Controller<Model, Query extends Adapter> {
 
   constructor(
@@ -137,7 +140,7 @@ export default class Controller<Model, Query extends Adapter> {
     if (authenticate) {
       await resource.authenticateRequest(context)
     }
-    await resource.emitBefore(context)
+    await resource.runBeforeHandlers(context)
   }
 
   // ------
@@ -164,8 +167,8 @@ export default class Controller<Model, Query extends Adapter> {
   public async create(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
     const adapter     = this.adapter(resource, context)
     const requestPack = Pack.deserialize(this.registry, request.body)
-    const document    = await resource.extractRequestDocument(resource, requestPack, false, context)
-    const options     = resource.extractUpdateActionOptions(context)
+    const document    = await resource.extractRequestDocument(requestPack, false, context)
+    const options     = resource.extractActionOptions(context)
 
     const responsePack = await resource.create(document, requestPack, adapter, context, options)
 
@@ -177,8 +180,8 @@ export default class Controller<Model, Query extends Adapter> {
     const adapter     = this.adapter(resource, context)
     const locator     = resource.extractResourceLocator(context)
     const requestPack = Pack.deserialize(this.registry, request.body)
-    const document    = await resource.extractRequestDocument(resource, requestPack, true, context)
-    const options     = resource.extractUpdateActionOptions(context)
+    const document    = await resource.extractRequestDocument(requestPack, true, context)
+    const options     = resource.extractActionOptions(context)
 
     const responsePack = await resource.update(locator, document, requestPack, adapter, context, options)
     response.json(responsePack.serialize())
@@ -188,9 +191,8 @@ export default class Controller<Model, Query extends Adapter> {
     const adapter     = this.adapter(resource, context)
     const requestPack = request.body?.data != null ? Pack.deserialize(this.registry, request.body) : new Pack(null)
     const selector    = resource.extractBulkSelector(requestPack, context)
-    const options     = resource.extractDeleteActionOptions(context)
 
-    const responsePack = await resource.delete(selector, adapter, context, options)
+    const responsePack = await resource.delete(selector, adapter, context)
     response.json(responsePack.serialize())
   }
 

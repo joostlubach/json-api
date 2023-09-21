@@ -3,7 +3,7 @@ import { isPlainObject } from 'lodash'
 import APIError from '../APIError'
 import RequestContext from '../RequestContext'
 import { AnyResource } from '../types'
-import { operationForAction } from '../util/operations'
+import { operationForAction } from '../util'
 
 export default function validateRequest(request: Request, context: RequestContext, resource: AnyResource) {
   validateRequestMethod(request)

@@ -105,7 +105,7 @@ export interface ResourceConfig<Model, Query> {
   authenticateRequest?: AuthenticateHandler
 
   /// A function called before any request for this resource is executed.
-  before?: BeforeHandler
+  before?: BeforeHandler[]
 
   /// A custom `list` action or `false` to disable this action.
   list?:   false | ListAction<Resource<Model, Query>, any>
@@ -283,8 +283,7 @@ export type DeleteAction<R extends AnyResource, A extends Adapter> = (
   this:     R,
   selector: BulkSelector,
   adapter:  A,
-  context:  RequestContext,
-  options:  ActionOptions
+  context:  RequestContext
 ) => Pack | Promise<Pack>
 
 export type ListRelatedAction<R extends AnyResource, A extends Adapter> = (

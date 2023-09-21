@@ -1,24 +1,31 @@
 import chalk from 'chalk'
+import { isArray } from 'lodash'
 import APIError from './APIError'
 import config from './config'
+import { Middleware, runMiddleware } from './middleware'
 import Resource from './Resource'
-import { mergeResourceConfig, ResourceConfig } from './ResourceConfig'
+import { ResourceConfig } from './ResourceConfig'
 
 export default class ResourceRegistry<Model, Query> {
 
   constructor(
-    private readonly defaults: Partial<ResourceConfig<Model, Query>> = {},
-    private readonly afterCreate?: (resource: Resource<Model, Query>) => any
-  ) {}
+    options: ResourceRegistryOptions<Model, Query> = {}
+  ) {
+    this.middleware =
+      isArray(options.middleware) ? options.middleware :
+      options.middleware == null ? [] :
+      [options.middleware]
+  }
 
   private readonly resources: Map<string, Resource<any, any>> = new Map()
+  private readonly middleware: Middleware<any, any>[] = []
 
   // #region Registering
 
   public register<M extends Model, Q extends Query>(type: string, resourceConfig: ResourceConfig<M, Q>) {
-    const mergedConfig = mergeResourceConfig(resourceConfig, this.defaults)
-    const resource = new Resource(this, type, mergedConfig)
-    this.afterCreate?.(resource)
+    runMiddleware(this.middleware, resourceConfig)
+
+    const resource = new Resource(this, type, resourceConfig)
     this.resources.set(type, resource)
 
     config.logger.info(chalk`-> Registered resource {yellow ${resource.plural}}\n`)
@@ -56,4 +63,8 @@ export default class ResourceRegistry<Model, Query> {
 
   // #endregion
 
+}
+
+export interface ResourceRegistryOptions<M, Q> {
+  middleware?: Middleware<M, Q>[]
 }

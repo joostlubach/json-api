@@ -57,7 +57,6 @@ export interface JSONAPIError {
 }
 
 export interface ActionOptions {
-  label?:        string
   sendProgress?: (current: number, total: number) => any
 }
 
@@ -66,19 +65,15 @@ export interface RetrievalActionOptions extends ActionOptions {
   detail?:  boolean
 }
 
-export interface UpdateActionOptions extends ActionOptions {
-  detail?: boolean
-}
-export interface DeleteActionOptions extends ActionOptions {}
-
 export type Include = string
 
 export interface ListParams {
-  filters:     Filters
-  search:      string | null
-  sorts:       Sort[]
-  offset:      number
-  limit:       number | null
+  filters?: Filters
+  label?:   string | null
+  search?:  string | null
+  sorts?:   Sort[]
+  offset?:  number
+  limit?:   number | null
 }
 
 export interface BulkSelector {
