@@ -440,14 +440,14 @@ export default class Resource<Model, Query> {
     return responsePack
   }
 
-  public async update(locator: ResourceLocator, document: Document, requestPack: Pack, adapter: Adapter, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
+  public async update(locator: ResourceLocator, document: Document, meta: Meta, adapter: Adapter, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
     if (this.config.update === false) {
       throw new APIError(405, `Action \`update\` not available`)
     }
 
     const responsePack = this.config.update != null
-      ? await this.config.update.call(this, document, requestPack, adapter, context, options)
-      : await adapter.update(locator, document, requestPack, options)
+      ? await this.config.update.call(this, document, meta, adapter, context, options)
+      : await adapter.update(locator, document, meta, options)
 
     this.injectPackSelfLinks(responsePack, context)
     return responsePack
@@ -521,8 +521,11 @@ export default class Resource<Model, Query> {
 
   // #region Request extracters
 
-  public async extractRequestDocument(pack: Pack, requireID: boolean, context: RequestContext) {
+  public extractRequestDocument(pack: Pack, requireID: true, context: RequestContext): Document & {id: string}
+  public extractRequestDocument(pack: Pack, requireID: boolean, context: RequestContext): Document
+  public extractRequestDocument(pack: Pack, requireID: boolean, context: RequestContext): Document {
     const document = pack.data
+    const idParam  = context.param('id', string({required: false}))
 
     if (document == null) {
       throw new APIError(400, "No document sent")
@@ -533,7 +536,7 @@ export default class Resource<Model, Query> {
     if (requireID && document.id == null) {
       throw new APIError(400, "Document ID required")
     }
-    if (document.id != null && document.id !== context.param('id', string({required: false}))) {
+    if (document.id != null && idParam != null && document.id !== idParam) {
       throw new APIError(409, "Document ID does not match endpoint ID")
     }
     if (document.resource.type !== this.type) {

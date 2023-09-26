@@ -37,7 +37,7 @@ export default class RequestContext<P = Record<string, any>> {
     if (type == null) { return value }
 
     const coerced = this.validator.coerce(value, type, false)
-    if (coerced == null) {
+    if (type.options.required !== false && coerced == null) {
       throw new APIError(400, `Parameter \`${name}\`: required`)
     }
     if (coerced === INVALID) {

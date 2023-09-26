@@ -10,6 +10,7 @@ import {
   BulkSelector,
   Linkage,
   ListParams,
+  Meta,
   RelatedQuery,
   Relationship,
   ResourceID,
@@ -274,7 +275,7 @@ export type CreateAction<R extends AnyResource, A extends Adapter> = (
 export type UpdateAction<R extends AnyResource, A extends Adapter> = (
   this:     R,
   document: Document,
-  pack:     Pack,
+  meta:     Meta,
   adapter:  A,
   context:  RequestContext,
   options:  ActionOptions
