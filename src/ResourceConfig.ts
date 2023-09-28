@@ -43,7 +43,7 @@ export interface ResourceConfig<Model, Query> {
   totals?: boolean
 
   /// Whether the resource is read-only.
-  readOnly?: boolean
+  readonly?: boolean
 
   //------
   // Serialization

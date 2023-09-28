@@ -45,7 +45,7 @@ export function needsBody(request: Request) {
 
 export function validateOperation(context: RequestContext, resource: AnyResource) {
   const operation = operationForAction(context.action)
-  if (resource.config.readOnly && operation === '$write') {
+  if (resource.config.readonly && operation === '$write') {
     throw new APIError(403, "This resource is read-only")
   }
 }
