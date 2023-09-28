@@ -241,7 +241,8 @@ export default class Controller<Model, Query extends Adapter> {
 
       const adapter = this.adapter(resource, context)
       const options = resource.extractActionOptions(context)
-      const pack    = await spec.action.call(resource, requestPack, adapter, context, options)
+      const locator = resource.extractResourceLocator(context)
+      const pack    = await spec.action.call(resource, locator, requestPack, adapter, context, options)
       response.json(pack.serialize())
     }
   }

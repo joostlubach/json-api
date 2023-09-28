@@ -509,6 +509,32 @@ export default class Resource<Model, Query> {
     return pack
   }
 
+  // #endregion
+
+  // #region Custom actions
+
+  public async callCollectionAction(name: string, requestPack: Pack, adapter: Adapter, context: RequestContext, options: ActionOptions = {}) {
+    const action = this.config.collectionActions?.find(it => it.name === name)
+    if (action == null) {
+      throw new APIError(405, `Action \`${name}\` not found`)
+    }
+
+    const responsePack = await action.action.call(this, requestPack, adapter, context, options)
+    this.injectPackSelfLinks(responsePack, context)
+    return responsePack
+  }
+
+  public async callDocumentAction(name: string, locator: ResourceLocator, requestPack: Pack, adapter: Adapter, context: RequestContext, options: ActionOptions = {}) {
+    const action = this.config.documentActions?.find(it => it.name === name)
+    if (action == null) {
+      throw new APIError(405, `Action \`${name}\` not found`)
+    }
+
+    const responsePack = await action.action.call(this, locator, requestPack, adapter, context, options)
+    this.injectPackSelfLinks(responsePack, context)
+    return responsePack
+  }
+
   public get collectionActions() {
     return this.config.collectionActions ?? []
   }

@@ -324,7 +324,7 @@ export interface CustomDocumentAction<R extends AnyResource, A extends Adapter> 
   endpoint?:     string
   authenticate?: boolean
   deserialize?:  boolean
-  action:        (this: R, pack: Pack, adapter: A, context: RequestContext, options: ActionOptions) => Promise<Pack>
+  action:        (this: R, locator: ResourceLocator, pack: Pack, adapter: A, context: RequestContext, options: ActionOptions) => Promise<Pack>
 }
 
 export type ModelOf<Cfg extends ResourceConfig<any, any>> = Cfg extends ResourceConfig<infer M, any> ? M : never

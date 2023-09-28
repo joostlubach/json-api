@@ -18,50 +18,70 @@ export default class JSONAPI<Model, Query> {
     private readonly adapter: (resource: Resource<Model, Query>, context: RequestContext) => Adapter,
   ) {}
 
-    // #region Interface
+  // #region CRUD
 
-    public async show(resourceType: string, locator: ResourceLocator, context: RequestContext, options: RetrievalActionOptions = {}) {
-      const resource = this.registry.get(resourceType)
-      const adapter = this.adapter(resource, context)
+  public async show(resourceType: string, locator: ResourceLocator, context: RequestContext, options: RetrievalActionOptions = {}) {
+    const resource = this.registry.get(resourceType)
+    const adapter = this.adapter(resource, context)
 
-      await resource.runBeforeHandlers(context)
-      return await resource.get(locator, adapter, context, options)
-    }
-
-    public async list(resourceType: string, params: ListParams, context: RequestContext, options: RetrievalActionOptions = {}) {
-      const resource = this.registry.get(resourceType)
-      const adapter = this.adapter(resource, context)
-
-      await resource.runBeforeHandlers(context)
-      return await resource.list(params, adapter, context, options)
-    }
-
-    public async create(resourceType: string, pack: Pack, context: RequestContext, options: ActionOptions = {}) {
-      const resource = this.registry.get(resourceType)
-      const document = resource.extractRequestDocument(pack, false, context)
-      const adapter  = this.adapter(resource, context)
-
-      await resource.runBeforeHandlers(context)
-      return await resource.create(document, pack, adapter, context, options)
-    }
-
-    public async update(resourceType: string, pack: Pack, context: RequestContext, options: ActionOptions = {}) {
-      const resource = this.registry.get(resourceType)
-      const document = resource.extractRequestDocument(pack, true, context)
-      const adapter  = this.adapter(resource, context)
-
-      await resource.runBeforeHandlers(context)
-      return await resource.update({id: document.id}, document, pack.meta, adapter, context, options)
-    }
-
-    public async delete(resourceType: string, selector: BulkSelector, context: RequestContext) {
-      const resource = this.registry.get(resourceType)
-      const adapter = this.adapter(resource, context)
-
-      await resource.runBeforeHandlers(context)
-      return await resource.delete(selector, adapter, context)
-    }
-
-    // #endregion
-
+    await resource.runBeforeHandlers(context)
+    return await resource.get(locator, adapter, context, options)
   }
+
+  public async list(resourceType: string, params: ListParams, context: RequestContext, options: RetrievalActionOptions = {}) {
+    const resource = this.registry.get(resourceType)
+    const adapter = this.adapter(resource, context)
+
+    await resource.runBeforeHandlers(context)
+    return await resource.list(params, adapter, context, options)
+  }
+
+  public async create(resourceType: string, pack: Pack, context: RequestContext, options: ActionOptions = {}) {
+    const resource = this.registry.get(resourceType)
+    const document = resource.extractRequestDocument(pack, false, context)
+    const adapter  = this.adapter(resource, context)
+
+    await resource.runBeforeHandlers(context)
+    return await resource.create(document, pack, adapter, context, options)
+  }
+
+  public async update(resourceType: string, pack: Pack, context: RequestContext, options: ActionOptions = {}) {
+    const resource = this.registry.get(resourceType)
+    const document = resource.extractRequestDocument(pack, true, context)
+    const adapter  = this.adapter(resource, context)
+
+    await resource.runBeforeHandlers(context)
+    return await resource.update({id: document.id}, document, pack.meta, adapter, context, options)
+  }
+
+  public async delete(resourceType: string, selector: BulkSelector, context: RequestContext) {
+    const resource = this.registry.get(resourceType)
+    const adapter = this.adapter(resource, context)
+
+    await resource.runBeforeHandlers(context)
+    return await resource.delete(selector, adapter, context)
+  }
+
+  // #endregion
+
+  // #region Custom actions
+
+  public async collectionAction(resourceType: string, action: string, requestPack: Pack, context: RequestContext, options: ActionOptions = {}) {
+    const resource = this.registry.get(resourceType)
+    const adapter  = this.adapter(resource, context)
+
+    await resource.runBeforeHandlers(context)
+    return await resource.callCollectionAction(action, requestPack, adapter, context, options)
+  }
+
+  public async documentAction(resourceType: string, locator: ResourceLocator, action: string, requestPack: Pack, context: RequestContext, options: ActionOptions = {}) {
+    const resource = this.registry.get(resourceType)
+    const adapter  = this.adapter(resource, context)
+
+    await resource.runBeforeHandlers(context)
+    return await resource.callDocumentAction(action, locator, requestPack, adapter, context, options)
+  }
+
+  // #endregion
+
+}
