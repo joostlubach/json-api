@@ -109,25 +109,25 @@ export interface ResourceConfig<Model, Query> {
   before?: BeforeHandler[]
 
   /// A custom `list` action or `false` to disable this action.
-  list?:   false | ListAction<Resource<Model, Query>, any>
+  list?:   false | ListAction<Resource<Model, Query>>
 
   /// A custom `get` action or `false` to disable this action.
-  get?:    false | GetAction<Resource<Model, Query>, any>
+  get?:    false | GetAction<Resource<Model, Query>>
 
   /// A custom `create` action or `false` to disable this action.
-  create?: false | CreateAction<Resource<Model, Query>, any>
+  create?: false | CreateAction<Resource<Model, Query>>
 
   /// A custom `update` action or `false` to disable this action.
-  update?: false | UpdateAction<Resource<Model, Query>, any>
+  update?: false | UpdateAction<Resource<Model, Query>>
 
   /// A custom `delete` action or `false` to disable this action.
-  delete?: false | DeleteAction<Resource<Model, Query>, any>
+  delete?: false | DeleteAction<Resource<Model, Query>>
 
   /// A custom `listRelated` action or `false` to disable this action.
-  listRelated?:  false | ListRelatedAction<Resource<Model, Query>, any>
+  listRelated?:  false | ListRelatedAction<Resource<Model, Query>>
 
   /// A custom `getRelated` action or `false` to disable this action.
-  getRelated?:   false | GetRelatedAction<Resource<Model, Query>, any>
+  getRelated?:   false | GetRelatedAction<Resource<Model, Query>>
 
   //------
   // Low level interface
@@ -137,8 +137,8 @@ export interface ResourceConfig<Model, Query> {
   //------
   // Custom
 
-  collectionActions?: Array<CustomCollectionAction<AnyResource, any>>
-  documentActions?:   Array<CustomDocumentAction<AnyResource, any>>
+  collectionActions?: CustomCollectionAction<AnyResource>[]
+  documentActions?:   CustomDocumentAction<AnyResource>[]
 
 }
 
@@ -250,58 +250,58 @@ export type FilterModifier<Q> = (query: Q, value: any, context: RequestContext) 
 export type AuthenticateHandler = (context: RequestContext) => void | Promise<void>
 export type BeforeHandler       = (context: RequestContext) => void | Promise<void>
 
-export type ListAction<R extends AnyResource, A extends Adapter>  = (
+export type ListAction<R extends AnyResource>  = (
   this:    R,
   params:  ListParams,
-  adapter: A,
+  adapter: Adapter,
   context: RequestContext,
   options: ActionOptions
 ) => Pack | Promise<Pack>
-export type GetAction<R extends AnyResource, A extends Adapter>   = (
+export type GetAction<R extends AnyResource>   = (
   this:    R,
   locator: ResourceLocator,
-  adapter: A,
+  adapter: Adapter,
   context: RequestContext,
   options: ActionOptions
 ) => Pack | Promise<Pack>
-export type CreateAction<R extends AnyResource, A extends Adapter> = (
+export type CreateAction<R extends AnyResource> = (
   this:     R,
   document: Document,
   pack:     Pack,
-  adapter:  A,
+  adapter:  Adapter,
   context:  RequestContext,
   options:  ActionOptions
 ) => Pack | Promise<Pack>
-export type UpdateAction<R extends AnyResource, A extends Adapter> = (
+export type UpdateAction<R extends AnyResource> = (
   this:     R,
   document: Document,
   meta:     Meta,
-  adapter:  A,
+  adapter:  Adapter,
   context:  RequestContext,
   options:  ActionOptions
 ) => Pack | Promise<Pack>
-export type DeleteAction<R extends AnyResource, A extends Adapter> = (
+export type DeleteAction<R extends AnyResource> = (
   this:     R,
   selector: BulkSelector,
-  adapter:  A,
+  adapter:  Adapter,
   context:  RequestContext
 ) => Pack | Promise<Pack>
 
-export type ListRelatedAction<R extends AnyResource, A extends Adapter> = (
+export type ListRelatedAction<R extends AnyResource> = (
   this:         R,
   locator:      ResourceLocator,
   relationship: string,
   params:       ListParams,
-  adapter:      A,
+  adapter:      Adapter,
   context:      RequestContext,
   options:      ActionOptions
 ) => Pack | Promise<Pack>
 
-export type GetRelatedAction<R extends AnyResource, A extends Adapter> = (
+export type GetRelatedAction<R extends AnyResource> = (
   this:         R,
   locator:      ResourceLocator,
   relationship: string,
-  adapter:      A,
+  adapter:      Adapter,
   context:      RequestContext,
   options:      ActionOptions
 ) => Pack | Promise<Pack>
@@ -309,22 +309,22 @@ export type GetRelatedAction<R extends AnyResource, A extends Adapter> = (
 //------
 // Custom actions
 
-export interface CustomCollectionAction<R extends AnyResource, A extends Adapter> {
+export interface CustomCollectionAction<R extends AnyResource> {
   name:          string
   method:        'get' | 'post' | 'put' | 'delete'
   endpoint?:     string
   authenticate?: boolean
   deserialize?:  boolean
-  action:        (this: R, pack: Pack, adapter: A, context: RequestContext, options: ActionOptions) => Promise<Pack>
+  action:        (this: R, pack: Pack, adapter: Adapter, context: RequestContext, options: ActionOptions) => Promise<Pack>
 }
 
-export interface CustomDocumentAction<R extends AnyResource, A extends Adapter> {
+export interface CustomDocumentAction<R extends AnyResource> {
   name:          string
   method:        'get' | 'post' | 'put' | 'delete'
   endpoint?:     string
   authenticate?: boolean
   deserialize?:  boolean
-  action:        (this: R, locator: ResourceLocator, pack: Pack, adapter: A, context: RequestContext, options: ActionOptions) => Promise<Pack>
+  action:        (this: R, locator: ResourceLocator, pack: Pack, adapter: Adapter, context: RequestContext, options: ActionOptions) => Promise<Pack>
 }
 
 export type ModelOf<Cfg extends ResourceConfig<any, any>> = Cfg extends ResourceConfig<infer M, any> ? M : never
