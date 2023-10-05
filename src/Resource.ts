@@ -179,7 +179,7 @@ export default class Resource<Model, Query> {
 
   // #endregion
 
-  // #region Serialization
+  // #region Attributes & relationships
 
   /**
    * Obtains a full list of all attributes and their configuration.
@@ -693,7 +693,6 @@ export default class Resource<Model, Query> {
   }
 
   // #endregion
-
 
 }
 

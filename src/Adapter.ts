@@ -1,3 +1,4 @@
+import Collection from './Collection'
 import Document from './Document'
 import Pack from './Pack'
 import {
@@ -19,4 +20,15 @@ export default interface Adapter {
   listRelated(locator: ResourceLocator, relationship: string, params: ListParams, options: RetrievalActionOptions): Promise<Pack>
   getRelated(locator: ResourceLocator, relationship: string, options: RetrievalActionOptions): Promise<Pack>
 
+  modelToDocument(model: any, options?: ModelToDocumentOptions): Promise<Document>
+  modelsToCollection(models: any[], options?: ModelsToCollectionOptions): Promise<Collection>
+
+}
+
+export interface ModelToDocumentOptions {
+  detail?:  boolean
+}
+
+export interface ModelsToCollectionOptions {
+  detail?:  boolean
 }

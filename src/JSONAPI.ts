@@ -1,4 +1,4 @@
-import Adapter from './Adapter'
+import Adapter, { ModelsToCollectionOptions, ModelToDocumentOptions } from './Adapter'
 import Pack from './Pack'
 import RequestContext from './RequestContext'
 import Resource from './Resource'
@@ -80,6 +80,24 @@ export default class JSONAPI<Model, Query> {
 
     await resource.runBeforeHandlers(context)
     return await resource.callDocumentAction(action, locator, requestPack, adapter, context, options)
+  }
+
+  // #endregion
+
+  // #region Serialization
+
+  public async modelToDocument(resourceType: string, model: Model, context: RequestContext, options: ModelToDocumentOptions = {}) {
+    const resource = this.registry.get(resourceType)
+    const adapter  = this.adapter(resource, context)
+
+    return await adapter.modelToDocument(model, options)
+  }
+
+  public async modelsToCollection(resourceType: string, models: Model[], context: RequestContext, options: ModelsToCollectionOptions = {}) {
+    const resource = this.registry.get(resourceType)
+    const adapter  = this.adapter(resource, context)
+
+    return await adapter.modelsToCollection(models, options)
   }
 
   // #endregion

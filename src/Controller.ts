@@ -69,7 +69,7 @@ export default class Controller<Model, Query extends Adapter> {
     }
   }
 
-  public defineCollectionAction(spec: CustomCollectionAction<Resource<Model, Query>, any>, resource?: Resource<Model, Query>) {
+  public defineCollectionAction(spec: CustomCollectionAction<Resource<Model, Query>>, resource?: Resource<Model, Query>) {
     if (this.app == null) {
       throw new Error("Mount the controller before defining actions")
     }
@@ -82,7 +82,7 @@ export default class Controller<Model, Query extends Adapter> {
     }
   }
 
-  public defineDocumentAction(spec: CustomDocumentAction<Resource<Model, Query>, any>, resource?: Resource<Model, Query>) {
+  public defineDocumentAction(spec: CustomDocumentAction<Resource<Model, Query>>, resource?: Resource<Model, Query>) {
     if (this.app == null) {
       throw new Error("Mount the controller before defining actions")
     }
@@ -220,7 +220,7 @@ export default class Controller<Model, Query extends Adapter> {
   //------
   // Custom actions
 
-  private customCollectionAction<R extends Resource<Model, Query>>(spec: CustomCollectionAction<R, any>) {
+  private customCollectionAction<R extends Resource<Model, Query>>(spec: CustomCollectionAction<R>) {
     return async (resource: R, request: Request, response: Response, context: RequestContext) => {
       const requestPack = spec.deserialize !== false
         ? Pack.tryDeserialize(this.registry, request.body) ?? new Pack(null)
@@ -233,7 +233,7 @@ export default class Controller<Model, Query extends Adapter> {
     }
   }
 
-  private customDocumentAction<R extends Resource<Model, Query>>(spec: CustomDocumentAction<R, any>) {
+  private customDocumentAction<R extends Resource<Model, Query>>(spec: CustomDocumentAction<R>) {
     return async (resource: R, request: Request, response: Response, context: RequestContext) => {
       const requestPack = spec.deserialize !== false
         ? Pack.tryDeserialize(this.registry, request.body) ?? new Pack(null)
