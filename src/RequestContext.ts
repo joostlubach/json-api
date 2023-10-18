@@ -65,9 +65,9 @@ export default class RequestContext<P = Record<string, any>> {
 
   private readonly dependencies = new WeakMap<Function, () => any>()
 
-  public inject<T>(Ctor: Constructor<T>, value: T | (() => T)): void
-  public inject(Ctor: Function, value: any | (() => any)): void
-  public inject(key: any, value: any) {
+  public provide<T>(Ctor: Constructor<T>, value: T | (() => T)): void
+  public provide(Ctor: Function, value: any | (() => any)): void
+  public provide(key: any, value: any) {
     this.dependencies.set(key, value)
   }
 

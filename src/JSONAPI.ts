@@ -11,12 +11,10 @@ import {
   RetrievalActionOptions,
 } from './types'
 
-export default class JSONAPI<Model, Query> {
+export default abstract class JSONAPI<Model, Query> {
 
-  constructor(
-    private readonly registry: ResourceRegistry<Model, Query>,
-    private readonly adapter: (resource: Resource<Model, Query>, context: RequestContext) => Adapter,
-  ) {}
+  public abstract registry: ResourceRegistry<Model, Query>
+  public abstract adapter(resource: Resource<Model, Query>, context: RequestContext): Adapter
 
   // #region CRUD
 
