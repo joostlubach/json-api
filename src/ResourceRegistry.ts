@@ -1,5 +1,6 @@
 import chalk from 'chalk'
 import { isArray } from 'lodash'
+import { objectEntries } from 'ytil'
 import APIError from './APIError'
 import config from './config'
 import { Middleware, runMiddleware } from './middleware'
@@ -22,7 +23,20 @@ export default class ResourceRegistry<Model, Query> {
 
   // #region Registering
 
-  public register<M extends Model, Q extends Query>(type: string, resourceConfig: ResourceConfig<M, Q>) {
+  public register(resources: Record<string, ResourceConfig<any, any>>): void
+  public register<M extends Model, Q extends Query>(type: string, config: ResourceConfig<M, Q>): void
+  public register(...args: any[]) {
+    if (args.length === 1) {
+      for (const [type, config] of objectEntries(args[0] as Record<string, ResourceConfig<any, any>>)) {
+        this.registerResource(type, config)
+      }
+    } else {
+      const [type, config] = args
+      this.registerResource(type, config)
+    }
+  }
+
+  private registerResource(type: string, resourceConfig: ResourceConfig<any, any>) {
     runMiddleware(this.middleware, resourceConfig)
 
     const resource = new Resource(this, type, resourceConfig)
