@@ -147,8 +147,8 @@ export default class Controller<Model, Query extends Adapter> {
   // Actions
 
   public async list(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
-    const adapter = this.adapter(resource, context)
     const params  = resource.extractListParams(context)
+    const adapter = () => this.adapter(resource, context)
     const options = resource.extractRetrievalActionOptions(context)
 
     const pack = await resource.list(params, adapter, context, options)
@@ -156,18 +156,18 @@ export default class Controller<Model, Query extends Adapter> {
   }
 
   public async show(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
-    const adapter = this.adapter(resource, context)
-    const options = resource.extractRetrievalActionOptions(context)
     const locator = resource.extractResourceLocator(context)
+    const adapter = () => this.adapter(resource, context)
+    const options = resource.extractRetrievalActionOptions(context)
 
     const pack = await resource.get(locator, adapter, context, options)
     response.json(pack.serialize())
   }
 
   public async create(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
-    const adapter     = this.adapter(resource, context)
     const requestPack = Pack.deserialize(this.registry, request.body)
-    const document    = await resource.extractRequestDocument(requestPack, false, context)
+    const document    = resource.extractRequestDocument(requestPack, false, context)
+    const adapter     = () => this.adapter(resource, context)
     const options     = resource.extractActionOptions(context)
 
     const responsePack = await resource.create(document, requestPack, adapter, context, options)
@@ -177,10 +177,10 @@ export default class Controller<Model, Query extends Adapter> {
   }
 
   public async update(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
-    const adapter     = this.adapter(resource, context)
     const locator     = resource.extractResourceLocator(context)
     const requestPack = Pack.deserialize(this.registry, request.body)
-    const document    = await resource.extractRequestDocument(requestPack, true, context)
+    const document    = resource.extractRequestDocument(requestPack, true, context)
+    const adapter     = () => this.adapter(resource, context)
     const options     = resource.extractActionOptions(context)
 
     const responsePack = await resource.update(locator, document, requestPack, adapter, context, options)
@@ -188,7 +188,7 @@ export default class Controller<Model, Query extends Adapter> {
   }
 
   public async delete(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
-    const adapter     = this.adapter(resource, context)
+    const adapter     = () => this.adapter(resource, context)
     const requestPack = request.body?.data != null ? Pack.deserialize(this.registry, request.body) : new Pack(null)
     const selector    = resource.extractBulkSelector(requestPack, context)
 
@@ -197,10 +197,10 @@ export default class Controller<Model, Query extends Adapter> {
   }
 
   public async listRelated(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
-    const adapter      = this.adapter(resource, context)
     const locator      = resource.extractResourceLocator(context)
     const relationship = context.param('relationship', string())
     const params       = resource.extractListParams(context)
+    const adapter      = () => this.adapter(resource, context)
     const options      = resource.extractRetrievalActionOptions(context)
 
     const responsePack = await resource.listRelated(locator, relationship, params, adapter, context, options)
@@ -208,9 +208,9 @@ export default class Controller<Model, Query extends Adapter> {
   }
 
   public async getRelated(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
-    const adapter      = this.adapter(resource, context)
     const locator      = resource.extractResourceLocator(context)
     const relationship = context.param('relationship', string())
+    const adapter      = () => this.adapter(resource, context)
     const options      = resource.extractRetrievalActionOptions(context)
 
     const responsePack = await resource.getRelated(locator, relationship, adapter, context, options)
@@ -226,7 +226,7 @@ export default class Controller<Model, Query extends Adapter> {
         ? Pack.tryDeserialize(this.registry, request.body) ?? new Pack(null)
         : request.body
 
-      const adapter = this.adapter(resource, context)
+      const adapter = () => this.adapter(resource, context)
       const options = resource.extractActionOptions(context)
       const pack    = await spec.action.call(resource, requestPack, adapter, context, options)
       response.json(pack.serialize())
@@ -239,10 +239,11 @@ export default class Controller<Model, Query extends Adapter> {
         ? Pack.tryDeserialize(this.registry, request.body) ?? new Pack(null)
         : request.body
 
-      const adapter = this.adapter(resource, context)
-      const options = resource.extractActionOptions(context)
       const locator = resource.extractResourceLocator(context)
-      const pack    = await spec.action.call(resource, locator, requestPack, adapter, context, options)
+      const adapter = () => this.adapter(resource, context)
+      const options = resource.extractActionOptions(context)
+
+      const pack = await spec.action.call(resource, locator, requestPack, adapter, context, options)
       response.json(pack.serialize())
     }
   }

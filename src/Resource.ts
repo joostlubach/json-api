@@ -396,7 +396,7 @@ export default class Resource<Model, Query> {
     }
   }
 
-  public async list(params: ListParams, adapter: Adapter, context: RequestContext, options: RetrievalActionOptions = {}): Promise<Pack> {
+  public async list(params: ListParams, adapter: () => Adapter, context: RequestContext, options: RetrievalActionOptions = {}): Promise<Pack> {
     if (this.config.list === false) {
       throw new APIError(405, `Action \`list\` not available`)
     }
@@ -407,60 +407,60 @@ export default class Resource<Model, Query> {
 
     const pack = this.config.list != null
       ? await this.config.list.call(this, params, adapter, context, options)
-      : await adapter.list(params, options)
+      : await adapter().list(params, options)
 
     this.injectPackSelfLinks(pack, context)
     await this.injectPaginationMeta(pack, context, params.offset)
     return pack
   }
 
-  public async get(locator: ResourceLocator, adapter: Adapter, context: RequestContext, options: RetrievalActionOptions = {}): Promise<Pack> {
+  public async get(locator: ResourceLocator, adapter: () => Adapter, context: RequestContext, options: RetrievalActionOptions = {}): Promise<Pack> {
     if (this.config.get === false) {
       throw new APIError(405, `Action \`show\` not available`)
     }
 
     const responsePack = this.config.get != null
       ? await this.config.get.call(this, locator, adapter, context, options)
-      : await adapter.get(locator, options)
+      : await adapter().get(locator, options)
 
     this.injectPackSelfLinks(responsePack, context)
     return responsePack
   }
 
-  public async create(document: Document, requestPack: Pack, adapter: Adapter, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
+  public async create(document: Document, requestPack: Pack, adapter: () => Adapter, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
     if (this.config.create === false) {
       throw new APIError(405, `Action \`show\` not available`)
     }
 
     const responsePack = this.config.create != null
       ? await this.config.create.call(this, document, requestPack, adapter, context, options)
-      : await adapter.create(document, requestPack, options)
+      : await adapter().create(document, requestPack, options)
 
     this.injectPackSelfLinks(responsePack, context)
     return responsePack
   }
 
-  public async update(locator: ResourceLocator, document: Document, meta: Meta, adapter: Adapter, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
+  public async update(locator: ResourceLocator, document: Document, meta: Meta, adapter: () => Adapter, context: RequestContext, options: ActionOptions = {}): Promise<Pack> {
     if (this.config.update === false) {
       throw new APIError(405, `Action \`update\` not available`)
     }
 
     const responsePack = this.config.update != null
       ? await this.config.update.call(this, document, meta, adapter, context, options)
-      : await adapter.update(locator, document, meta, options)
+      : await adapter().update(locator, document, meta, options)
 
     this.injectPackSelfLinks(responsePack, context)
     return responsePack
   }
 
-  public async delete(selector: BulkSelector, adapter: Adapter, context: RequestContext): Promise<Pack> {
+  public async delete(selector: BulkSelector, adapter: () => Adapter, context: RequestContext): Promise<Pack> {
     if (this.config.delete === false) {
       throw new APIError(405, `Action \`delete\` not available`)
     }
 
     const responsePack = this.config.delete != null
       ? await this.config.delete.call(this, selector, adapter, context)
-      : await adapter.delete(selector)
+      : await adapter().delete(selector)
 
     this.injectPackSelfLinks(responsePack, context)
     return responsePack
@@ -470,7 +470,7 @@ export default class Resource<Model, Query> {
     locator:      ResourceLocator,
     relationship: string,
     params:       ListParams,
-    adapter:      Adapter,
+    adapter:      () => Adapter,
     context:      RequestContext,
     options:      ActionOptions,
   ): Promise<Pack> {
@@ -483,7 +483,7 @@ export default class Resource<Model, Query> {
     }
     const pack = this.config.listRelated != null
       ? await this.config.listRelated.call(this, locator, relationship, params, adapter, context, options)
-      : await adapter.listRelated(locator, relationship, params, options)
+      : await adapter().listRelated(locator, relationship, params, options)
 
     this.injectPackSelfLinks(pack, context)
     await this.injectPaginationMeta(pack, context, params.offset)
@@ -493,7 +493,7 @@ export default class Resource<Model, Query> {
   public async getRelated(
     locator:      ResourceLocator,
     relationship: string,
-    adapter:      Adapter,
+    adapter:      () => Adapter,
     context:      RequestContext,
     options:      ActionOptions
   ): Promise<Pack> {
@@ -503,7 +503,7 @@ export default class Resource<Model, Query> {
 
     const pack = this.config.getRelated != null
       ? await this.config.getRelated.call(this, locator, relationship, adapter, context, options)
-      : await adapter.getRelated(locator, relationship, options)
+      : await adapter().getRelated(locator, relationship, options)
 
     this.injectPackSelfLinks(pack, context)
     return pack
@@ -513,7 +513,7 @@ export default class Resource<Model, Query> {
 
   // #region Custom actions
 
-  public async callCollectionAction(name: string, requestPack: Pack, adapter: Adapter, context: RequestContext, options: ActionOptions = {}) {
+  public async callCollectionAction(name: string, requestPack: Pack, adapter: () => Adapter, context: RequestContext, options: ActionOptions = {}) {
     const action = this.config.collectionActions?.find(it => it.name === name)
     if (action == null) {
       throw new APIError(405, `Action \`${name}\` not found`)
@@ -524,7 +524,7 @@ export default class Resource<Model, Query> {
     return responsePack
   }
 
-  public async callDocumentAction(name: string, locator: ResourceLocator, requestPack: Pack, adapter: Adapter, context: RequestContext, options: ActionOptions = {}) {
+  public async callDocumentAction(name: string, locator: ResourceLocator, requestPack: Pack, adapter: () => Adapter, context: RequestContext, options: ActionOptions = {}) {
     const action = this.config.documentActions?.find(it => it.name === name)
     if (action == null) {
       throw new APIError(405, `Action \`${name}\` not found`)

@@ -253,14 +253,14 @@ export type BeforeHandler       = (context: RequestContext) => void | Promise<vo
 export type ListAction<R extends AnyResource>  = (
   this:    R,
   params:  ListParams,
-  adapter: Adapter,
+  adapter: () => Adapter,
   context: RequestContext,
   options: ActionOptions
 ) => Pack | Promise<Pack>
 export type GetAction<R extends AnyResource>   = (
   this:    R,
   locator: ResourceLocator,
-  adapter: Adapter,
+  adapter: () => Adapter,
   context: RequestContext,
   options: ActionOptions
 ) => Pack | Promise<Pack>
@@ -268,7 +268,7 @@ export type CreateAction<R extends AnyResource> = (
   this:     R,
   document: Document,
   pack:     Pack,
-  adapter:  Adapter,
+  adapter:  () => Adapter,
   context:  RequestContext,
   options:  ActionOptions
 ) => Pack | Promise<Pack>
@@ -276,14 +276,14 @@ export type UpdateAction<R extends AnyResource> = (
   this:     R,
   document: Document,
   meta:     Meta,
-  adapter:  Adapter,
+  adapter:  () => Adapter,
   context:  RequestContext,
   options:  ActionOptions
 ) => Pack | Promise<Pack>
 export type DeleteAction<R extends AnyResource> = (
   this:     R,
   selector: BulkSelector,
-  adapter:  Adapter,
+  adapter:  () => Adapter,
   context:  RequestContext
 ) => Pack | Promise<Pack>
 
@@ -292,7 +292,7 @@ export type ListRelatedAction<R extends AnyResource> = (
   locator:      ResourceLocator,
   relationship: string,
   params:       ListParams,
-  adapter:      Adapter,
+  adapter:      () => Adapter,
   context:      RequestContext,
   options:      ActionOptions
 ) => Pack | Promise<Pack>
@@ -301,7 +301,7 @@ export type GetRelatedAction<R extends AnyResource> = (
   this:         R,
   locator:      ResourceLocator,
   relationship: string,
-  adapter:      Adapter,
+  adapter:      () => Adapter,
   context:      RequestContext,
   options:      ActionOptions
 ) => Pack | Promise<Pack>
@@ -315,7 +315,7 @@ export interface CustomCollectionAction<R extends AnyResource> {
   endpoint?:     string
   authenticate?: boolean
   deserialize?:  boolean
-  action:        (this: R, pack: Pack, adapter: Adapter, context: RequestContext, options: ActionOptions) => Promise<Pack>
+  action:        (this: R, pack: Pack, adapter: () => Adapter, context: RequestContext, options: ActionOptions) => Promise<Pack>
 }
 
 export interface CustomDocumentAction<R extends AnyResource> {
@@ -324,7 +324,7 @@ export interface CustomDocumentAction<R extends AnyResource> {
   endpoint?:     string
   authenticate?: boolean
   deserialize?:  boolean
-  action:        (this: R, locator: ResourceLocator, pack: Pack, adapter: Adapter, context: RequestContext, options: ActionOptions) => Promise<Pack>
+  action:        (this: R, locator: ResourceLocator, pack: Pack, adapter: () => Adapter, context: RequestContext, options: ActionOptions) => Promise<Pack>
 }
 
 export type ModelOf<Cfg extends ResourceConfig<any, any>> = Cfg extends ResourceConfig<infer M, any> ? M : never
