@@ -446,7 +446,7 @@ export default class Resource<Model, Query> {
     }
 
     const responsePack = this.config.update != null
-      ? await this.config.update.call(this, document, meta, adapter, context, options)
+      ? await this.config.update.call(this, locator, document, meta, adapter, context, options)
       : await adapter().update(locator, document, meta, options)
 
     this.injectPackSelfLinks(responsePack, context)

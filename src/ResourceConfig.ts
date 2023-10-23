@@ -274,6 +274,7 @@ export type CreateAction<R extends AnyResource> = (
 ) => Pack | Promise<Pack>
 export type UpdateAction<R extends AnyResource> = (
   this:     R,
+  locator:  ResourceLocator,
   document: Document,
   meta:     Meta,
   adapter:  () => Adapter,
