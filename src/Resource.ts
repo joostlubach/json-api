@@ -230,9 +230,10 @@ export default class Resource<Model, Query> {
   public async getPackMeta(context: RequestContext) {
     const meta: Record<string, any> = {}
 
-    for (const [key, config] of objectEntries(this.config.meta ?? {})) {
+    const promises = objectEntries(this.config.meta ?? {}).map(async ([key, config]) => {
       meta[key] = await config.get.call(this, context)
-    }
+    })
+    await Promise.all(promises)
 
     return meta
   }
@@ -240,9 +241,10 @@ export default class Resource<Model, Query> {
   public async getDocumentMeta(model: Model, context: RequestContext) {
     const meta: Record<string, any> = {}
 
-    for (const [key, config] of objectEntries(this.config.documentMeta ?? {})) {
+    const promises = objectEntries(this.config.documentMeta ?? {}).map(async ([key, config]) => {
       meta[key] = await config.get.call(this, model, context)
-    }
+    })
+    await Promise.all(promises)
 
     return meta
   }
@@ -268,10 +270,20 @@ export default class Resource<Model, Query> {
   }
 
   /**
-   * Injects proper 'self' links into the resulting pack for this resource.
+   * Injects pack meta into a response pack.
    *
-   * @param pack The resulting pack.
-   * @param request The request.
+   * @param pack The pack to inject the meta into.
+   * @param context The request context.
+   */
+  private async injectPackMeta(pack: Pack, context: RequestContext) {
+    Object.assign(pack.meta, await this.getPackMeta(context))
+  }
+
+  /**
+   * Injects proper 'self' links into the response pack for this resource.
+   *
+   * @param pack The response pack.
+   * @param context The request context.
    */
   private injectPackSelfLinks(pack: Pack, context: RequestContext) {
     // Start by interpolating current request parameters in our base. This is useful in case resources
@@ -410,6 +422,7 @@ export default class Resource<Model, Query> {
       : await adapter().list(params, options)
 
     this.injectPackSelfLinks(pack, context)
+    await this.injectPackMeta(pack, context)
     await this.injectPaginationMeta(pack, context, params.offset)
     return pack
   }
@@ -424,6 +437,7 @@ export default class Resource<Model, Query> {
       : await adapter().get(locator, options)
 
     this.injectPackSelfLinks(responsePack, context)
+    await this.injectPackMeta(responsePack, context)
     return responsePack
   }
 
@@ -437,6 +451,7 @@ export default class Resource<Model, Query> {
       : await adapter().create(document, requestPack, options)
 
     this.injectPackSelfLinks(responsePack, context)
+    await this.injectPackMeta(responsePack, context)
     return responsePack
   }
 
@@ -450,6 +465,7 @@ export default class Resource<Model, Query> {
       : await adapter().update(locator, document, meta, options)
 
     this.injectPackSelfLinks(responsePack, context)
+    await this.injectPackMeta(responsePack, context)
     return responsePack
   }
 
@@ -463,6 +479,7 @@ export default class Resource<Model, Query> {
       : await adapter().delete(selector)
 
     this.injectPackSelfLinks(responsePack, context)
+    await this.injectPackMeta(responsePack, context)
     return responsePack
   }
 
@@ -486,6 +503,7 @@ export default class Resource<Model, Query> {
       : await adapter().listRelated(locator, relationship, params, options)
 
     this.injectPackSelfLinks(pack, context)
+    await this.injectPackMeta(pack, context)
     await this.injectPaginationMeta(pack, context, params.offset)
     return pack
   }
@@ -506,6 +524,7 @@ export default class Resource<Model, Query> {
       : await adapter().getRelated(locator, relationship, options)
 
     this.injectPackSelfLinks(pack, context)
+    await this.injectPackMeta(pack, context)
     return pack
   }
 
@@ -532,6 +551,7 @@ export default class Resource<Model, Query> {
 
     const responsePack = await action.action.call(this, locator, requestPack, adapter, context, options)
     this.injectPackSelfLinks(responsePack, context)
+    await this.injectPackMeta(responsePack, context)
     return responsePack
   }
 
