@@ -13,7 +13,7 @@ export default class Pack {
     public data:     Data | null,
     public included: Collection = new Collection(),
     public links:    Links = {},
-    public meta:     Meta = {}
+    public meta:     Meta = {},
   ) {
     this.links = {...links}
     this.meta = {...meta}
@@ -62,10 +62,10 @@ export default class Pack {
       : this.data
 
     return {
-      data:     data,
-      included: included,
-      links:    this.links,
-      meta:     this.meta,
+      data,
+      included,
+      links: this.links,
+      meta:  this.meta,
     }
   }
 

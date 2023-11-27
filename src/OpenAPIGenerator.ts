@@ -8,7 +8,7 @@ export default class OpenAPIGenerator {
   constructor(
     private readonly dir: string,
     private readonly version: string,
-    private readonly baseURL: string
+    private readonly baseURL: string,
   ) {}
 
   public async generate() {
@@ -30,7 +30,7 @@ export default class OpenAPIGenerator {
 
   private async loadResources() {
     const resourceDir = Path.join(this.dir, 'resources')
-    const files       = await FS.readdir(resourceDir)
+    const files = await FS.readdir(resourceDir)
     return await Promise.all(files.map(file => this.loadResource(Path.join(resourceDir, file))))
   }
 
@@ -40,7 +40,7 @@ export default class OpenAPIGenerator {
     return {}
   }
 
-  //------
+  // ------
   // Support
 
   private async loadFile(path: string, interpolation: Record<string, any> = {}) {

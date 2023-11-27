@@ -19,7 +19,7 @@ export default class Controller<Model, Query extends Adapter> {
   constructor(
     private readonly registry: ResourceRegistry<Model, Query>,
     private readonly adapter: <M, Q>(resource: Resource<M, Q>, context: RequestContext) => Adapter,
-    private readonly options: ControllerOptions = {}
+    private readonly options: ControllerOptions = {},
   ) {}
 
   // ------
@@ -32,7 +32,7 @@ export default class Controller<Model, Query extends Adapter> {
       throw new Error("This controller is already mounted.")
     }
     const app = appOrRouter as Application
-    this.app  = app
+    this.app = app
 
     app.get('/openapi.json', this.openAPI.bind(this))
 
@@ -129,7 +129,7 @@ export default class Controller<Model, Query extends Adapter> {
     response: Response,
     context: RequestContext,
     enforceContentType: boolean,
-    authenticate: boolean
+    authenticate: boolean,
   ) {
     validateRequest(request, context, resource)
 
@@ -147,7 +147,7 @@ export default class Controller<Model, Query extends Adapter> {
   // Actions
 
   public async list(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
-    const params  = resource.extractListParams(context)
+    const params = resource.extractListParams(context)
     const adapter = () => this.adapter(resource, context)
     const options = resource.extractRetrievalActionOptions(context)
 
@@ -166,9 +166,9 @@ export default class Controller<Model, Query extends Adapter> {
 
   public async create(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
     const requestPack = Pack.deserialize(this.registry, request.body)
-    const document    = resource.extractRequestDocument(requestPack, false, context)
-    const adapter     = () => this.adapter(resource, context)
-    const options     = resource.extractActionOptions(context)
+    const document = resource.extractRequestDocument(requestPack, false, context)
+    const adapter = () => this.adapter(resource, context)
+    const options = resource.extractActionOptions(context)
 
     const responsePack = await resource.create(document, requestPack, adapter, context, options)
 
@@ -177,47 +177,47 @@ export default class Controller<Model, Query extends Adapter> {
   }
 
   public async update(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
-    const locator     = resource.extractResourceLocator(context)
+    const locator = resource.extractResourceLocator(context)
     const requestPack = Pack.deserialize(this.registry, request.body)
-    const document    = resource.extractRequestDocument(requestPack, true, context)
-    const adapter     = () => this.adapter(resource, context)
-    const options     = resource.extractActionOptions(context)
+    const document = resource.extractRequestDocument(requestPack, true, context)
+    const adapter = () => this.adapter(resource, context)
+    const options = resource.extractActionOptions(context)
 
     const responsePack = await resource.update(locator, document, requestPack, adapter, context, options)
     response.json(responsePack.serialize())
   }
 
   public async delete(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
-    const adapter     = () => this.adapter(resource, context)
+    const adapter = () => this.adapter(resource, context)
     const requestPack = request.body?.data != null ? Pack.deserialize(this.registry, request.body) : new Pack(null)
-    const selector    = resource.extractBulkSelector(requestPack, context)
+    const selector = resource.extractBulkSelector(requestPack, context)
 
     const responsePack = await resource.delete(selector, adapter, context)
     response.json(responsePack.serialize())
   }
 
   public async listRelated(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
-    const locator      = resource.extractResourceLocator(context)
+    const locator = resource.extractResourceLocator(context)
     const relationship = context.param('relationship', string())
-    const params       = resource.extractListParams(context)
-    const adapter      = () => this.adapter(resource, context)
-    const options      = resource.extractRetrievalActionOptions(context)
+    const params = resource.extractListParams(context)
+    const adapter = () => this.adapter(resource, context)
+    const options = resource.extractRetrievalActionOptions(context)
 
     const responsePack = await resource.listRelated(locator, relationship, params, adapter, context, options)
     response.json(responsePack.serialize())
   }
 
   public async getRelated(resource: Resource<Model, Query>, request: Request, response: Response, context: RequestContext) {
-    const locator      = resource.extractResourceLocator(context)
+    const locator = resource.extractResourceLocator(context)
     const relationship = context.param('relationship', string())
-    const adapter      = () => this.adapter(resource, context)
-    const options      = resource.extractRetrievalActionOptions(context)
+    const adapter = () => this.adapter(resource, context)
+    const options = resource.extractRetrievalActionOptions(context)
 
     const responsePack = await resource.getRelated(locator, relationship, adapter, context, options)
     response.json(responsePack.serialize())
   }
 
-  //------
+  // ------
   // Custom actions
 
   private customCollectionAction<R extends Resource<Model, Query>>(spec: CustomCollectionAction<R>) {
@@ -228,7 +228,7 @@ export default class Controller<Model, Query extends Adapter> {
 
       const adapter = () => this.adapter(resource, context)
       const options = resource.extractActionOptions(context)
-      const pack    = await spec.action.call(resource, requestPack, adapter, context, options)
+      const pack = await spec.action.call(resource, requestPack, adapter, context, options)
       response.json(pack.serialize())
     }
   }
@@ -248,7 +248,7 @@ export default class Controller<Model, Query extends Adapter> {
     }
   }
 
-  //------
+  // ------
   // Open API
 
   private async openAPI(request: Request, response: Response, next: NextFunction) {

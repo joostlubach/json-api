@@ -7,7 +7,7 @@ export default class ErrorPack {
     public readonly status: number,
     public readonly message: string,
     public readonly errors?: any[],
-    public readonly meta: Meta = {}
+    public readonly meta: Meta = {},
   ) {}
 
   public serialize(): any {

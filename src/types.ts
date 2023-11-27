@@ -24,8 +24,8 @@ export interface Sort {
 export type Constructor<T> = new (...args: any[]) => T
 export type RelatedQuery = any
 
-export type Meta            = Record<string, any>
-export type AttributeBag    = Record<string, any>
+export type Meta = Record<string, any>
+export type AttributeBag = Record<string, any>
 
 export type RelationshipBag = Record<string, Relationship>
 
@@ -51,7 +51,7 @@ export interface JSONAPIError {
   detail?: string | null
 
   source?: {
-    pointer?: string
+    pointer?:   string
     parameter?: string
   }
 }
@@ -77,9 +77,9 @@ export interface ListParams {
 }
 
 export interface BulkSelector {
-  ids?:         string[]
-  filters?:     Record<string, any>
-  search?:      string
+  ids?:     string[]
+  filters?: Record<string, any>
+  search?:  string
 }
 
 export type ResourceID = string | number

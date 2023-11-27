@@ -26,9 +26,9 @@ export default interface Adapter {
 }
 
 export interface ModelToDocumentOptions {
-  detail?:  boolean
+  detail?: boolean
 }
 
 export interface ModelsToCollectionOptions {
-  detail?:  boolean
+  detail?: boolean
 }

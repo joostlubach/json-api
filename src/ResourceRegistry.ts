@@ -10,15 +10,17 @@ import { ResourceConfig } from './ResourceConfig'
 export default class ResourceRegistry<Model, Query> {
 
   constructor(
-    options: ResourceRegistryOptions<Model, Query> = {}
+    options: ResourceRegistryOptions<Model, Query> = {},
   ) {
     this.middleware =
-      isArray(options.middleware) ? options.middleware :
-      options.middleware == null ? [] :
-      [options.middleware]
+      isArray(options.middleware)
+        ? options.middleware
+        : options.middleware == null
+          ? []
+          : [options.middleware]
   }
 
-  private readonly resources: Map<string, Resource<any, any>> = new Map()
+  private readonly resources:  Map<string, Resource<any, any>> = new Map()
   private readonly middleware: Middleware<any, any>[] = []
 
   // #region Registering

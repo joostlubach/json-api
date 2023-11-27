@@ -8,7 +8,7 @@ import Validator, {
   TypeOptions,
 } from 'validator'
 import { object } from 'validator/types'
-import { Constructor } from 'ytil'
+import { Constructor, AnyConstructor } from 'ytil'
 import APIError from './APIError'
 
 export default class RequestContext<P = Record<string, any>> {
@@ -55,7 +55,7 @@ export default class RequestContext<P = Record<string, any>> {
    * @returns Whether the parameters match the schema.
    */
   public validate<S extends ObjectSchema>(schema: S): this is RequestContext<SchemaInstance<S>> {
-    const result    = this.validator.validateType(this.params as SchemaInstance<S>, object({schema}))
+    const result = this.validator.validateType(this.params as SchemaInstance<S>, object({schema}))
     return result.isValid
   }
 
@@ -63,17 +63,17 @@ export default class RequestContext<P = Record<string, any>> {
 
   // #region Dependency injection
 
-  private readonly dependencies = new WeakMap<Function, () => any>()
+  private readonly dependencies = new WeakMap<AnyConstructor, () => any>()
 
   public provide<T>(Ctor: Constructor<T>, value: T | (() => T)): void
-  public provide(Ctor: Function, value: any | (() => any)): void
+  public provide(Ctor: AnyConstructor, value: any | (() => any)): void
   public provide(key: any, value: any) {
     this.dependencies.set(key, value)
   }
 
   public get<C extends Constructor<any>>(Ctor: C): InstanceType<C>
-  public get<T>(Ctor: Function): T
-  public get(Ctor: Function) {
+  public get<T>(Ctor: AnyConstructor): T
+  public get(Ctor: AnyConstructor) {
     const value = this.dependencies.get(Ctor)
     if (value == null) {
       throw new Error(`No dependency found for ${Ctor.name}`)

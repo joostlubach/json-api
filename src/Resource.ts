@@ -38,7 +38,7 @@ export default class Resource<Model, Query> {
   constructor(
     public readonly registry: ResourceRegistry<any, any>,
     public readonly type:     string,
-    public readonly config:   ResourceConfig<Model, Query>
+    public readonly config:   ResourceConfig<Model, Query>,
   ) {}
 
   // #region Naming
@@ -290,7 +290,7 @@ export default class Resource<Model, Query> {
     // use interpolation values in their base (e.g. `scripts/:scriptID/messages`).
     if (context.requestURI == null) { return null }
 
-    const base        = context.requestURI
+    const base = context.requestURI
     const baseNoQuery = new URL({...context.requestURI, search: ''})
     if (base == null ?? baseNoQuery == null) { return }
 
@@ -385,7 +385,7 @@ export default class Resource<Model, Query> {
       if (context.requestURI != null) {
         const url = new URL({
           ...context.requestURI,
-          searchParams: new URLSearchParams({offset: `${nextOffset}`})
+          searchParams: new URLSearchParams({offset: `${nextOffset}`}),
         })
         if (url != null) {
           pack.links.next = url.toString()
@@ -513,7 +513,7 @@ export default class Resource<Model, Query> {
     relationship: string,
     adapter:      () => Adapter,
     context:      RequestContext,
-    options:      ActionOptions
+    options:      ActionOptions,
   ): Promise<Pack> {
     if (this.config.getRelated === false) {
       throw new APIError(405, `Action \`getRelated\` not available`)
@@ -571,7 +571,7 @@ export default class Resource<Model, Query> {
   public extractRequestDocument(pack: Pack, requireID: boolean, context: RequestContext): Document
   public extractRequestDocument(pack: Pack, requireID: boolean, context: RequestContext): Document {
     const document = pack.data
-    const idParam  = context.param('id', string({required: false}))
+    const idParam = context.param('id', string({required: false}))
 
     if (document == null) {
       throw new APIError(400, "No document sent")
@@ -598,20 +598,20 @@ export default class Resource<Model, Query> {
 
   public extractRetrievalActionOptions(context: RequestContext): RetrievalActionOptions {
     const include = context.param('include', string({default: ''})).split(',').map(it => it.trim()).filter(it => it !== '')
-    const detail  = context.param('detail', boolean({default: false}))
+    const detail = context.param('detail', boolean({default: false}))
 
     return {
       ...this.extractActionOptions(context),
       include,
-      detail
+      detail,
     }
   }
 
   public extractListParams(context: RequestContext): ListParams {
-    const label           = context.param('label', string({required: false}))
-    const filters         = this.extractFilters(context)
-    const search          = this.extractSearch(context)
-    const sorts           = this.extractSorts(context)
+    const label = context.param('label', string({required: false}))
+    const filters = this.extractFilters(context)
+    const search = this.extractSearch(context)
+    const sorts = this.extractSorts(context)
     const {limit, offset} = this.extractPagination(context)
 
     return {filters, label, search, sorts, limit, offset}
@@ -620,7 +620,7 @@ export default class Resource<Model, Query> {
   public extractFilters(context: RequestContext) {
     return context.param('filter', dictionary({
       valueType: any(),
-      default:   () => ({})
+      default:   () => ({}),
     }))
   }
 
@@ -648,13 +648,13 @@ export default class Resource<Model, Query> {
 
   public extractPagination(context: RequestContext): {offset: number, limit: number | null} {
     const offset = context.param('limit', number({integer: true, defaultValue: 0}))
-    const limit  = context.param('limit', number({integer: true, required: false}))
+    const limit = context.param('limit', number({integer: true, required: false}))
 
     return {offset, limit}
   }
 
   public extractResourceLocator(context: RequestContext): ResourceLocator {
-    const id        = context.param('id', string({required: false}))
+    const id = context.param('id', string({required: false}))
     const singleton = context.param('singleton', string({required: false}))
 
     if (id != null) {
@@ -687,8 +687,8 @@ export default class Resource<Model, Query> {
       }
 
       return {
-        filters: filters,
-        search:  search,
+        filters,
+        search,
       }
     }
   }

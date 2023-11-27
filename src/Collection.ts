@@ -17,7 +17,7 @@ export default class Collection {
   public add(collection: Collection): void
   public add(...args: any[]) {
     if (args.length === 1 && args[0] instanceof Collection) {
-    this.documents.push(...args[0].documents)
+      this.documents.push(...args[0].documents)
     } else {
       this.documents.push(...args)
     }

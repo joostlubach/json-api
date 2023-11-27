@@ -12,7 +12,7 @@ export default class Document {
     public attributes:    AttributeBag = {},
     public relationships: RelationshipBag = {},
     public links:         Links = {},
-    public meta:          Meta = {}
+    public meta:          Meta = {},
   ) {
     this.links = {...links}
     this.meta = {...meta}
@@ -43,10 +43,10 @@ export default class Document {
     }
 
     const document = new Document(resource, serialized.id, detail)
-    document.attributes    = document.deserializeAttributes({...serialized.attributes})
+    document.attributes = document.deserializeAttributes({...serialized.attributes})
     document.relationships = document.deserializeRelationships({...serialized.relationships})
-    document.links         = {...serialized.links}
-    document.meta          = {...serialized.meta}
+    document.links = {...serialized.links}
+    document.meta = {...serialized.meta}
 
     return document
   }
