@@ -1,5 +1,6 @@
 import { Request } from 'express'
 import { isPlainObject } from 'lodash'
+
 import APIError from '../APIError'
 import RequestContext from '../RequestContext'
 import { AnyResource } from '../types'

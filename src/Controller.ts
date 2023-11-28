@@ -1,6 +1,7 @@
 import { Application, NextFunction, Request, Response, Router } from 'express'
 import { string } from 'validator/types'
 import { objectEntries } from 'ytil'
+
 import Adapter from './Adapter'
 import APIError from './APIError'
 import OpenAPIGenerator from './OpenAPIGenerator'

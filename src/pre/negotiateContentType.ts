@@ -1,4 +1,5 @@
 import { Request, Response } from 'express'
+
 import APIError from '../APIError'
 
 const availableTypes = ['application/json', 'application/vnd.api+json']

@@ -1,4 +1,5 @@
 import { isFunction } from 'lodash'
+
 import APIError from './APIError'
 import ResourceRegistry from './ResourceRegistry'
 import { AnyResource, AttributeBag, Links, Meta, RelationshipBag } from './types'

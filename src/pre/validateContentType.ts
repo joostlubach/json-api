@@ -1,5 +1,6 @@
-import { Request } from 'express'
 import { parse as parseContentType } from 'content-type'
+import { Request } from 'express'
+
 import APIError from '../APIError'
 import { bodyPresent } from './validateRequest'
 

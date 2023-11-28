@@ -1,4 +1,5 @@
 import { isArray, isPlainObject } from 'lodash'
+
 import APIError from './APIError'
 import Collection from './Collection'
 import Document from './Document'

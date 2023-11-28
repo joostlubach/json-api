@@ -8,7 +8,8 @@ import Validator, {
   TypeOptions,
 } from 'validator'
 import { object } from 'validator/types'
-import { Constructor, AnyConstructor } from 'ytil'
+import { AnyConstructor, Constructor } from 'ytil'
+
 import APIError from './APIError'
 
 export default class RequestContext<P = Record<string, any>> {

@@ -1,4 +1,5 @@
 import { isArray } from 'lodash'
+
 import { BeforeHandler, ResourceConfig } from './ResourceConfig'
 
 export function middleware<M = any, Q = any>(mw: Middleware<M, Q>) {

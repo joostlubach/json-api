@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 import { isArray } from 'lodash'
 import { objectEntries } from 'ytil'
+
 import APIError from './APIError'
 import config from './config'
 import { Middleware, runMiddleware } from './middleware'

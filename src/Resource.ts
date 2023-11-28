@@ -2,6 +2,7 @@ import { singularize } from 'inflected'
 import { isFunction, isPlainObject } from 'lodash'
 import { any, boolean, dictionary, number, string } from 'validator/types'
 import { objectEntries } from 'ytil'
+
 import Adapter from './Adapter'
 import APIError from './APIError'
 import Collection from './Collection'
