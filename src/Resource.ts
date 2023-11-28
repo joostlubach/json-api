@@ -428,7 +428,7 @@ export default class Resource<Model, Query> {
     return pack
   }
 
-  public async get(locator: ResourceLocator, adapter: () => Adapter, context: RequestContext, options: RetrievalActionOptions = {}): Promise<Pack> {
+  public async show(locator: ResourceLocator, adapter: () => Adapter, context: RequestContext, options: RetrievalActionOptions = {}): Promise<Pack> {
     if (this.config.get === false) {
       throw new APIError(405, `Action \`show\` not available`)
     }

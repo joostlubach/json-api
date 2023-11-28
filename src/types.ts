@@ -56,9 +56,8 @@ export interface JSONAPIError {
   }
 }
 
-export interface ActionOptions {
-  sendProgress?: (current: number, total: number) => any
-}
+// Reserved for future use.
+export interface ActionOptions {}
 
 export interface RetrievalActionOptions extends ActionOptions {
   include?: Include[]

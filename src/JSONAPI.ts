@@ -23,7 +23,7 @@ export default abstract class JSONAPI<Model, Query> {
     const adapter = () => this.adapter(resource, context)
 
     await resource.runBeforeHandlers(context)
-    return await resource.get(locator, adapter, context, options)
+    return await resource.show(locator, adapter, context, options)
   }
 
   public async list(resourceType: string, params: ListParams, context: RequestContext, options: RetrievalActionOptions = {}) {

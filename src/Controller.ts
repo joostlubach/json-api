@@ -161,7 +161,7 @@ export default class Controller<Model, Query extends Adapter> {
     const adapter = () => this.adapter(resource, context)
     const options = resource.extractRetrievalActionOptions(context)
 
-    const pack = await resource.get(locator, adapter, context, options)
+    const pack = await resource.show(locator, adapter, context, options)
     response.json(pack.serialize())
   }
 
