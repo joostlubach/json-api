@@ -64,23 +64,24 @@ export default class RequestContext<P = Record<string, any>> {
 
   // #region Dependency injection
 
-  private readonly dependencies = new WeakMap<AnyConstructor, () => any>()
+  private readonly dependencies = new WeakMap<AnyConstructor, () => Promise<any>>()
 
-  public provide<T>(Ctor: Constructor<T>, value: T | (() => T)): void
-  public provide(Ctor: AnyConstructor, value: any | (() => any)): void
+  public provide<T>(Ctor: Constructor<T>, value: T | Promise<T> | (() => T | Promise<T>)): void
+  public provide(Ctor: AnyConstructor, value: any | Promise<any> | (() => any | Promise<any>)): void
   public provide(key: any, value: any) {
-    this.dependencies.set(key, value)
+    const dep = isFunction(value) ? () => Promise.resolve(value()) : () => Promise.resolve(value)
+    this.dependencies.set(key, dep)
   }
 
-  public get<C extends Constructor<any>>(Ctor: C): InstanceType<C>
-  public get<T>(Ctor: AnyConstructor): T
+  public get<C extends Constructor<any>>(Ctor: C): Promise<InstanceType<C>>
+  public get<T>(Ctor: AnyConstructor): Promise<T>
   public get(Ctor: AnyConstructor) {
-    const value = this.dependencies.get(Ctor)
-    if (value == null) {
+    const dep = this.dependencies.get(Ctor)
+    if (dep == null) {
       throw new Error(`No dependency found for ${Ctor.name}`)
     }
 
-    return isFunction(value) ? value() : value
+    return dep()
   }
 
   // #endregion
