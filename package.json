@@ -37,6 +37,7 @@
     "js-yaml": "^4.1.0",
     "url-template": "^2.0.8",
     "validator": "workspace:^",
+    "ydeps": "workspace:^",
     "ytil": "workspace:^"
   },
   "devDependencies": {

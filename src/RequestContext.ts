@@ -1,4 +1,3 @@
-import { isFunction } from 'lodash'
 import Validator, {
   INVALID,
   ObjectSchema,
@@ -8,7 +7,8 @@ import Validator, {
   TypeOptions,
 } from 'validator'
 import { object } from 'validator/types'
-import { AnyConstructor, Constructor } from 'ytil'
+import { DependencyProvider } from 'ydeps'
+import { Constructor } from 'ytil'
 
 import APIError from './APIError'
 
@@ -18,7 +18,12 @@ export default class RequestContext<P = Record<string, any>> {
     public readonly action: string,
     private readonly params: P,
     public readonly requestURI?: URL,
-  ) {}
+    deps?: DependencyProvider,
+  ) {
+    this.deps = new DependencyProvider({upstream: deps})
+  }
+
+  public readonly deps: DependencyProvider
 
   // #region Parameters
 
@@ -62,26 +67,27 @@ export default class RequestContext<P = Record<string, any>> {
 
   // #endregion
 
-  // #region Dependency injection
+  // #region Dependencies
 
-  private readonly dependencies = new WeakMap<AnyConstructor, () => Promise<any>>()
+  // Expose these to the context as direct methods, as they are used a lot, and the context is in
+  // essence a dependency provider.
 
-  public provide<T>(Ctor: Constructor<T>, value: T | Promise<T> | (() => T | Promise<T>)): void
-  public provide(Ctor: AnyConstructor, value: any | Promise<any> | (() => any | Promise<any>)): void
-  public provide(key: any, value: any) {
-    const dep = isFunction(value) ? () => Promise.resolve(value()) : () => Promise.resolve(value)
-    this.dependencies.set(key, dep)
+  public provide<Ctor extends Constructor<any>>(key: Ctor, getter: () => InstanceType<Ctor> | Promise<InstanceType<Ctor>>): void
+  public provide<T>(key: any, getter: () => any | Promise<any>): void
+  public provide(key: any, getter: () => any | Promise<any>) {
+    return this.deps.provide(key, getter)
   }
 
-  public get<C extends Constructor<any>>(Ctor: C): Promise<InstanceType<C>>
-  public get<T>(Ctor: AnyConstructor): Promise<T>
-  public get(Ctor: AnyConstructor) {
-    const dep = this.dependencies.get(Ctor)
-    if (dep == null) {
-      throw new Error(`No dependency found for ${Ctor.name}`)
-    }
+  public get<Ctor extends Constructor<any>>(key: Ctor): InstanceType<Ctor>
+  public get<T>(key: any): T
+  public get(key: any) {
+    return this.deps.get(key)
+  }
 
-    return dep()
+  public getAsync<Ctor extends Constructor<any>>(key: Ctor): InstanceType<Ctor>
+  public getAsync<T>(key: any): T
+  public getAsync(key: any) {
+    return this.deps.getAsync(key)
   }
 
   // #endregion
