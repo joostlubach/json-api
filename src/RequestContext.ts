@@ -84,8 +84,8 @@ export default class RequestContext<P = Record<string, any>> {
     return this.deps.get(key)
   }
 
-  public getAsync<Ctor extends Constructor<any>>(key: Ctor): InstanceType<Ctor>
-  public getAsync<T>(key: any): T
+  public getAsync<Ctor extends Constructor<any>>(key: Ctor): Promise<InstanceType<Ctor>>
+  public getAsync<T>(key: any): Promise<T>
   public getAsync(key: any) {
     return this.deps.getAsync(key)
   }
