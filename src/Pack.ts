@@ -35,10 +35,7 @@ export default class Pack {
   }
 
   public static deserialize(registry: ResourceRegistry<any, any>, serialized: any): Pack {
-    const {data: dataRaw, meta = {}, links = {}, included: includedRaw = [], ...rest} = serialized
-    if (dataRaw === undefined) {
-      throw new APIError(400, "Malformed pack: missing `data` node")
-    }
+    const {data: dataRaw = null, meta = {}, links = {}, included: includedRaw = [], ...rest} = serialized
     if (Object.keys(rest).length > 0) {
       throw new APIError(400, `Malformed pack: extraneous nodes ${Object.keys(rest).join(', ')} found`)
     }

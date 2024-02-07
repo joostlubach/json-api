@@ -5,7 +5,6 @@ import Resource from './Resource'
 import ResourceRegistry from './ResourceRegistry'
 import {
   ActionOptions,
-  BulkSelector,
   ListParams,
   ResourceLocator,
   RetrievalActionOptions,
@@ -34,26 +33,27 @@ export default abstract class JSONAPI<Model, Query> {
     return await resource.list(params, adapter, context, options)
   }
 
-  public async create(resourceType: string, pack: Pack, context: RequestContext, options: ActionOptions = {}) {
+  public async create(resourceType: string, requestPack: Pack, context: RequestContext, options: ActionOptions = {}) {
     const resource = this.registry.get(resourceType)
-    const document = resource.extractRequestDocument(pack, false, context)
+    const document = resource.extractRequestDocument(requestPack, false, context)
     const adapter = () => this.adapter(resource, context)
 
     await resource.runBeforeHandlers(context)
-    return await resource.create(document, pack, adapter, context, options)
+    return await resource.create(document, requestPack, adapter, context, options)
   }
 
-  public async update(resourceType: string, pack: Pack, context: RequestContext, options: ActionOptions = {}) {
+  public async update(resourceType: string, requestPack: Pack, context: RequestContext, options: ActionOptions = {}) {
     const resource = this.registry.get(resourceType)
-    const document = resource.extractRequestDocument(pack, true, context)
+    const document = resource.extractRequestDocument(requestPack, true, context)
     const adapter = () => this.adapter(resource, context)
 
     await resource.runBeforeHandlers(context)
-    return await resource.update({id: document.id}, document, pack.meta, adapter, context, options)
+    return await resource.update({id: document.id}, document, requestPack.meta, adapter, context, options)
   }
 
-  public async delete(resourceType: string, selector: BulkSelector, context: RequestContext) {
+  public async delete(resourceType: string, requestPack: Pack, context: RequestContext) {
     const resource = this.registry.get(resourceType)
+    const selector = resource.extractBulkSelector(requestPack, context)
     const adapter = () => this.adapter(resource, context)
 
     await resource.runBeforeHandlers(context)
