@@ -31,6 +31,9 @@ export default class Pack {
     if (!isPlainObject(serialized)) { return null }
     if (!('data' in serialized)) { return null }
 
+    const type = isArray(serialized.data) ? serialized.data[0]?.type : serialized.data?.type
+    if (type != null && !registry.has(type)) { return null }
+
     return this.deserialize(registry, serialized)
   }
 
