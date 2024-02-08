@@ -1,23 +1,40 @@
+import { string } from 'validator/types'
+import { wrapArray } from 'ytil'
+
 import Adapter, { ModelsToCollectionOptions, ModelToDocumentOptions } from './Adapter'
 import Pack from './Pack'
 import RequestContext from './RequestContext'
 import Resource from './Resource'
 import ResourceRegistry from './ResourceRegistry'
-import {
-  ActionOptions,
-  ListParams,
-  ResourceLocator,
-  RetrievalActionOptions,
-} from './types'
+import { Middleware } from './middleware'
+import { ActionOptions, DocumentLocator, ListParams, RetrievalActionOptions } from './types'
 
-export default abstract class JSONAPI<Model, Query> {
+/**
+ * Facade base class. Derive from this class in your application to expose a JSON API.
+ */
+export default abstract class JSONAPI<Model, Query, ID> {
 
-  public abstract registry: ResourceRegistry<Model, Query>
-  public abstract adapter(resource: Resource<Model, Query>, context: RequestContext): Adapter
+  constructor(
+    options: JSONAPIOptions<Model, Query, ID> = {},
+  ) {
+    this.registry = new ResourceRegistry<Model, Query, ID>(
+      this,
+      options.middleware == null ? [] : wrapArray(options.middleware)
+    )
+  }
+
+  public readonly registry: ResourceRegistry<Model, Query, ID>
+  
+  public abstract adapter(resource: Resource<Model, Query, ID>, context: RequestContext): Adapter<Model, Query, ID>
+  public abstract parseID(id: string): ID
+
+  // #region Registration
+  
+  // #endregion
 
   // #region CRUD
 
-  public async show(resourceType: string, locator: ResourceLocator, context: RequestContext, options: RetrievalActionOptions = {}) {
+  public async show(resourceType: string, locator: DocumentLocator<ID>, context: RequestContext, options: RetrievalActionOptions = {}) {
     const resource = this.registry.get(resourceType)
     const adapter = () => this.adapter(resource, context)
 
@@ -33,7 +50,7 @@ export default abstract class JSONAPI<Model, Query> {
     return await resource.list(params, adapter, context, options)
   }
 
-  public async create(resourceType: string, requestPack: Pack, context: RequestContext, options: ActionOptions = {}) {
+  public async create(resourceType: string, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
     const resource = this.registry.get(resourceType)
     const document = resource.extractRequestDocument(requestPack, false, context)
     const adapter = () => this.adapter(resource, context)
@@ -42,7 +59,7 @@ export default abstract class JSONAPI<Model, Query> {
     return await resource.create(document, requestPack, adapter, context, options)
   }
 
-  public async update(resourceType: string, requestPack: Pack, context: RequestContext, options: ActionOptions = {}) {
+  public async update(resourceType: string, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
     const resource = this.registry.get(resourceType)
     const document = resource.extractRequestDocument(requestPack, true, context)
     const adapter = () => this.adapter(resource, context)
@@ -51,9 +68,13 @@ export default abstract class JSONAPI<Model, Query> {
     return await resource.update({id: document.id}, document, requestPack.meta, adapter, context, options)
   }
 
-  public async delete(resourceType: string, requestPack: Pack, context: RequestContext) {
+  public async delete(resourceType: string, requestPack: Pack<ID>, context: RequestContext) {
     const resource = this.registry.get(resourceType)
+    
+    const idParam = context.param('id', string())
     const selector = resource.extractBulkSelector(requestPack, context)
+
+
     const adapter = () => this.adapter(resource, context)
 
     await resource.runBeforeHandlers(context)
@@ -64,7 +85,7 @@ export default abstract class JSONAPI<Model, Query> {
 
   // #region Custom actions
 
-  public async collectionAction(resourceType: string, action: string, requestPack: Pack, context: RequestContext, options: ActionOptions = {}) {
+  public async collectionAction(resourceType: string, action: string, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
     const resource = this.registry.get(resourceType)
     const adapter = () => this.adapter(resource, context)
 
@@ -72,7 +93,7 @@ export default abstract class JSONAPI<Model, Query> {
     return await resource.callCollectionAction(action, requestPack, adapter, context, options)
   }
 
-  public async documentAction(resourceType: string, locator: ResourceLocator, action: string, requestPack: Pack, context: RequestContext, options: ActionOptions = {}) {
+  public async documentAction(resourceType: string, locator: DocumentLocator<ID>, action: string, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
     const resource = this.registry.get(resourceType)
     const adapter = () => this.adapter(resource, context)
 
@@ -100,4 +121,8 @@ export default abstract class JSONAPI<Model, Query> {
 
   // #endregion
 
+}
+
+export interface JSONAPIOptions<M, Q, I> {
+  middleware?: Middleware<M, Q, I>[]
 }

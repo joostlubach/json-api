@@ -14,6 +14,16 @@
         "types": "./dist/esm/index.d.ts",
         "default": "./dist/esm/index.js"
       }
+    },
+    "./testing": {
+      "require": {
+        "types": "./dist/cjs/testing/index.d.ts",
+        "default": "./dist/cjs/testing/index.js"
+      },
+      "import": {
+        "types": "./dist/esm/testing/index.d.ts",
+        "default": "./dist/esm/testing/index.js"
+      }
     }
   },
   "scripts": {
@@ -38,6 +48,9 @@
     "validator": "workspace:^",
     "ydeps": "workspace:^",
     "ytil": "workspace:^"
+  },
+  "peerDependencies": {
+    "jest": "^29.7.0"
   },
   "devDependencies": {
     "@types/content-type": "^1.1.2",

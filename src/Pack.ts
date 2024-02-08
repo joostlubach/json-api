@@ -6,13 +6,11 @@ import Document from './Document'
 import ResourceRegistry from './ResourceRegistry'
 import { Links, Meta } from './types'
 
-export type Data = Document | Collection | any
-
-export default class Pack {
+export default class Pack<ID> {
 
   constructor(
-    public data:     Data | null,
-    public included: Collection = new Collection(),
+    public data:     Document<ID> | Collection<ID> | any | null,
+    public included: Collection<ID> = new Collection(),
     public links:    Links = {},
     public meta:     Meta = {},
   ) {
@@ -27,7 +25,7 @@ export default class Pack {
     }
   }
 
-  public static tryDeserialize(registry: ResourceRegistry<any, any>, serialized: any): Pack | null {
+  public static tryDeserialize<M, Q, I>(registry: ResourceRegistry<M, Q, I>, serialized: any): Pack<I> | null {
     if (!isPlainObject(serialized)) { return null }
     if (!('data' in serialized)) { return null }
 
@@ -37,7 +35,7 @@ export default class Pack {
     return this.deserialize(registry, serialized)
   }
 
-  public static deserialize(registry: ResourceRegistry<any, any>, serialized: any): Pack {
+  public static deserialize<M, Q, I>(registry: ResourceRegistry<M, Q, I>, serialized: any): Pack<I> {
     const {data: dataRaw = null, meta = {}, links = {}, included: includedRaw = [], ...rest} = serialized
     if (Object.keys(rest).length > 0) {
       throw new APIError(400, `Malformed pack: extraneous nodes ${Object.keys(rest).join(', ')} found`)
@@ -50,10 +48,10 @@ export default class Pack {
         : Document.deserialize(registry, dataRaw)
 
     const included = includedRaw == null
-      ? new Collection([])
+      ? new Collection<I>([])
       : Collection.deserialize(registry, includedRaw)
 
-    return new Pack(data, included, links, meta)
+    return new Pack<I>(data, included, links, meta)
   }
 
   public serialize(): any {

@@ -3,25 +3,47 @@ import Document from './Document'
 import Pack from './Pack'
 import {
   ActionOptions,
-  BulkSelector,
+  DocumentLocator,
   ListParams,
   Meta,
-  ResourceLocator,
   RetrievalActionOptions,
+  Sort,
 } from './types'
 
-export default interface Adapter {
+export default interface Adapter<Model, Query, ID> {
 
-  list(params: ListParams, options: RetrievalActionOptions): Promise<Pack>
-  get(locator: ResourceLocator, options: RetrievalActionOptions): Promise<Pack>
-  create(document: Document, meta: Meta, options: ActionOptions): Promise<Pack>
-  update(locator: ResourceLocator, document: Document, meta: Meta, options: ActionOptions): Promise<Pack>
-  delete(selector: BulkSelector): Promise<Pack>
-  listRelated(locator: ResourceLocator, relationship: string, params: ListParams, options: RetrievalActionOptions): Promise<Pack>
-  getRelated(locator: ResourceLocator, relationship: string, options: RetrievalActionOptions): Promise<Pack>
+  // #region Actions
 
-  modelToDocument(model: any, options?: ModelToDocumentOptions): Promise<Document>
-  modelsToCollection(models: any[], options?: ModelsToCollectionOptions): Promise<Collection>
+  list(query: Query, params: ListParams, options: RetrievalActionOptions): Promise<Pack<ID>>
+  get(query: Query, locator: DocumentLocator<ID>, options: RetrievalActionOptions): Promise<Pack<ID>>
+  create(query: Query, document: Document<ID>, meta: Meta, options: ActionOptions): Promise<Pack<ID>>
+  replace(query: Query, locator: DocumentLocator<ID>, document: Document<ID>, meta: Meta, options: ActionOptions): Promise<Pack<ID>>
+  update(query: Query, locator: DocumentLocator<ID>, document: Document<ID>, meta: Meta, options: ActionOptions): Promise<Pack<ID>>
+  delete(query: Query): Promise<Pack<ID>>
+
+  listRelated(locator: DocumentLocator<ID>, relationship: string, query: Query, params: ListParams, options: RetrievalActionOptions): Promise<Pack<ID>>
+  showRelated(locator: DocumentLocator<ID>, relationship: string, query: Query, options: RetrievalActionOptions): Promise<Pack<ID>>
+
+  // #endregion
+
+  // #region Query modifiers
+  
+  query(): Query
+  clearFilters(query: Query): Query
+  applyFilter(query: Query, field: string, value: any): Query | Promise<Query>
+  clearSorts(query: Query): Query
+  applySort(query: Query, sort: Sort): Query | Promise<Query>
+  applyOffset(query: Query, offset: number): Query | Promise<Query>
+  applyLimit(query: Query, limit: number): Query | Promise<Query>
+  
+  // #endregion
+  
+  // #region Utility
+
+  modelToDocument(model: Model, options?: ModelToDocumentOptions): Promise<Document<ID>>
+  modelsToCollection(models: Model[], options?: ModelsToCollectionOptions): Promise<Collection<ID>>
+
+  // #endregion
 
 }
 

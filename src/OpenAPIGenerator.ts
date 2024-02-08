@@ -34,7 +34,6 @@ export default class OpenAPIGenerator {
     return await Promise.all(files.map(file => this.loadResource(Path.join(resourceDir, file))))
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private async loadResource(path: string) {
     // TODO
     return {}

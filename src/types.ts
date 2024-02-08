@@ -1,15 +1,25 @@
+import { isPlainObject } from 'lodash'
+
 import Resource from './Resource'
 
-export type AnyResource = Resource<any, any>
+export type AnyResource = Resource<any, any, any>
 
-export type ResourceLocator = IDLocator | SingletonLocator
+export type DocumentLocator<I> = IDLocator<I> | SingletonLocator
 
-export interface IDLocator {
-  id: string
+export interface IDLocator<I> {
+  id: I
 }
 
 export interface SingletonLocator {
   singleton: string
+}
+
+export const DocumentLocator: {
+  isSingleton: <I>(locator: DocumentLocator<I>) => locator is SingletonLocator
+} = {
+  isSingleton(locator: DocumentLocator<any>): locator is SingletonLocator {
+    return 'singleton' in locator
+  },
 }
 
 export interface Filters {
@@ -39,6 +49,17 @@ export interface Linkage {
   type:  string
   id:    string
   meta?: Meta
+}
+
+export const Linkage: {
+  isLinkage: (arg: any) => arg is Linkage
+} = {
+  isLinkage: (arg: any): arg is Linkage => {
+    if (!isPlainObject(arg)) { return false }
+    if (!('type' in arg) || typeof arg.type !== 'string') { return false }
+    if (!('id' in arg) || !['string', 'number'].includes(arg.id)) { return false }
+    return true
+  },
 }
 
 export type Links = Record<string, string>
@@ -75,8 +96,8 @@ export interface ListParams {
   limit?:   number | null
 }
 
-export interface BulkSelector {
-  ids?:     string[]
+export interface BulkSelector<I> {
+  ids?:     I[]
   filters?: Record<string, any>
   search?:  string
 }
@@ -84,3 +105,7 @@ export interface BulkSelector {
 export type ResourceID = string | number
 export type Serialized = Record<string, any>
 export type Primitive = string | number | boolean
+
+export type ModelOf<R extends Resource<any, any, any>> = R extends Resource<infer M, any, any> ? M : never
+export type QueryOf<R extends Resource<any, any, any>> = R extends Resource<any, infer Q, any> ? Q : never
+export type IDOf<R extends Resource<any, any, any>> = R extends Resource<any, any, infer I> ? I : never

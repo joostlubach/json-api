@@ -4,11 +4,11 @@ import APIError from './APIError'
 import ResourceRegistry from './ResourceRegistry'
 import { AnyResource, AttributeBag, Links, Meta, RelationshipBag } from './types'
 
-export default class Document {
+export default class Document<ID> {
 
   constructor(
     public resource:      AnyResource,
-    public id:            string | null,
+    public id:            ID | null,
     public detail:        boolean,
     public attributes:    AttributeBag = {},
     public relationships: RelationshipBag = {},
@@ -33,7 +33,7 @@ export default class Document {
     return serialized
   }
 
-  public static deserialize(registry: ResourceRegistry<any, any>, serialized: Record<string, any>, detail: boolean = true): Document {
+  public static deserialize<M, Q, I>(registry: ResourceRegistry<M, Q, I>, serialized: Record<string, any>, detail: boolean = true): Document<I> {
     if (serialized.type == null) {
       throw new APIError(400, "missing 'type' node")
     }
