@@ -20,11 +20,11 @@ export default class ResourceRegistry<Model, Query, ID> {
 
   // #region Registering
 
-  public register(resources: Record<string, ResourceConfig<any, any, any>>): void
+  public register(resources: Record<string, ResourceConfig<Model, Query, ID>>): void
   public register<M extends Model, Q extends Query, I extends ID>(type: string, config: ResourceConfig<M, Q, I>): void
   public register(...args: any[]) {
     if (args.length === 1) {
-      for (const [type, config] of objectEntries(args[0] as Record<string, ResourceConfig<any, any, any>>)) {
+      for (const [type, config] of objectEntries(args[0] as Record<string, ResourceConfig<Model, Query, ID>>)) {
         this.registerResource(type, config)
       }
     } else {
@@ -33,7 +33,12 @@ export default class ResourceRegistry<Model, Query, ID> {
     }
   }
 
-  private registerResource(type: string, resourceConfig: ResourceConfig<any, any, any>) {
+  public modify(type: string, fn: (config: ResourceConfig<Model, Query, ID>) => void) {
+    const resource = this.get(type)
+    fn(resource.config)
+  }
+
+  private registerResource(type: string, resourceConfig: ResourceConfig<Model, Query, ID>) {
     runMiddleware(this.middleware, resourceConfig)
 
     const resource = new Resource(this.jsonAPI, type, resourceConfig)

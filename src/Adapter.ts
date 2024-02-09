@@ -15,7 +15,7 @@ export default interface Adapter<Model, Query, ID> {
 
   // #region Actions
 
-  list(query: Query, params: ListParams, options: RetrievalActionOptions): Promise<Model[]>
+  list(query: Query, params: ListParams, options: RetrievalActionOptions): Promise<Model[] | [Model[], number]>
   get(query: Query, locator: DocumentLocator<ID>, options: RetrievalActionOptions): Promise<Model>
   create(query: Query, document: Document<ID>, meta: Meta, options: ActionOptions): Promise<Model>
   replace(query: Query, locator: DocumentLocator<ID>, document: Document<ID>, meta: Meta, options: ActionOptions): Promise<Model>

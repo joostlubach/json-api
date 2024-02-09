@@ -48,7 +48,7 @@ export interface ResourceConfig<Model, Query, ID> {
   // Serialization
 
   /// The serialzable attributes for this resource.
-  attributes?: AttributeMap<Model, Query, ID>
+  attributes: AttributeMap<Model, Query, ID>
 
   /// Relationship configuration for this resource.
   relationships?: RelationshipMap<Model, Query, ID>
@@ -248,7 +248,7 @@ export type ListAction<M, Q, I> = (
   adapter: Adapter<M, Q, I>,
   context: RequestContext,
   options: ActionOptions
-) => Promise<M[]>
+) => Promise<M[] | [M[], number]>
 export type GetAction<M, Q, I> = (
   this:    Resource<M, Q, I>,
   locator: DocumentLocator<I>,
@@ -297,7 +297,7 @@ export type ListRelatedAction<M, Q, I> = (
   adapter:      Adapter<M, Q, I>,
   context:      RequestContext,
   options:      ActionOptions
-) => Promise<M[]>
+) => Promise<M[] | [M[], number]>
 
 export type GetRelatedAction<M, Q, I> = (
   this:         Resource<M, Q, I>,

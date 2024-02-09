@@ -1,6 +1,7 @@
 import { MockJSONAPI } from './mock'
 
 import RequestContext from '../RequestContext'
+import db from './db'
 
 describe("list", () => {
 
@@ -18,14 +19,9 @@ describe("list", () => {
 
   describe("without parameters", () => {
 
-    let out: any
-
-    beforeEach(async () => {
-      const pack = await jsonAPI.list('parents', {}, context('list'))
-      out = pack.serialize()
-    })
-
     it("should list documents of a specific resource type", async () => {
+      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const out = pack.serialize()
       expect(out).toEqual({
         data: [
           expect.objectContaining({type: 'parents', id: 'alice'}),
@@ -37,9 +33,19 @@ describe("list", () => {
         included: [],
         links:    {},
       })
+
+      expect(out.data[0]).toEqual({
+        type:          'parents',
+        id:            'alice',
+        attributes:    {name: "Alice", age: 30},
+        relationships: expect.objectContaining({}), // See below.
+      })
     })
   
     it("should include relationships", async () => {
+      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const out = pack.serialize()
+
       expect(out.data[0].relationships).toEqual({
         spouse:   {data: {type: 'parents', id: 'bob'}},
         children: {data: [{type: 'children', id: 'charlie'}, {type: 'children', id: 'dolores'}]},
@@ -58,7 +64,105 @@ describe("list", () => {
       })
     
     })
-  
+
+    it("should not include detail attributes", async () => {
+      jsonAPI.registry.modify('parents', cfg => {
+        cfg.attributes.age = {
+          detail: true,
+        }
+      })
+
+      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const out = pack.serialize()
+      expect(out.data[0].attributes).toEqual({name: "Alice"})
+    })
+
+    it("should not include detail relationships", async () => {
+      jsonAPI.registry.modify('parents', cfg => {
+        cfg.relationships!.children = {
+          type:   'children',
+          plural: true,
+          detail: true,
+        }
+      })
+
+      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const out = pack.serialize()
+      expect(out.data[0].relationships).toEqual({
+        spouse:   expect.objectContaining({}),
+        children: undefined,
+      })
+    })
+
+    it("should include pagination info in the meta", async () => {
+      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const out = pack.serialize()
+      expect(out.meta).toEqual({
+        total:      4,
+        count:      4,
+        offset:     0,
+        nextOffset: null,
+        isFirst:    true,
+        isLast:     true,
+      })
+    })
+
+    it("should reflect proper pagination info if offset and limit are given", async () => {
+      const pack = await jsonAPI.list('parents', {offset: 3, limit: 2}, context('list'))
+      const out = pack.serialize()
+      expect(out.meta).toEqual({
+        total:      4,
+        count:      1,
+        offset:     3,
+        nextOffset: null,
+        isFirst:    false,
+        isLast:     true,
+      })
+    })
+
+    it("should handle conditional attributes", async () => {
+      jsonAPI.registry.modify('parents', cfg => {
+        cfg.attributes.age = {
+          if: model => model.age > 30,
+        }
+      })
+
+      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const out = pack.serialize()
+      expect(out.data[0].attributes).toEqual({name: "Alice"})
+      expect(out.data[1].attributes).toEqual({name: "Bob", age: 40})
+    })
+    
+    it("should handle conditional relationships", async () => {
+      jsonAPI.registry.modify('parents', cfg => {
+        cfg.relationships!.children = {
+          type:   'children',
+          plural: true,
+          if:     model => model.age > 30,
+        }
+      })
+
+      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const out = pack.serialize()
+      expect(out.data[0].relationships).toEqual({
+        spouse: expect.objectContaining({}),
+      })
+      expect(out.data[1].relationships).toEqual({
+        spouse:   expect.objectContaining({}),
+        children: expect.objectContaining({}),
+      })
+    })
+
+    it.todo("should handle custom attributes")
+    it.todo("should handle custom relationships")
+
+    it.todo("should include document links if configured")
+    it.todo("should include document meta if configured")
+
+    it.todo("should include pagination meta")
+    it.todo("should include additional meta if configured")
+    it.todo("should include collection links if configured")
+
   })
 
   describe("filtering", () => {
@@ -74,7 +178,7 @@ describe("list", () => {
       out = pack.serialize()
     })
 
-    it("should allow filtering", async () => {
+    it("should apply specified filters", async () => {
       expect(out).toEqual({
         data: [
           expect.objectContaining({type: 'parents', id: 'bob'}),
@@ -85,102 +189,101 @@ describe("list", () => {
         links:    {},
       })
     })
+
+    it.todo("should reflect changes in pagination meta appropriately")
+
   
   })
 
+  describe("searching", () => {
 
-  // it("should allow searching", async () => {
-  //   registry.modify(Parent, {
-  //     search: searchOn('name'),
-  //   })
-  //   const response = await io.call('data.parents.list', [{
-  //     search: "3",
-  //   }], context(user))
-  //   expect(response).toBeAListPackOf('parents', {
-  //     data: [
-  //       resource().withExactAttrs({name: "Parent 3", age: 60}),
-  //     ],
-  //   })
-  // })
+    let out: any
 
-  // it("should allow sorting", async () => {
-  //   const response = await io.call('data.parents.list', [{
-  //     sorts: [
-  //       {field: 'age', direction: -1},
-  //     ],
-  //   }], context(user))
-  //   expect(response).toBeAListPackOf('parents', {
-  //     data: [
-  //       resource().withExactAttrs({name: "Parent 4", age: 80}),
-  //       resource().withExactAttrs({name: "Parent 3", age: 60}),
-  //       resource().withExactAttrs({name: "Parent 2", age: 40}),
-  //       resource().withExactAttrs({name: "Parent 1", age: 20}),
-  //     ],
-  //   })
-  // })
+    beforeEach(() => {
+      jsonAPI.registry.modify('parents', cfg => {
+        cfg.search = (query, term) => {
+          return {
+            ...query,
+            filters: {
+              ...query.filters,
+              name: (name: string) => name.includes(term),
+            },
+          }
+        }
+      })
+    })
 
-  // it("should allow pagination", async () => {
-  //   const response = await io.call('data.parents.list', [{
-  //     offset: 1,
-  //     limit:  2,
-  //   }], context(user))
-  //   expect(response).toBeAListPackOf('parents', {
-  //     data: [
-  //       resource().withExactAttrs({name: "Parent 2", age: 40}),
-  //       resource().withExactAttrs({name: "Parent 3", age: 60}),
-  //     ],
-  //   })
-  // })
+    it("should only return matching documents", async () => {
+      const pack = await jsonAPI.list('parents', {
+        search: "e",
+      }, context('list'))
+      out = pack.serialize()
 
-  // it("should not include detail properties", async () => {
-  //   registry.modify(Parent, {
-  //     attributes: {
-  //       name: true,
-  //       age:  {detail: true},
-  //     },
-  //   })
+      expect(out).toEqual({
+        data: [
+          expect.objectContaining({type: 'parents', id: 'alice'}),
+          expect.objectContaining({type: 'parents', id: 'eve'}),
+        ],
+        meta:     expect.any(Object),
+        included: [],
+        links:    {},
+      })
+    })
 
-  //   const response = await io.call('data.parents.list', [{
-  //     limit: 1,
-  //   }], context(user))
-  //   expect(response).toBeAListPackOf('parents', {
-  //     data: [
-  //       resource().withExactAttrs({name: "Parent 1"}),
-  //     ],
-  //   })
-  // })
+    it("should reflect changes in pagination meta appropriately", async () => {
+      const pack = await jsonAPI.list('parents', {
+        search: "e",
+      }, context('list'))
+      out = pack.serialize()
 
-  // it("should include pagination info in the meta", async () => {
-  //   const response = await io.call('data.parents.list', [], context(user))
-  //   expect(response).toBeAListPackOf('parents', {
-  //     meta: {
-  //       total:      4,
-  //       count:      4,
-  //       offset:     0,
-  //       limit:      dataConfig.pageSize,
-  //       nextOffset: null,
-  //       isFirst:    true,
-  //       isLast:     true,
-  //     },
-  //   })
-  // })
+      expect(out.meta).toEqual({
+        count:      2,
+        isFirst:    true,
+        isLast:     true,
+        nextOffset: null,
+        offset:     0,
+        total:      2,
+      })
+    })
 
-  // it("should reflect proper pagination info if offset and limit are given", async () => {
-  //   const response = await io.call('data.parents.list', [{
-  //     offset: 3,
-  //     limit:  2,
-  //   }], context(user))
-  //   expect(response).toBeAListPackOf('parents', {
-  //     meta: {
-  //       total:      4,
-  //       count:      1,
-  //       offset:     3,
-  //       limit:      2,
-  //       nextOffset: null,
-  //       isFirst:    false,
-  //       isLast:     true,
-  //     },
-  //   })
-  // })
+  })
+
+  describe("sorting", () => {
+
+    it("should allow sorting", async () => {
+      const pack = await jsonAPI.list('parents', {
+        sorts: [{field: 'name', direction: -1}],
+      }, context('list'))
+      const out = pack.serialize()
+
+      expect(out.data.map((it: any) => it.id)).toEqual([
+        'frank',
+        'eve',
+        'bob',
+        'alice',
+      ])
+    })
+
+    it("should allow sorting on multiple fields", async () => {
+      db('parents').get('bob')!.name = "Alice"
+      db('parents').get('frank')!.name = "Eve"
+
+      const pack = await jsonAPI.list('parents', {
+        sorts: [
+          {field: 'name', direction: -1},
+          {field: 'age', direction: 1},
+        ],
+      }, context('list'))
+      const out = pack.serialize()
+
+      expect(out.data.map((it: any) => it.id)).toEqual([
+        'eve',
+        'frank',
+        'alice',
+        'bob',
+      ])
+    })
+
+  })
     
 })

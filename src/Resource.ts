@@ -223,20 +223,22 @@ export default class Resource<Model, Query, ID> {
     return this.config.relationships ?? {}
   }
 
-  public async attributeAvailable(attribute: AttributeConfig<Model, Query, ID>, model: Model, context: RequestContext) {
+  public async attributeAvailable(attribute: AttributeConfig<Model, Query, ID>, model: Model, detail: boolean, context: RequestContext) {
+    if (attribute.detail && !detail) { return false }
     if (attribute.if == null) { return true }
     return await attribute.if.call(this, model, context)
   }
 
-  public attributeWritable(attribute: AttributeConfig<Model, Query, ID>, model: Model, create: boolean, context: RequestContext) {
-    if (!this.attributeAvailable(attribute, model, context)) { return false }
+  public attributeWritable(attribute: AttributeConfig<Model, Query, ID>, model: Model, detail: boolean, create: boolean, context: RequestContext) {
+    if (!this.attributeAvailable(attribute, model, detail, context)) { return false }
     if (attribute.writable == null) { return true }
     if (isFunction(attribute.writable)) { return attribute.writable.call(this, model, context) }
     if (attribute.writable === 'create') { return create }
     return attribute.writable
   }
 
-  public async relationshipAvailable(relationship: RelationshipConfig<Model, Query, ID>, model: Model, context: RequestContext) {
+  public async relationshipAvailable(relationship: RelationshipConfig<Model, Query, ID>, model: Model, detail: boolean, context: RequestContext) {
+    if (relationship.detail && !detail) { return false }
     if (relationship.if == null) { return true }
     return await relationship.if.call(this, model, context)
   }
@@ -406,11 +408,8 @@ export default class Resource<Model, Query, ID> {
    * @param context The request context.
    * @param pagination Supplied pagination parameters.
    */
-  private async injectPaginationMeta(pack: Pack<ID>, context: RequestContext, offset: number | undefined) {
+  private async injectPaginationMeta(pack: Pack<ID>, offset: number | undefined, total: number | undefined, context: RequestContext) {
     const count = pack.data instanceof Collection ? pack.data.length : 1
-    const total = typeof pack.meta.total === 'number'
-      ? pack.meta.total
-      : null
 
     offset ??= 0
 
@@ -435,6 +434,7 @@ export default class Resource<Model, Query, ID> {
       Object.assign(pack.meta, {
         offset,
         count,
+        total,
         nextOffset,
         isFirst: offset === 0,
         isLast:  nextOffset == null,
@@ -472,12 +472,16 @@ export default class Resource<Model, Query, ID> {
     }
 
     const adapter = getAdapter()
-    const models = this.config.list != null
+    const response = this.config.list != null
       ? await this.config.list.call(this, params, adapter, context, options)
       : await adapter.list(await this.listQuery(adapter, params, context), params, options)
 
+    const [models, total] = response.length === 2 && typeof response[1] === 'number'
+      ? response as [Model[], number]
+      : [response as Model[], undefined]
+
     const pack = await this.collectionPack(models, adapter, context, options)
-    await this.injectPaginationMeta(pack, context, params.offset)
+    await this.injectPaginationMeta(pack, params.offset, total, context)
     return pack
   }
 
@@ -568,12 +572,16 @@ export default class Resource<Model, Query, ID> {
     }
 
     const adapter = getAdapter()
-    const models = this.config.listRelated != null
+    const response = this.config.listRelated != null
       ? await this.config.listRelated.call(this, locator, relationship, params, adapter, context, options)
       : await adapter.listRelated(locator, relationship, await this.listQuery(adapter, params, context), params, options)
 
+    const [models, total] = response.length === 2 && typeof response[1] === 'number'
+      ? response as [Model[], number]
+      : [response as Model[], undefined]
+
     const pack = await this.collectionPack(models, adapter, context, options)
-    await this.injectPaginationMeta(pack, context, params.offset)
+    await this.injectPaginationMeta(pack, params.offset, total, context)
     return pack
   }
 
@@ -685,6 +693,10 @@ export default class Resource<Model, Query, ID> {
   }
 
   public async modelToDocument(model: Model, adapter: Adapter<Model, Query, ID>, context: RequestContext, options: ModelToDocumentOptions = {}): Promise<Document<ID>> {
+    const {
+      detail = true,
+    } = options
+
     const attributes: Record<string, any> = {}
     const relationships: Record<string, Relationship<ID>> = {}
 
@@ -693,11 +705,11 @@ export default class Resource<Model, Query, ID> {
       : (model as any).id
 
     for (const [name, attribute] of Object.entries(this.attributes)) {
-      if (!await this.attributeAvailable(attribute, model, context)) { continue }
+      if (!await this.attributeAvailable(attribute, model, detail, context)) { continue }
       attributes[name] = await this.getAttribute(model, name, attribute, adapter, context)
     }
     for (const [name, relationship] of Object.entries(this.relationships)) {
-      if (!await this.relationshipAvailable(relationship, model, context)) { continue }
+      if (!await this.relationshipAvailable(relationship, model, detail, context)) { continue }
       relationships[name] = await this.getRelationship(model, name, relationship, adapter, context)
     }
 

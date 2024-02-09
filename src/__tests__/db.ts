@@ -4,18 +4,18 @@ import { slugify } from 'ytil'
 import { Filters, Sort } from '../types'
 
 export interface Parent {
-  id:       number
+  id:       string
   name:     string
   age:      number
-  spouse:   number | null
-  children: number[]
+  spouse:   string | null
+  children: string[]
 }
 
 export interface Child {
-  id:      number
+  id:      string
   name:    string
   age:     number
-  parents: number[]
+  parents: string[]
 }
 
 export type Model = Parent | Child
@@ -32,10 +32,33 @@ export class Db {
   private models: Model[] = []
 
   public list(query: Query) {
-    return this.models.filter(it => this.match(query, it))
+    let models = this.models.filter(it => this.match(query, it))
+    if (query.offset != null) {
+      models = models.slice(query.offset)
+    }
+    if (query.limit != null) {
+      models = models.slice(0, query.limit)
+    }
+    for (const {field, direction} of [...query.sorts].reverse()) {
+      models.sort((a, b) => {
+        const vala = (a as any)[field]
+        const valb = (b as any)[field]
+        const order = typeof vala === 'string'
+          ? vala.localeCompare(valb)
+          : vala - valb
+
+        return order * direction
+      })
+    }
+    
+    return models
   }
 
-  public get(query: Query, id: number) {
+  public count(query: Query) {
+    return this.models.filter(it => this.match(query, it)).length
+  }
+
+  public get(id: string, query?: Query) {
     return this.load(query, id)
   }
 
@@ -77,8 +100,9 @@ export class Db {
     return true
   }
 
-  private load(query: Query, id: number) {
-    const model = this.models.find(it => it.id === id)
+  private load(query: Query | undefined, id: string) {
+    const models = query == null ? this.models : this.list(query)
+    const model = models.find(it => it.id === id)
     if (model == null) { throw new NotFoundError() }
     return model
   }

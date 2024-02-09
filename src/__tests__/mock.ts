@@ -59,8 +59,10 @@ export class MockAdapter implements Adapter<Model, Query, number> {
     private readonly context: RequestContext,
   ) {}
 
-  public async list(query: Query, params: ListParams, options: RetrievalActionOptions): Promise<Model[]> {
-    return db(this.resource.type).list(query)
+  public async list(query: Query, params: ListParams, options: RetrievalActionOptions): Promise<[Model[], number]> {
+    const models = db(this.resource.type).list(query)
+    const total = db(this.resource.type).count({...query, offset: 0, limit: null})
+    return [models, total]
   }
   
   public async get(query: Query, locator: DocumentLocator<number>, options: RetrievalActionOptions): Promise<Model> {
