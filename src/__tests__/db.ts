@@ -1,10 +1,13 @@
+import { isFunction } from 'lodash'
+import { slugify } from 'ytil'
+
 import { Filters, Sort } from '../types'
 
 export interface Parent {
   id:       number
   name:     string
   age:      number
-  spouses:  number[]
+  spouse:   number | null
   children: number[]
 }
 
@@ -27,7 +30,6 @@ export interface Query {
 export class Db {
 
   private models: Model[] = []
-  private nextID: number = 0
 
   public list(query: Query) {
     return this.models.filter(it => this.match(query, it))
@@ -39,7 +41,7 @@ export class Db {
 
   public insert(...items: Record<string, any>[]) {
     return items.map(attrs => {
-      const id = attrs.id ?? this.nextID++
+      const id = attrs.id ?? slugify(attrs.name)
       const model = {...attrs, id} as Model
       this.models = this.models.filter(it => it.id !== model.id)
       this.models.push(model)
@@ -62,8 +64,14 @@ export class Db {
 
   private match(query: Query, model: Model) {
     for (const [name, value] of Object.entries(query.filters)) {
-      if ((model as any)[name] !== value) {
-        return false
+      if (isFunction(value)) {
+        if (!value((model as any)[name])) {
+          return false
+        }
+      } else {
+        if ((model as any)[name] !== value) {
+          return false
+        }
       }
     }
     return true
@@ -86,41 +94,38 @@ export default function db(which: string) {
   return dbs[which]!
 }
 
-function createFamily({parents, children}: {parents: Omit<Parent, 'id' | 'spouses' | 'children'>[], children: Omit<Child, 'id' | 'parents'>[]}) {
-  const parentModels = db('parents').insert(parents)
-  const childModels = db('children').insert(children)
+function createFamily(
+  parents: [Omit<Parent, 'id' | 'spouse' | 'children'>, Omit<Parent, 'id' | 'spouse' | 'children'>],
+  children: Omit<Child, 'id' | 'parents'>[]
+) {
+  const parentModels = db('parents').insert(...parents)
+  const childModels = db('children').insert(...children)
 
-  for (const parent of parentModels) {
-    ;(parent as Parent).spouses = parentModels.filter(it => it.id !== parent.id).map(it => it.id)
-    ;(parent as Parent).children = childModels.map(it => it.id)
-  }
-  for (const child of childModels) {
-    ;(child as Child).parents = parentModels.map(it => it.id)
+  ;(parentModels[0] as Parent).spouse = parentModels[1].id
+  ;(parentModels[1] as Parent).spouse = parentModels[0].id
+
+  for (const childModel of childModels) {
+    (childModel as Child).parents = [parentModels[0].id, parentModels[1].id]
+    ;((parentModels[0] as Parent).children ??= []).push(childModel.id)
+    ;((parentModels[1] as Parent).children ??= []).push(childModel.id)
   }
 }
 
-createFamily({
-  parents: [
-    {name: "Alice", age: 30},
-    {name: "Bob", age: 40},
-  ],
-  children: [
-    {name: "Charlie", age: 10},
-    {name: "Dolores", age: 20},
-  ],
-})
+createFamily([
+  {name: "Alice", age: 30},
+  {name: "Bob", age: 40},
+], [
+  {name: "Charlie", age: 10},
+  {name: "Dolores", age: 20},
+])
 
-createFamily({
-  parents: [
-    {name: "Eve", age: 50},
-    {name: "Frank", age: 60},
-    {name: "Grace", age: 40},
-  ],
-  children: [
-    {name: "Isaac", age: 15},
-    {name: "Hank", age: 25},
-  ],
-})
+createFamily([
+  {name: "Eve", age: 50},
+  {name: "Frank", age: 60},
+], [
+  {name: "Isaac", age: 15},
+  {name: "Henry", age: 25},
+])
 
 
 export class NotFoundError extends Error {}

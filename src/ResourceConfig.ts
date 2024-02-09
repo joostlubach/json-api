@@ -12,7 +12,6 @@ import {
   Linkage,
   ListParams,
   Meta,
-  RelatedQuery,
   Relationship,
   ResourceID,
 } from './types'
@@ -52,7 +51,7 @@ export interface ResourceConfig<Model, Query, ID> {
   attributes?: AttributeMap<Model, Query, ID>
 
   /// Relationship configuration for this resource.
-  relationships?: RelationshipMap<Model, Query, ID> | RelationshipsBuilder<Model, Query, ID>
+  relationships?: RelationshipMap<Model, Query, ID>
 
   // ------
   // Data retrieval
@@ -145,24 +144,18 @@ export interface ResourceConfig<Model, Query, ID> {
 // ------
 // Attribute types
 
-export type AttributeMap<M, Q, I> = Record<string, AttributeConfig<M, Q, I> | boolean>
+export type AttributeMap<M, Q, I> = Record<string, AttributeConfig<M, Q, I> | true>
 export interface AttributeConfig<M, Q, I> {
-  writable?:    boolean | AttributeIf<M, Q, I> | 'create'
-  detail?:      boolean
-  if?:          AttributeIf<M, Q, I>
-  collect?:     AttributeCollector<M, Q, I>
-  get?:         AttributeGetter<M, Q, I>
-  set?:         AttributeSetter<M, Q, I>
-  serialize?:   AttributeSerializer
-  deserialize?: AttributeDeserializer
+  writable?: boolean | AttributeIf<M, Q, I> | 'create'
+  detail?:   boolean
+  if?:       AttributeIf<M, Q, I>
+  get?:      AttributeGetter<M, Q, I>
+  set?:      AttributeSetter<M, Q, I>
 }
 
 export type AttributeIf<M, Q, I> = (this: Resource<M, Q, I>, item: M, context: RequestContext) => boolean | Promise<boolean>
-export type AttributeCollector<M, Q, I> = (this: Resource<M, Q, I>, items: M[], context: RequestContext) => any | Promise<any>
-export type AttributeGetter<M, Q, I> = (this: Resource<M, Q, I>, item: M, raw: any, context: RequestContext) => any | Promise<any>
-export type AttributeSetter<M, Q, I> = (this: Resource<M, Q, I>, item: M, raw: any, context: RequestContext) => any | Promise<any>
-export type AttributeSerializer = (value: any) => any
-export type AttributeDeserializer = (raw: any) => any
+export type AttributeGetter<M, Q, I> = (this: Resource<M, Q, I>, item: M, context: RequestContext) => unknown | Promise<unknown>
+export type AttributeSetter<M, Q, I> = (this: Resource<M, Q, I>, item: M, value: unknown, context: RequestContext) => void | Promise<void>
 
 // ------
 // Meta & link types
@@ -194,13 +187,12 @@ export interface DocumentMetaConfig<M, Q, I> {
 
 export type RelationshipMap<M, Q, I> = Record<string, RelationshipConfig<M, Q, I>>
 export type RelationshipConfig<M, Q, I> = SingularRelationshipConfig<M, Q, I> | PluralRelationshipConfig<M, Q, I>
-export type RelationshipsBuilder<M, Q, I> = (this: Resource<M, Q, I>, model: M) => Record<string, Relationship>
 
 interface RelationshipConfigCommon<M, Q, I> {
-  type?:     string
+  type:      string
   writable?: boolean | 'create'
   detail?:   boolean
-  if?:       (this: Resource<M, Q, I>, model: M, context: RequestContext) => boolean
+  if?:       (this: Resource<M, Q, I>, model: M, context: RequestContext) => boolean | Promise<boolean>
   include?:  RelationshipIncludeConfig
 }
 
@@ -212,15 +204,15 @@ export interface RelationshipIncludeConfig {
 export type SingularRelationshipConfig<M, Q, I> = RelationshipConfigCommon<M, Q, I> & {
   plural: false
 
-  get?: (model: M, context: RequestContext) => Promise<string | Linkage | null>
-  set?: (model: M, value: string | null, context: RequestContext) => any | Promise<any>
+  get?: (this: Resource<M, Q, I>, model: M, context: RequestContext) => Promise<Relationship<I> | I | Linkage<I> | null>
+  set?: (this: Resource<M, Q, I>, model: M, value: I | null, context: RequestContext) => any | Promise<any>
 }
 
 export type PluralRelationshipConfig<M, Q, I> = RelationshipConfigCommon<M, Q, I> & {
   plural: true
 
-  get?: (model: M, context: RequestContext) => RelatedQuery | Promise<Array<string | Linkage>>
-  set?: (model: M, value: string[], context: RequestContext) => any | Promise<any>
+  get?: (this: Resource<M, Q, I>, model: M, context: RequestContext) => Promise<Relationship<I> | Array<Linkage<I> | I>>
+  set?: (this: Resource<M, Q, I>, model: M, ids: I[], context: RequestContext) => any | Promise<any>
 }
 
 // ------
@@ -253,68 +245,68 @@ export type BeforeHandler = (context: RequestContext) => void | Promise<void>
 export type ListAction<M, Q, I> = (
   this:    Resource<M, Q, I>,
   params:  ListParams,
-  adapter: () => Adapter<M, Q, I>,
+  adapter: Adapter<M, Q, I>,
   context: RequestContext,
   options: ActionOptions
-) => Pack<I> | Promise<Pack<I>>
+) => Promise<M[]>
 export type GetAction<M, Q, I> = (
   this:    Resource<M, Q, I>,
   locator: DocumentLocator<I>,
-  adapter: () => Adapter<M, Q, I>,
+  adapter: Adapter<M, Q, I>,
   context: RequestContext,
   options: ActionOptions
-) => Pack<I> | Promise<Pack<I>>
+) => Promise<M>
 export type CreateAction<M, Q, I> = (
   this:     Resource<M, Q, I>,
   document: Document<I>,
   pack:     Pack<I>,
-  adapter:  () => Adapter<M, Q, I>,
+  adapter:  Adapter<M, Q, I>,
   context:  RequestContext,
   options:  ActionOptions
-) => Pack<I> | Promise<Pack<I>>
+) => Promise<M>
 export type ReplaceAction<M, Q, I> = (
   this:     Resource<M, Q, I>,
   locator:  DocumentLocator<I>,
   document: Document<I>,
   meta:     Meta,
-  adapter:  () => Adapter<M, Q, I>,
+  adapter:  Adapter<M, Q, I>,
   context:  RequestContext,
   options:  ActionOptions
-) => Pack<I> | Promise<Pack<I>>
+) => Promise<M>
 export type UpdateAction<M, Q, I> = (
   this:     Resource<M, Q, I>,
   locator:  DocumentLocator<I>,
   document: Document<I>,
   meta:     Meta,
-  adapter:  () => Adapter<M, Q, I>,
+  adapter:  Adapter<M, Q, I>,
   context:  RequestContext,
   options:  ActionOptions
-) => Pack<I> | Promise<Pack<I>>
+) => Promise<M>
 export type DeleteAction<M, Q, I> = (
   this:     Resource<M, Q, I>,
   selector: BulkSelector<I>,
-  adapter:  () => Adapter<M, Q, I>,
+  adapter:  Adapter<M, Q, I>,
   context:  RequestContext
-) => Pack<I> | Promise<Pack<I>>
+) => Promise<Array<M | I>>
 
 export type ListRelatedAction<M, Q, I> = (
   this:         Resource<M, Q, I>,
   locator:      DocumentLocator<I>,
   relationship: string,
   params:       ListParams,
-  adapter:      () => Adapter<M, Q, I>,
+  adapter:      Adapter<M, Q, I>,
   context:      RequestContext,
   options:      ActionOptions
-) => Pack<I> | Promise<Pack<I>>
+) => Promise<M[]>
 
 export type GetRelatedAction<M, Q, I> = (
   this:         Resource<M, Q, I>,
   locator:      DocumentLocator<I>,
   relationship: string,
-  adapter:      () => Adapter<M, Q, I>,
+  adapter:      Adapter<M, Q, I>,
   context:      RequestContext,
   options:      ActionOptions
-) => Pack<I> | Promise<Pack<I>>
+) => Promise<M>
 
 // ------
 // Custom actions

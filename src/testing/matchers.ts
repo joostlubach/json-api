@@ -13,8 +13,8 @@ expect.extend({
 
 })
 
-export function resource() {
-  return new ExpectedResource()
+export function document() {
+  return new ExpectedDocument()
 }
 
 export class PackMatcher {
@@ -31,7 +31,7 @@ export class PackMatcher {
     if (!isPlainObject(actual)) {
       return {
         pass:    false,
-        message: () => "Expected pack to be a plain object",
+        message: () => chalk`Expected pack to be a plain object, was a {bold ${describeType(actual)}}`,
       }
     }
     
@@ -101,7 +101,7 @@ export class PackMatcher {
   }
 
   private checkList(actual: unknown[]) {
-    const expected = this.options.data as ExpectedResource[]
+    const expected = this.options.data as ExpectedDocument[]
     for (const [index, resource] of actual.entries()) {
       expected[index].type = this.type
       const result = expected[index].match(resource, chalk`{underline .data[${index}]}`, this.context)
@@ -115,7 +115,7 @@ export class PackMatcher {
   }
 
   private checkSingle(actual: unknown) {
-    const expected = this.options.data as ExpectedResource
+    const expected = this.options.data as ExpectedDocument
     expected.type = this.type
     return expected.match(actual, chalk`{underline .data}`, this.context)
   }
@@ -135,7 +135,7 @@ export class PackMatcher {
     if (!isPlainObject(actual.meta)) {
       return {
         pass:    false,
-        message: () => chalk`Expected {underline .meta} to be a plain object`,
+        message: () => chalk`Expected {underline .meta} to be a plain object, was a {bold ${describeType(actual.meta)}}`,
       }
     }
 
@@ -174,7 +174,7 @@ export class PackMatcher {
   
 }
 
-export class ExpectedResource {
+export class ExpectedDocument {
 
   public type?:           string
   public id?:             string | null
@@ -206,7 +206,7 @@ export class ExpectedResource {
     if (!isPlainObject(actual)) {
       return {
         pass:    false,
-        message: () => `Expected ${what} to be a plain object`,
+        message: () => chalk`Expected ${what} to be a plain object, was a {bold ${describeType(actual)}}`,
       }
     }
 
@@ -273,7 +273,7 @@ export class ExpectedResource {
     if (!isPlainObject(actual.attributes)) {
       return {
         pass:    false,
-        message: () => chalk`Expected of ${what}{underline .attributes} to be a plain object`,
+        message: () => chalk`Expected of ${what}{underline .attributes} to be a plain object, was a {bold ${describeType(actual.attributes)}}`,
       }
     }
 
@@ -330,8 +330,18 @@ function describeValue(value: any) {
   }
 }
 
+function describeType(value: any) {
+  if (isObject(value) && 'toAsymmetricMatcher' in value && isFunction(value.toAsymmetricMatcher)) {
+    return value.toAsymmetricMatcher()
+  } else if (isObject(value) && value.constructor != null) {
+    return value.constructor.name
+  } else {
+    return typeof value
+  }
+}
+
 export interface ExpectedListPackOptions {
-  data?:      ExpectedResource | ExpectedResource[] | null
+  data?:      ExpectedDocument | ExpectedDocument[] | null
   meta?:      Meta
   exactMeta?: boolean
   links?:     Links

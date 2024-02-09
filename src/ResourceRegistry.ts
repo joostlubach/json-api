@@ -39,7 +39,7 @@ export default class ResourceRegistry<Model, Query, ID> {
     const resource = new Resource(this.jsonAPI, type, resourceConfig)
     this.resources.set(type, resource)
 
-    config.logger.info(chalk`-> Registered resource {yellow ${resource.plural}}\n`)
+    config.logger.debug(chalk`-> Registered resource {yellow ${resource.plural}}\n`)
   }
 
   // #endregion

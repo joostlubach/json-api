@@ -1,35 +1,35 @@
-import { isFunction } from 'lodash'
+import { objectEntries, objectKeys } from 'ytil'
 
 import APIError from './APIError'
 import ResourceRegistry from './ResourceRegistry'
-import { AnyResource, AttributeBag, Links, Meta, RelationshipBag } from './types'
+import { AnyResource, Links, Meta, Relationship } from './types'
 
 export default class Document<ID> {
 
   constructor(
-    public resource:      AnyResource,
-    public id:            ID | null,
-    public detail:        boolean,
-    public attributes:    AttributeBag = {},
-    public relationships: RelationshipBag = {},
-    public links:         Links = {},
-    public meta:          Meta = {},
-  ) {
-    this.links = {...links}
-    this.meta = {...meta}
-  }
+    public readonly resource:      AnyResource,
+    public readonly id:            ID | null,
+    public readonly attributes:    Record<string, any> = {},
+    public readonly relationships: Record<string, Relationship<ID>> = {},
+    public readonly links:         Links = {},
+    public readonly meta:          Meta = {},
+  ) {}
 
   public serialize(): any {
     const serialized: Record<string, any> = {
       id:            this.id,
       type:          this.resource.type,
-      attributes:    this.serializeAttributes(this.attributes),
-      relationships: this.serializeRelationships(this.relationships),
-      links:         this.links,
+      attributes:    this.attributes,
+      relationships: this.relationships,
     }
-    if (Object.keys(this.meta).length > 0) {
+
+    if (objectKeys(this.links).length > 0) {
+      serialized.links = this.links
+    }
+    if (objectKeys(this.meta).length > 0) {
       serialized.meta = this.meta
     }
+      
     return serialized
   }
 
@@ -43,70 +43,31 @@ export default class Document<ID> {
       throw new APIError(404, `Resource \`${serialized.type}\` not found`)
     }
 
-    const document = new Document(resource, serialized.id, detail)
-    document.attributes = document.deserializeAttributes({...serialized.attributes})
-    document.relationships = document.deserializeRelationships({...serialized.relationships})
-    document.links = {...serialized.links}
-    document.meta = {...serialized.meta}
+    const document = new Document(
+      resource,
+      serialized.id,
+      {...serialized.attributes},
+      {...serialized.relationships},
+      {...serialized.links},
+      {...serialized.meta},
+    )
 
+    document.validate()
     return document
   }
 
-  private serializeAttributes(attributes: AttributeBag): Record<string, any> {
-    if (this.resource == null) { return attributes }
-
-    const serialized: Record<string, any> = {}
-    for (const [name, attribute] of this.resource.attributes) {
-      if (!this.detail && attribute.detail) { continue }
-
-      serialized[name] = attribute.serialize(attributes[name])
-    }
-    return serialized
-  }
-
-  private deserializeAttributes(attributes: AttributeBag): Record<string, any> {
-    if (this.resource == null) { return attributes }
-
-    const deserialized: Record<string, any> = {}
-    for (const name of Object.keys(attributes)) {
-      const attribute = this.resource.attributes.get(name)
-      if (attribute == null) {
-        throw new APIError(403, `Attribute '${name}' not found`)
-      }
-
-      deserialized[name] = attribute.deserialize(attributes[name])
-    }
-    return deserialized
-  }
-
-  private serializeRelationships(relationships: RelationshipBag): Record<string, any> | undefined {
-    const serialized: Record<string, any> = {}
-    for (const name of Object.keys(relationships)) {
-      if (isFunction(this.resource.config.relationships)) {
-        serialized[name] = relationships[name]
-      } else {
-        const relConfig = this.resource.relationship(name)
-        if (relConfig == null) { continue }
-        if (!this.detail && relConfig.detail) { continue }
-
-        serialized[name] = relationships[name]
+  private validate() {
+    for (const [name, value] of objectEntries(this.relationships)) {
+      if (!Relationship.isRelationship(value)) {
+        throw new APIError(400, `Invalid relationship for relationship '${name}'`)
       }
     }
 
-    return serialized
-  }
-
-  private deserializeRelationships(relationships: RelationshipBag): Record<string, any> {
-    const deserialized: Record<string, any> = {}
-    for (const name of Object.keys(relationships)) {
-      const relConfig = this.resource.relationship(name)
-      if (relConfig == null) {
-        throw new APIError(403, `Relationship '${name}' not found`)
+    for (const [name, link] of objectEntries(this.links)) {
+      if (typeof link !== 'string') {
+        throw new APIError(400, `Invalid link for link '${name}'`)
       }
-
-      deserialized[name] = relationships[name]
     }
-    return deserialized
   }
 
 }

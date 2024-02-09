@@ -1,12 +1,9 @@
 import RequestContext from 'RequestContext'
 import Resource from 'Resource'
-import { isArray } from 'lodash'
 
-import Adapter, { ModelsToCollectionOptions, ModelToDocumentOptions } from '../Adapter'
-import Collection from '../Collection'
+import Adapter from '../Adapter'
 import Document from '../Document'
-import JSONAPI from '../JSONAPI'
-import Pack from '../Pack'
+import JSONAPI, { JSONAPIOptions } from '../JSONAPI'
 import {
   ActionOptions,
   DocumentLocator,
@@ -18,6 +15,32 @@ import {
 import db, { Model, Query } from './db'
 
 export class MockJSONAPI extends JSONAPI<Model, Query, number> {
+
+  constructor(options: JSONAPIOptions<Model, Query, number> = {}) {
+    super(options)
+
+    this.registry.register('parents', {
+      modelName:  'Parent',
+      attributes: {
+        name: true,
+        age:  true,
+      },
+      relationships: {
+        spouse:   {type: 'parents', plural: false},
+        children: {type: 'children', plural: true},
+      },
+    })
+    this.registry.register('children', {
+      modelName:  'Child',
+      attributes: {
+        name: true,
+        age:  true,
+      },
+      relationships: {
+        parents: {type: 'parents', plural: true},
+      },
+    })
+  }
 
   public adapter(resource: Resource<Model, Query, number>, context: RequestContext<Record<string, any>>): MockAdapter {
     return new MockAdapter(resource, context)
@@ -36,38 +59,38 @@ export class MockAdapter implements Adapter<Model, Query, number> {
     private readonly context: RequestContext,
   ) {}
 
-  public async list(query: Query, params: ListParams, options: RetrievalActionOptions): Promise<Pack<number>> {
-    return await this.pack(db(this.resource.type).list(query))
+  public async list(query: Query, params: ListParams, options: RetrievalActionOptions): Promise<Model[]> {
+    return db(this.resource.type).list(query)
   }
   
-  public async get(query: Query, locator: DocumentLocator<number>, options: RetrievalActionOptions): Promise<Pack<number>> {
+  public async get(query: Query, locator: DocumentLocator<number>, options: RetrievalActionOptions): Promise<Model> {
     const model = await this.loadModel(query, locator, options.include, this.context)
-    return await this.pack(model)
+    return model
   }
   
-  public async create(query: Query, document: Document<number>, meta: Meta, options: ActionOptions): Promise<Pack<number>> {
-    return await this.pack(db(this.resource.type).insert({...query.filters, ...document.attributes}))
+  public async create(query: Query, document: Document<number>, meta: Meta, options: ActionOptions): Promise<Model> {
+    return db(this.resource.type).insert({...query.filters, ...document.attributes})[0]
   }
   
-  public async replace(query: Query, locator: DocumentLocator<number>, document: Document<number>, meta: Meta, options: ActionOptions): Promise<Pack<number>> {
+  public async replace(query: Query, locator: DocumentLocator<number>, document: Document<number>, meta: Meta, options: ActionOptions): Promise<Model> {
     const model = await this.loadModel(query, locator, [], this.context)
-    return await this.pack(db(this.resource.type).insert(query, {...document.attributes, id: model.id}))
+    return db(this.resource.type).insert(query, {...document.attributes, id: model.id})[0]
   }
   
-  public async update(query: Query, locator: DocumentLocator<number>, document: Document<number>, meta: Meta, options: ActionOptions): Promise<Pack<number>> {
+  public async update(query: Query, locator: DocumentLocator<number>, document: Document<number>, meta: Meta, options: ActionOptions): Promise<Model> {
     const model = await this.loadModel(query, locator, [], this.context)
-    return await this.pack(db(this.resource.type).insert(query, {...model, ...document.attributes}))
+    return db(this.resource.type).insert(query, {...model, ...document.attributes})[0]
   }
   
-  public async delete(query: Query): Promise<Pack<number>> {
-    return await this.pack(db(this.resource.type).delete(query))
+  public async delete(query: Query): Promise<Model[]> {
+    return db(this.resource.type).delete(query)
   }
   
-  public async listRelated(locator: DocumentLocator<number>, relationship: string, query: Query, params: ListParams, options: RetrievalActionOptions): Promise<Pack<number>> {
+  public async listRelated(locator: DocumentLocator<number>, relationship: string, query: Query, params: ListParams, options: RetrievalActionOptions): Promise<Model[]> {
     throw new Error('Method not implemented.')
   }
   
-  public async showRelated(locator: DocumentLocator<number>, relationship: string, query: Query, options: RetrievalActionOptions): Promise<Pack<number>> {
+  public async showRelated(locator: DocumentLocator<number>, relationship: string, query: Query, options: RetrievalActionOptions): Promise<Model> {
     throw new Error('Method not implemented.')
   }
 
@@ -135,21 +158,6 @@ export class MockAdapter implements Adapter<Model, Query, number> {
       : [db(this.resource.type).get(query, locator.id)]
 
     return model
-  }
-
-  public async modelToDocument(model: Model, options?: ModelToDocumentOptions | undefined): Promise<Document<number>> {
-    return new Document(this.resource, model.id, options?.detail ?? true, model)
-  }
-  public async modelsToCollection(models: Model[], options?: ModelsToCollectionOptions | undefined): Promise<Collection<number>> {
-    const documents = await Promise.all(models.map(it => this.modelToDocument(it, {detail: options?.detail ?? false})))
-    return new Collection(documents)
-  }
-
-  private async pack(docOrColl: Model | Model[]) {
-    const data = isArray(docOrColl)
-      ? await this.modelsToCollection(docOrColl)
-      : await this.modelToDocument(docOrColl)
-    return new Pack<number>(data)
   }
 
 }

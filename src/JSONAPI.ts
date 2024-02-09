@@ -1,13 +1,22 @@
+import { isObject } from 'lodash'
 import { string } from 'validator/types'
 import { wrapArray } from 'ytil'
 
-import Adapter, { ModelsToCollectionOptions, ModelToDocumentOptions } from './Adapter'
+import Adapter from './Adapter'
 import Pack from './Pack'
 import RequestContext from './RequestContext'
 import Resource from './Resource'
 import ResourceRegistry from './ResourceRegistry'
 import { Middleware } from './middleware'
-import { ActionOptions, DocumentLocator, ListParams, RetrievalActionOptions } from './types'
+import {
+  ActionOptions,
+  DocumentLocator,
+  Linkage,
+  ListParams,
+  ModelsToCollectionOptions,
+  ModelToDocumentOptions,
+  RetrievalActionOptions,
+} from './types'
 
 /**
  * Facade base class. Derive from this class in your application to expose a JSON API.
@@ -27,7 +36,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
   
   public abstract adapter(resource: Resource<Model, Query, ID>, context: RequestContext): Adapter<Model, Query, ID>
   public abstract parseID(id: string): ID
-
+  
   // #region Registration
   
   // #endregion
@@ -105,18 +114,30 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   // #region Serialization
 
-  public async modelToDocument(resourceType: string, model: Model, context: RequestContext, options: ModelToDocumentOptions = {}) {
-    const resource = this.registry.get(resourceType)
-    const adapter = this.adapter(resource, context)
-
-    return await adapter.modelToDocument(model, options)
-  }
-
   public async modelsToCollection(resourceType: string, models: Model[], context: RequestContext, options: ModelsToCollectionOptions = {}) {
     const resource = this.registry.get(resourceType)
     const adapter = this.adapter(resource, context)
 
-    return await adapter.modelsToCollection(models, options)
+    return await resource.modelsToCollection(models, adapter, context, options)
+  }
+
+  public async modelToDocument(resourceType: string, model: Model, context: RequestContext, options: ModelToDocumentOptions = {}) {
+    const resource = this.registry.get(resourceType)
+    const adapter = this.adapter(resource, context)
+
+    return await resource.modelToDocument(model, adapter, context, options)
+  }
+
+  public toLinkage<M, I>(arg: M | I | Linkage<I>, type: string): Linkage<I> {
+    const linkage = Linkage.isLinkage(arg) ? (
+      arg
+    ) : isObject(arg) && 'id' in arg ? (
+      {type, id: arg.id as any}
+    ) : (
+      {type, id: arg}
+    )
+  
+    return linkage
   }
 
   // #endregion

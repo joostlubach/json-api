@@ -17,7 +17,7 @@ const config: Config = {
   defaultPageSize: 50,
 
   logger: {
-    debug: console.log,
+    debug: (...args) => process.env.DEBUG ? console.debug(...args) : undefined,
     info:  console.log,
     warn:  console.warn,
     error: console.error,

@@ -1,11 +1,12 @@
-import Collection from './Collection'
+
 import Document from './Document'
-import Pack from './Pack'
 import {
   ActionOptions,
   DocumentLocator,
+  Linkage,
   ListParams,
   Meta,
+  Relationship,
   RetrievalActionOptions,
   Sort,
 } from './types'
@@ -14,15 +15,15 @@ export default interface Adapter<Model, Query, ID> {
 
   // #region Actions
 
-  list(query: Query, params: ListParams, options: RetrievalActionOptions): Promise<Pack<ID>>
-  get(query: Query, locator: DocumentLocator<ID>, options: RetrievalActionOptions): Promise<Pack<ID>>
-  create(query: Query, document: Document<ID>, meta: Meta, options: ActionOptions): Promise<Pack<ID>>
-  replace(query: Query, locator: DocumentLocator<ID>, document: Document<ID>, meta: Meta, options: ActionOptions): Promise<Pack<ID>>
-  update(query: Query, locator: DocumentLocator<ID>, document: Document<ID>, meta: Meta, options: ActionOptions): Promise<Pack<ID>>
-  delete(query: Query): Promise<Pack<ID>>
+  list(query: Query, params: ListParams, options: RetrievalActionOptions): Promise<Model[]>
+  get(query: Query, locator: DocumentLocator<ID>, options: RetrievalActionOptions): Promise<Model>
+  create(query: Query, document: Document<ID>, meta: Meta, options: ActionOptions): Promise<Model>
+  replace(query: Query, locator: DocumentLocator<ID>, document: Document<ID>, meta: Meta, options: ActionOptions): Promise<Model>
+  update(query: Query, locator: DocumentLocator<ID>, document: Document<ID>, meta: Meta, options: ActionOptions): Promise<Model>
+  delete(query: Query): Promise<Array<Model | ID>>
 
-  listRelated(locator: DocumentLocator<ID>, relationship: string, query: Query, params: ListParams, options: RetrievalActionOptions): Promise<Pack<ID>>
-  showRelated(locator: DocumentLocator<ID>, relationship: string, query: Query, options: RetrievalActionOptions): Promise<Pack<ID>>
+  listRelated(locator: DocumentLocator<ID>, relationship: string, query: Query, params: ListParams, options: RetrievalActionOptions): Promise<Model[]>
+  showRelated(locator: DocumentLocator<ID>, relationship: string, query: Query, options: RetrievalActionOptions): Promise<Model>
 
   // #endregion
 
@@ -38,19 +39,13 @@ export default interface Adapter<Model, Query, ID> {
   
   // #endregion
   
-  // #region Utility
-
-  modelToDocument(model: Model, options?: ModelToDocumentOptions): Promise<Document<ID>>
-  modelsToCollection(models: Model[], options?: ModelsToCollectionOptions): Promise<Collection<ID>>
+  // #region Serialization
+  
+  getID?(model: Model): ID | Promise<ID>
+  getAttribute?(model: Model, attribute: string): any | Promise<any>
+  getRelationship?(model: Model, relationship: string): Relationship<ID> | ID | Linkage<ID> | Promise<ID | Linkage<ID>>
+  collectIncludes?(models: Model[], includes: string[]): Promise<Document<ID>[]>
 
   // #endregion
 
-}
-
-export interface ModelToDocumentOptions {
-  detail?: boolean
-}
-
-export interface ModelsToCollectionOptions {
-  detail?: boolean
 }

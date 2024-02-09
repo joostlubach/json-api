@@ -1,4 +1,5 @@
-import { isPlainObject } from 'lodash'
+import { isArray, isPlainObject } from 'lodash'
+import { objectKeys, objectValues } from 'ytil'
 
 import Resource from './Resource'
 
@@ -31,38 +32,50 @@ export interface Sort {
   direction: -1 | 1
 }
 
-export type Constructor<T> = new (...args: any[]) => T
-export type RelatedQuery = any
-
+export type Links = Record<string, string>
 export type Meta = Record<string, any>
-export type AttributeBag = Record<string, any>
 
-export type RelationshipBag = Record<string, Relationship>
-
-export interface Relationship {
-  data:   Linkage | Linkage[] | null
+export interface Relationship<ID> {
+  data:   Linkage<ID> | Linkage<ID>[] | null
   links?: Links
   meta?:  Meta
 }
 
-export interface Linkage {
+export const Relationship: {
+  isRelationship: <I>(arg: any) => arg is Relationship<I>
+} = {
+  isRelationship: (arg: any): arg is Relationship<any> => {
+    if (!isPlainObject(arg)) { return false }
+
+    const {data, links, meta, ...rest} = arg
+    if (objectKeys(rest).length > 0) { return false }
+
+    if (links != null && (!isPlainObject(links) || !objectValues(links).every(it => typeof it === 'string'))) { return false }
+    if (meta != null && !isPlainObject(meta)) { return false }
+
+    if (data == null) { return true }
+    if (isArray(data)) { return data.every(Linkage.isLinkage) }
+    return Linkage.isLinkage(data)
+  },
+}
+
+export interface Linkage<ID> {
   type:  string
-  id:    string
+  id:    ID
   meta?: Meta
 }
 
 export const Linkage: {
-  isLinkage: (arg: any) => arg is Linkage
+  isLinkage: <I>(arg: any) => arg is Linkage<I>
 } = {
-  isLinkage: (arg: any): arg is Linkage => {
+  isLinkage: (arg: any): arg is Linkage<any> => {
     if (!isPlainObject(arg)) { return false }
     if (!('type' in arg) || typeof arg.type !== 'string') { return false }
-    if (!('id' in arg) || !['string', 'number'].includes(arg.id)) { return false }
+    if (!('id' in arg)) { return false }
     return true
   },
 }
 
-export type Links = Record<string, string>
 
 export interface JSONAPIError {
   id?:     string
@@ -109,3 +122,11 @@ export type Primitive = string | number | boolean
 export type ModelOf<R extends Resource<any, any, any>> = R extends Resource<infer M, any, any> ? M : never
 export type QueryOf<R extends Resource<any, any, any>> = R extends Resource<any, infer Q, any> ? Q : never
 export type IDOf<R extends Resource<any, any, any>> = R extends Resource<any, any, infer I> ? I : never
+
+export interface ModelToDocumentOptions {
+  detail?: boolean
+}
+
+export interface ModelsToCollectionOptions {
+  detail?: boolean
+}
