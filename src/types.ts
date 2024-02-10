@@ -98,6 +98,10 @@ export interface RetrievalActionOptions extends ActionOptions {
   detail?:  boolean
 }
 
+export interface ListActionOptions extends RetrievalActionOptions {
+  totals?: boolean
+}
+
 export type Include = string
 
 export interface ListParams {

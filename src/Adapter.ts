@@ -4,6 +4,7 @@ import {
   ActionOptions,
   DocumentLocator,
   Linkage,
+  ListActionOptions,
   ListParams,
   Meta,
   Relationship,
@@ -15,7 +16,8 @@ export default interface Adapter<Model, Query, ID> {
 
   // #region Actions
 
-  list(query: Query, params: ListParams, options: RetrievalActionOptions): Promise<Model[] | [Model[], number]>
+  list(query: Query, params: ListParams, options: ListActionOptions & {totals: false}): Promise<Model[]>
+  list(query: Query, params: ListParams, options: ListActionOptions): Promise<Model[] | [Model[], number]>
   get(query: Query, locator: DocumentLocator<ID>, options: RetrievalActionOptions): Promise<Model>
   create(query: Query, document: Document<ID>, meta: Meta, options: ActionOptions): Promise<Model>
   replace(query: Query, locator: DocumentLocator<ID>, document: Document<ID>, meta: Meta, options: ActionOptions): Promise<Model>
@@ -44,7 +46,6 @@ export default interface Adapter<Model, Query, ID> {
   getID?(model: Model): ID | Promise<ID>
   getAttribute?(model: Model, attribute: string): any | Promise<any>
   getRelationship?(model: Model, relationship: string): Relationship<ID> | ID | Linkage<ID> | Promise<ID | Linkage<ID>>
-  collectIncludes?(models: Model[], includes: string[]): Promise<Document<ID>[]>
 
   // #endregion
 

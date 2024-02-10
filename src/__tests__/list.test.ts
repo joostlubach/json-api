@@ -8,6 +8,8 @@ describe("list", () => {
   let jsonAPI: MockJSONAPI
 
   beforeEach(() => {
+    db.seed()
+
     // Rather than creating mock functions, we, we've created a mock DB with a mock adapter that actually
     // sort of works. This exemplifies JSON API better.
     jsonAPI = new MockJSONAPI()
@@ -190,8 +192,16 @@ describe("list", () => {
       })
     })
 
-    it.todo("should reflect changes in pagination meta appropriately")
-
+    it("should reflect changes in pagination meta appropriately", async () => {
+      expect(out.meta).toEqual({
+        count:      2,
+        isFirst:    true,
+        isLast:     true,
+        nextOffset: null,
+        offset:     0,
+        total:      2,
+      })
+    })
   
   })
 

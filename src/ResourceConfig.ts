@@ -189,7 +189,7 @@ export type RelationshipMap<M, Q, I> = Record<string, RelationshipConfig<M, Q, I
 export type RelationshipConfig<M, Q, I> = SingularRelationshipConfig<M, Q, I> | PluralRelationshipConfig<M, Q, I>
 
 interface RelationshipConfigCommon<M, Q, I> {
-  type:      string
+  type?:     string
   writable?: boolean | 'create'
   detail?:   boolean
   if?:       (this: Resource<M, Q, I>, model: M, context: RequestContext) => boolean | Promise<boolean>

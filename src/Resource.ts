@@ -7,6 +7,7 @@ import APIError from './APIError'
 import Adapter from './Adapter'
 import Collection from './Collection'
 import Document from './Document'
+import IncludeCollector from './IncludeCollector'
 import JSONAPI from './JSONAPI'
 import Pack from './Pack'
 import RequestContext from './RequestContext'
@@ -257,19 +258,20 @@ export default class Resource<Model, Query, ID> {
     const coerce = (value: Relationship<ID> | Linkage<ID> | ID | Array<Linkage<ID> | ID> | null): Relationship<ID> => {
       if (Relationship.isRelationship(value)) {
         return value
-      } else if (isArray(value)) {
-        return {
-          data: value.map(it => this.jsonAPI.toLinkage(it, relationship.type)),
-        }
-      } else if (value != null) {
-        return {
-          data: this.jsonAPI.toLinkage(value, relationship.type),
-        }
-      } else {
-        return {
-          data: null,
-        }
+      } else if (value == null) {
+        return {data: null}
       }
+
+      const {type} = relationship
+      if (type == null) {
+        throw new APIError(409, `Relationship "${name}" is polymorphic but its getter doesn't return linkages.`)
+      }
+
+      const data = isArray(value)
+        ? value.map(it => this.jsonAPI.toLinkage(it, type))
+        : this.jsonAPI.toLinkage(value, type)
+
+      return {data}
     }
 
     if (relationship.plural && relationship.get != null) {
@@ -495,7 +497,7 @@ export default class Resource<Model, Query, ID> {
       ? await this.config.get.call(this, locator, adapter, context, options)
       : await adapter.get(await this.listQuery(adapter, {}, context), locator, options)
     
-    return await this.documentPack(model, adapter, context)
+    return await this.documentPack(model, adapter, context, options)
   }
 
   public async create(document: Document<ID>, requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
@@ -508,7 +510,7 @@ export default class Resource<Model, Query, ID> {
       ? await this.config.create.call(this, document, requestPack, adapter, context, options)
       : await adapter.create(await this.listQuery(adapter, {}, context), document, requestPack, options)
 
-    return await this.documentPack(model, adapter, context)
+    return await this.documentPack(model, adapter, context, options)
   }
 
   public async replace(locator: DocumentLocator<ID>, document: Document<ID>, meta: Meta, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
@@ -521,7 +523,7 @@ export default class Resource<Model, Query, ID> {
       ? await this.config.replace.call(this, locator, document, meta, adapter, context, options)
       : await adapter.replace(await this.listQuery(adapter, {}, context), locator, document, meta, options)
 
-    return await this.documentPack(model, adapter, context)
+    return await this.documentPack(model, adapter, context, options)
   }
 
   public async update(locator: DocumentLocator<ID>, document: Document<ID>, meta: Meta, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
@@ -534,7 +536,7 @@ export default class Resource<Model, Query, ID> {
       ? await this.config.update.call(this, locator, document, meta, adapter, context, options)
       : await adapter.update(await this.listQuery(adapter, {}, context), locator, document, meta, options)
 
-    return await this.documentPack(model, adapter, context)
+    return await this.documentPack(model, adapter, context, options)
   }
 
   public async delete(selector: BulkSelector<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext): Promise<Pack<ID>> {
@@ -609,8 +611,8 @@ export default class Resource<Model, Query, ID> {
       detail: options.detail,
     })
 
-    const included = options.include != null && adapter.collectIncludes != null ? (
-      await adapter.collectIncludes(models, options.include)
+    const included = options.include != null ? (
+      await this.collectIncludes(collection.documents, options.include, context)
     ) : (
       []
     )
@@ -626,8 +628,8 @@ export default class Resource<Model, Query, ID> {
       detail: options.detail,
     })
 
-    const included = options.include != null && adapter.collectIncludes != null ? (
-      await adapter.collectIncludes([model], options.include)
+    const included = options.include != null ? (
+      await this.collectIncludes([document], options.include, context)
     ) : (
       []
     )
@@ -640,6 +642,11 @@ export default class Resource<Model, Query, ID> {
     Object.assign(pack.meta, this.getDocumentMeta(model, context))
 
     return pack
+  }
+
+  private async collectIncludes(documents: Document<ID>[], paths: string[], context: RequestContext) {
+    const includer = new IncludeCollector(this.jsonAPI, context)
+    return await includer.collect(documents, paths)
   }
 
   // #endregion

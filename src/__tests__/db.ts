@@ -1,4 +1,4 @@
-import { isFunction } from 'lodash'
+import { isArray, isFunction } from 'lodash'
 import { slugify } from 'ytil'
 
 import { Filters, Sort } from '../types'
@@ -91,6 +91,10 @@ export class Db {
         if (!value((model as any)[name])) {
           return false
         }
+      } else if (isArray(value)) {
+        if (!value.includes((model as any)[name])) {
+          return false
+        }
       } else {
         if ((model as any)[name] !== value) {
           return false
@@ -114,9 +118,31 @@ const dbs: Record<string, Db> = {
   children: new Db(),
 }
 
-export default function db(which: string) {
+function db(which: string) {
   return dbs[which]!
 }
+
+namespace db {
+  export function seed() {
+    createFamily([
+      {name: "Alice", age: 30},
+      {name: "Bob", age: 40},
+    ], [
+      {name: "Charlie", age: 10},
+      {name: "Dolores", age: 20},
+    ])
+    
+    createFamily([
+      {name: "Eve", age: 50},
+      {name: "Frank", age: 60},
+    ], [
+      {name: "Isaac", age: 15},
+      {name: "Henry", age: 25},
+    ])
+  }
+}
+
+export default db
 
 function createFamily(
   parents: [Omit<Parent, 'id' | 'spouse' | 'children'>, Omit<Parent, 'id' | 'spouse' | 'children'>],
@@ -134,22 +160,5 @@ function createFamily(
     ;((parentModels[1] as Parent).children ??= []).push(childModel.id)
   }
 }
-
-createFamily([
-  {name: "Alice", age: 30},
-  {name: "Bob", age: 40},
-], [
-  {name: "Charlie", age: 10},
-  {name: "Dolores", age: 20},
-])
-
-createFamily([
-  {name: "Eve", age: 50},
-  {name: "Frank", age: 60},
-], [
-  {name: "Isaac", age: 15},
-  {name: "Henry", age: 25},
-])
-
 
 export class NotFoundError extends Error {}

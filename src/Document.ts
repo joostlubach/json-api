@@ -2,7 +2,7 @@ import { objectEntries, objectKeys } from 'ytil'
 
 import APIError from './APIError'
 import ResourceRegistry from './ResourceRegistry'
-import { AnyResource, Links, Meta, Relationship } from './types'
+import { AnyResource, Linkage, Links, Meta, Relationship } from './types'
 
 export default class Document<ID> {
 
@@ -31,6 +31,13 @@ export default class Document<ID> {
     }
       
     return serialized
+  }
+
+  public toLinkage(): Linkage<ID> {
+    if (this.id == null) {
+      throw new APIError(500, "Cannot create linkage: document has no ID")
+    }
+    return {type: this.resource.type, id: this.id}
   }
 
   public static deserialize<M, Q, I>(registry: ResourceRegistry<M, Q, I>, serialized: Record<string, any>, detail: boolean = true): Document<I> {
