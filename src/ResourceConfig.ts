@@ -81,13 +81,10 @@ export interface ResourceConfig<Model, Query, ID> {
   wildcardLabel?: WildcardLabelModifier<Model, Query, ID>
 
   // ------
-  // Meta & links
+  // Meta
 
-  links?: LinkMap<Model, Query, ID>
-  meta?:  MetaMap<Model, Query, ID>
-
-  documentLinks?: DocumentLinkMap<Model, Query, ID>
-  documentMeta?:  DocumentMetaMap<Model, Query, ID>
+  meta?:         Meta | DynamicMeta<Model, Query, ID>
+  documentMeta?: DynamicDocumentMeta<Model, Query, ID>
 
   // ------
   // Pagination
@@ -160,27 +157,8 @@ export type AttributeSetter<M, Q, I> = (this: Resource<M, Q, I>, item: M, value:
 // ------
 // Meta & link types
 
-export type LinkMap<M, Q, I> = Record<string, LinkConfig<M, Q, I>>
-export type DocumentLinkMap<M, Q, I> = Record<string, DocumentLinkConfig<M, Q, I>>
-
-export interface LinkConfig<M, Q, I> {
-  get: (this: Resource<M, Q, I>, context: RequestContext) => string | Promise<string>
-}
-
-export interface DocumentLinkConfig<M, Q, I> {
-  get: (this: Resource<M, Q, I>, item: M, context: RequestContext) => string | Promise<string>
-}
-
-export type MetaMap<M, Q, I> = Record<string, MetaConfig<M, Q, I>>
-export type DocumentMetaMap<M, Q, I> = Record<string, DocumentMetaConfig<M, Q, I>>
-
-export interface MetaConfig<M, Q, I> {
-  get: (this: Resource<M, Q, I>, context: RequestContext) => any | Promise<any>
-}
-
-export interface DocumentMetaConfig<M, Q, I> {
-  get: (this: Resource<M, Q, I>, item: M, context: RequestContext) => any | Promise<any>
-}
+export type DynamicMeta<M, Q, I> = (this: Resource<M, Q, I>, meta: Meta, model: M | null, context: RequestContext) => Meta | Promise<Meta>
+export type DynamicDocumentMeta<M, Q, I> = (this: Resource<M, Q, I>, meta: Meta, model: M, context: RequestContext) => Meta | Promise<Meta>
 
 // ------
 // Relationship types
@@ -322,7 +300,7 @@ export interface CustomDocumentAction<M, Q, I> {
   name:         string
   method:       'get' | 'post' | 'put' | 'delete'
   deserialize?: boolean
-  action:       (this: Resource<M, Q, I>, locator: DocumentLocator<I>, pack: Pack<I>, adapter: () => Adapter<M, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
+  action:       (this: Resource<M, Q, I>, model: M, pack: Pack<I>, adapter: Adapter<M, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
 }
 
 // ------

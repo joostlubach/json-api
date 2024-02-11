@@ -287,107 +287,21 @@ export default class Resource<Model, Query, ID> {
 
   // #endregion
 
-  // #region Meta & links
+  // #region Meta
 
-  public async getPackMeta(context: RequestContext) {
-    const meta: Record<string, any> = {}
-
-    const promises = objectEntries(this.config.meta ?? {}).map(async ([key, config]) => {
-      meta[key] = await config.get.call(this, context)
-    })
-    await Promise.all(promises)
-
-    return meta
-  }
-
-  public async getDocumentMeta(model: Model, context: RequestContext) {
-    const meta: Record<string, any> = {}
-
-    const promises = objectEntries(this.config.documentMeta ?? {}).map(async ([key, config]) => {
-      meta[key] = await config.get.call(this, model, context)
-    })
-    await Promise.all(promises)
-
-    return meta
-  }
-
-  public async getPackLinks(context: RequestContext) {
-    const links: Record<string, any> = {}
-
-    for (const [key, config] of objectEntries(this.config.links ?? {})) {
-      links[key] = await config.get.call(this, context)
-    }
-
-    return links
-  }
-
-  public async getDocumentLinks(model: Model, context: RequestContext) {
-    const links: Record<string, any> = {}
-
-    for (const [key, config] of objectEntries(this.config.documentLinks ?? {})) {
-      links[key] = await config.get.call(this, model, context)
-    }
-
-    return links
-  }
-
-  /**
-   * Injects pack meta into a response pack.
-   *
-   * @param pack The pack to inject the meta into.
-   * @param context The request context.
-   */
-  private async injectPackMeta(pack: Pack<ID>, context: RequestContext) {
-    Object.assign(pack.meta, await this.getPackMeta(context))
-  }
-
-  /**
-   * Injects proper 'self' links into the response pack for this resource.
-   *
-   * @param pack The response pack.
-   * @param context The request context.
-   */
-  private injectPackSelfLinks(pack: Pack<ID>, context: RequestContext) {
-    // Start by interpolating current request parameters in our base. This is useful in case resources
-    // use interpolation values in their base (e.g. `scripts/:scriptID/messages`).
-    if (context.requestURI == null) { return null }
-
-    const base = context.requestURI
-    const baseNoQuery = new URL({...context.requestURI, search: ''})
-    if (base == null ?? baseNoQuery == null) { return }
-
-    if (pack.data == null ?? pack.data instanceof Collection) {
-      // This is a request for some collection, the self link is the base.
-      pack.links.self = `${base}`
-    }
-    if (pack.data instanceof Document && pack.data.id != null) {
-      pack.links.self = `${base}/${pack.data.id}`
-    }
-
-    if (pack.data instanceof Collection) {
-      // Insert a self link for each document in the collection.
-      for (const document of pack.data.documents) {
-        this.injectDocumentSelfLinks(document, baseNoQuery)
-      }
-    }
-    if (pack.data instanceof Document) {
-      this.injectDocumentSelfLinks(pack.data, baseNoQuery)
+  private async injectPackMeta(pack: Pack<ID>, model: Model | null, context: RequestContext) {
+    if (isFunction(this.config.meta)) {
+      pack.meta = await this.config.meta.call(this, pack.meta, model, context)
+    } else if (this.config.meta != null) {
+      Object.assign(pack.meta, this.config.meta)
     }
   }
 
-  private injectDocumentSelfLinks(document: Document<ID>, base: URL) {
-    const {id} = document
-    if (id == null) { return }
-
-    document.links.self = `${base}/${id}`
-
-    for (const name of Object.keys(document.relationships)) {
-      const relationship = document.relationships[name]
-      relationship.links = {
-        self:    `${base}/${id}/relationships/${name}`,
-        related: `${base}/${id}/${name}`,
-        ...relationship.links,
-      }
+  private async injectDocumentMeta(document: Document<ID>, model: Model, context: RequestContext) {
+    if (isFunction(this.config.documentMeta)) {
+      document.meta = await this.config.documentMeta.call(this, document.meta, model, context)
+    } else if (this.config.documentMeta != null) {
+      Object.assign(document.meta, this.config.documentMeta)
     }
   }
 
@@ -415,16 +329,6 @@ export default class Resource<Model, Query, ID> {
 
     offset ??= 0
 
-    if (context.requestURI != null) {
-      const url = new URL({
-        ...context.requestURI,
-        searchParams: new URLSearchParams({offset: '0'}),
-      })
-      if (url != null) {
-        pack.links.first = url.toString()
-      }
-    }
-
     if (total == null) {
       Object.assign(pack.meta, {
         offset,
@@ -441,16 +345,6 @@ export default class Resource<Model, Query, ID> {
         isFirst: offset === 0,
         isLast:  nextOffset == null,
       })
-
-      if (context.requestURI != null) {
-        const url = new URL({
-          ...context.requestURI,
-          searchParams: new URLSearchParams({offset: `${nextOffset}`}),
-        })
-        if (url != null) {
-          pack.links.next = url.toString()
-        }
-      }
     }
   }
 
@@ -482,9 +376,7 @@ export default class Resource<Model, Query, ID> {
       ? response as [Model[], number]
       : [response as Model[], undefined]
 
-    const pack = await this.collectionPack(models, adapter, context, options)
-    await this.injectPaginationMeta(pack, params.offset, total, context)
-    return pack
+    return await this.collectionPack(models, adapter, params.offset, total, context, options)
   }
 
   public async show(locator: DocumentLocator<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}): Promise<Pack<ID>> {
@@ -550,10 +442,9 @@ export default class Resource<Model, Query, ID> {
       : await adapter.delete(await this.bulkSelectorQuery(adapter, selector, context))
 
     const linkages = models.map(model => this.jsonAPI.toLinkage(model, this.type))
-    const pack = new Pack<ID>(linkages, undefined, undefined, {
+    const pack = new Pack<ID>(linkages, undefined, {
       deletedCount: models.length,
     })
-    this.injectPackSelfLinks(pack, context)
     return pack
   }
 
@@ -582,8 +473,7 @@ export default class Resource<Model, Query, ID> {
       ? response as [Model[], number]
       : [response as Model[], undefined]
 
-    const pack = await this.collectionPack(models, adapter, context, options)
-    await this.injectPaginationMeta(pack, params.offset, total, context)
+    const pack = await this.collectionPack(models, adapter, params.offset, total, context, options)
     return pack
   }
 
@@ -606,7 +496,7 @@ export default class Resource<Model, Query, ID> {
     return await this.documentPack(models, adapter, context, options)
   }
 
-  private async collectionPack(models: Model[], adapter: Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}) {
+  private async collectionPack(models: Model[], adapter: Adapter<Model, Query, ID>, offset: number | undefined, total: number | undefined, context: RequestContext, options: RetrievalActionOptions = {}) {
     const collection = await this.modelsToCollection(models, adapter, context, {
       detail: options.detail,
     })
@@ -618,8 +508,9 @@ export default class Resource<Model, Query, ID> {
     )
 
     const pack = new Pack<ID>(collection, new Collection(included))
-    this.injectPackSelfLinks(pack, context)
-    await this.injectPackMeta(pack, context)
+    await this.injectPaginationMeta(pack, offset, total, context)
+    await this.injectPackMeta(pack, null, context)
+
     return pack
   }
 
@@ -634,12 +525,10 @@ export default class Resource<Model, Query, ID> {
       []
     )
 
-    const pack = new Pack<ID>(document, new Collection(included))
-    this.injectPackSelfLinks(pack, context)
-    Object.assign(pack.links, this.getDocumentLinks(model, context))
+    await this.injectDocumentMeta(document, model, context)
 
-    await this.injectPackMeta(pack, context)
-    Object.assign(pack.meta, this.getDocumentMeta(model, context))
+    const pack = new Pack<ID>(document, new Collection(included))
+    await this.injectPackMeta(pack, model, context)
 
     return pack
   }
@@ -660,19 +549,26 @@ export default class Resource<Model, Query, ID> {
     }
 
     const responsePack = await action.action.call(this, requestPack, adapter, context, options)
-    this.injectPackSelfLinks(responsePack, context)
+    await this.injectPaginationMeta(responsePack, responsePack.meta.offset, responsePack.meta.total, context)
+
+    await this.injectPackMeta(responsePack, null, context)
+
     return responsePack
   }
 
-  public async callDocumentAction(name: string, locator: DocumentLocator<ID>, requestPack: Pack<ID>, adapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}) {
+  public async callDocumentAction(name: string, locator: DocumentLocator<ID>, requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}) {
     const action = this.config.documentActions?.find(it => it.name === name)
     if (action == null) {
       throw new APIError(405, `Action \`${name}\` not found`)
     }
 
-    const responsePack = await action.action.call(this, locator, requestPack, adapter, context, options)
-    this.injectPackSelfLinks(responsePack, context)
-    await this.injectPackMeta(responsePack, context)
+    const adapter = getAdapter()
+    const model = await adapter.get(await this.listQuery(adapter, {}, context), locator, options)
+
+    const responsePack = await action.action.call(this, model, requestPack, adapter, context, options)
+    
+    await this.injectPackMeta(responsePack, model, context)
+    
     return responsePack
   }
 
@@ -720,9 +616,9 @@ export default class Resource<Model, Query, ID> {
       relationships[name] = await this.getRelationship(model, name, relationship, adapter, context)
     }
 
-    const links = await this.getDocumentLinks(model, context)
-    const meta = await this.getDocumentMeta(model, context)
-    return new Document(this, id, attributes, relationships, links, meta)
+    const document = new Document(this, id, attributes, relationships)
+    await this.injectDocumentMeta(document, model, context)
+    return document
   }
   
   // #endregion

@@ -2,7 +2,7 @@ import { objectEntries, objectKeys } from 'ytil'
 
 import APIError from './APIError'
 import ResourceRegistry from './ResourceRegistry'
-import { AnyResource, Linkage, Links, Meta, Relationship } from './types'
+import { AnyResource, Linkage, Meta, Relationship } from './types'
 
 export default class Document<ID> {
 
@@ -11,8 +11,7 @@ export default class Document<ID> {
     public readonly id:            ID | null,
     public readonly attributes:    Record<string, any> = {},
     public readonly relationships: Record<string, Relationship<ID>> = {},
-    public readonly links:         Links = {},
-    public readonly meta:          Meta = {},
+    public meta: Meta = {},
   ) {}
 
   public serialize(): any {
@@ -23,9 +22,6 @@ export default class Document<ID> {
       relationships: this.relationships,
     }
 
-    if (objectKeys(this.links).length > 0) {
-      serialized.links = this.links
-    }
     if (objectKeys(this.meta).length > 0) {
       serialized.meta = this.meta
     }
@@ -55,7 +51,6 @@ export default class Document<ID> {
       serialized.id,
       {...serialized.attributes},
       {...serialized.relationships},
-      {...serialized.links},
       {...serialized.meta},
     )
 
@@ -67,12 +62,6 @@ export default class Document<ID> {
     for (const [name, value] of objectEntries(this.relationships)) {
       if (!Relationship.isRelationship(value)) {
         throw new APIError(400, `Invalid relationship for relationship '${name}'`)
-      }
-    }
-
-    for (const [name, link] of objectEntries(this.links)) {
-      if (typeof link !== 'string') {
-        throw new APIError(400, `Invalid link for link '${name}'`)
       }
     }
   }

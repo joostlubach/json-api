@@ -4,19 +4,15 @@ import APIError from './APIError'
 import Collection from './Collection'
 import Document from './Document'
 import ResourceRegistry from './ResourceRegistry'
-import { Links, Meta } from './types'
+import { Meta } from './types'
 
 export default class Pack<ID> {
 
   constructor(
     public data:     Document<ID> | Collection<ID> | any | null,
     public included: Collection<ID> = new Collection(),
-    public links:    Links = {},
     public meta:     Meta = {},
-  ) {
-    this.links = {...links}
-    this.meta = {...meta}
-  }
+  ) {}
 
   public static empty() {
     return {
@@ -36,7 +32,7 @@ export default class Pack<ID> {
   }
 
   public static deserialize<M, Q, I>(registry: ResourceRegistry<M, Q, I>, serialized: any): Pack<I> {
-    const {data: dataRaw = null, meta = {}, links = {}, included: includedRaw = [], ...rest} = serialized
+    const {data: dataRaw = null, meta = {}, included: includedRaw = [], ...rest} = serialized
     if (Object.keys(rest).length > 0) {
       throw new APIError(400, `Malformed pack: extraneous nodes ${Object.keys(rest).join(', ')} found`)
     }
@@ -51,7 +47,7 @@ export default class Pack<ID> {
       ? new Collection<I>([])
       : Collection.deserialize(registry, includedRaw)
 
-    return new Pack<I>(data, included, links, meta)
+    return new Pack<I>(data, included, meta)
   }
 
   public serialize(): any {
@@ -63,8 +59,7 @@ export default class Pack<ID> {
     return {
       data,
       included,
-      links: this.links,
-      meta:  this.meta,
+      meta: this.meta,
     }
   }
 

@@ -1,5 +1,9 @@
 import { MockJSONAPI } from './mock'
 
+import { omit } from 'lodash'
+import { delay } from 'yest'
+import { slugify } from 'ytil'
+
 import RequestContext from '../RequestContext'
 import db from './db'
 
@@ -33,7 +37,6 @@ describe("list", () => {
         ],
         meta:     expect.any(Object),
         included: [],
-        links:    {},
       })
 
       expect(out.data[0]).toEqual({
@@ -96,32 +99,6 @@ describe("list", () => {
       })
     })
 
-    it("should include pagination info in the meta", async () => {
-      const pack = await jsonAPI.list('parents', {}, context('list'))
-      const out = pack.serialize()
-      expect(out.meta).toEqual({
-        total:      4,
-        count:      4,
-        offset:     0,
-        nextOffset: null,
-        isFirst:    true,
-        isLast:     true,
-      })
-    })
-
-    it("should reflect proper pagination info if offset and limit are given", async () => {
-      const pack = await jsonAPI.list('parents', {offset: 3, limit: 2}, context('list'))
-      const out = pack.serialize()
-      expect(out.meta).toEqual({
-        total:      4,
-        count:      1,
-        offset:     3,
-        nextOffset: null,
-        isFirst:    false,
-        isLast:     true,
-      })
-    })
-
     it("should handle conditional attributes", async () => {
       jsonAPI.registry.modify('parents', cfg => {
         cfg.attributes.age = {
@@ -155,15 +132,119 @@ describe("list", () => {
       })
     })
 
-    it.todo("should handle custom attributes")
-    it.todo("should handle custom relationships")
+    it("should handle custom attributes", async () => {
+      jsonAPI.registry.modify('parents', cfg => {
+        cfg.attributes.foo = {
+          get: model => model.name.toUpperCase(),
+        }
+      })
 
-    it.todo("should include document links if configured")
-    it.todo("should include document meta if configured")
+      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const out = pack.serialize()
+      expect(out.data[0].attributes).toEqual({name: "Alice", foo: "ALICE", age: 30})    
+      expect(out.data[1].attributes).toEqual({name: "Bob", foo: "BOB", age: 40})    
+    })
 
-    it.todo("should include pagination meta")
-    it.todo("should include additional meta if configured")
-    it.todo("should include collection links if configured")
+    it("should handle custom relationships", async () => {
+      jsonAPI.registry.modify('parents', cfg => {
+        cfg.relationships!.parent = {
+          type:   'parents',
+          plural: false,
+          get:    async (model) => ({type: 'parents', id: model.id + '-parent'}),
+        }
+      })
+
+      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const out = pack.serialize()
+      expect(out.data[0].relationships).toEqual({
+        children: expect.objectContaining({}),
+        parent:   expect.objectContaining({data: {type: 'parents', id: 'alice-parent'}}),
+        spouse:   expect.objectContaining({}),
+      })
+    })
+
+    it("should include pagination info in the meta", async () => {
+      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const out = pack.serialize()
+      expect(out.meta).toEqual({
+        total:      4,
+        count:      4,
+        offset:     0,
+        nextOffset: null,
+        isFirst:    true,
+        isLast:     true,
+      })
+    })
+
+    it("should reflect proper pagination info if offset and limit are given", async () => {
+      const pack = await jsonAPI.list('parents', {offset: 3, limit: 2}, context('list'))
+      const out = pack.serialize()
+      expect(out.meta).toEqual({
+        total:      4,
+        count:      1,
+        offset:     3,
+        nextOffset: null,
+        isFirst:    false,
+        isLast:     true,
+      })
+    })
+
+    it("should include additional meta if configured", async () => {
+      jsonAPI.registry.modify('parents', cfg => {
+        cfg.meta = {
+          foo: 'bar',
+        }
+      })
+
+      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const out = pack.serialize()
+      expect(out.meta).toEqual(expect.objectContaining({
+        foo: 'bar',
+      }))
+    })
+
+    it("should allow meta to be configured as a (sync or async) dynamic function", async () => {
+      jsonAPI.registry.modify('parents', cfg => {
+        cfg.meta = async (meta, _, context) => {
+          await delay(10)
+          return {
+            ...omit(meta, 'isFirst', 'isLast', 'nextOffset'),
+            action: context.action,
+          }
+        }
+      })
+
+      const pack = await jsonAPI.list('parents', {}, context('my-list-action'))
+      const out = pack.serialize()
+      expect(out.meta).toEqual({
+        action: 'my-list-action',
+        total:  4,
+        count:  4,
+        offset: 0,
+      })
+    })
+
+    it("should include document meta in each document if configured", async () => {
+      jsonAPI.registry.modify('parents', cfg => {
+        cfg.documentMeta = async (meta, model, context) => {
+          await delay(10)
+          return {
+            action: context.action,
+            slug:   slugify(model.name),
+          }
+        }
+      })
+
+      const pack = await jsonAPI.list('parents', {}, context('my-list-action'))
+      const out = pack.serialize()
+      expect(out.data.map((it: any) => it.meta)).toEqual([
+        {action: 'my-list-action', slug: 'alice'},
+        {action: 'my-list-action', slug: 'bob'},
+        {action: 'my-list-action', slug: 'eve'},
+        {action: 'my-list-action', slug: 'frank'},
+      ])
+
+    })
 
   })
 
@@ -188,7 +269,6 @@ describe("list", () => {
         ],
         meta:     expect.any(Object),
         included: [],
-        links:    {},
       })
     })
 
@@ -236,7 +316,6 @@ describe("list", () => {
         ],
         meta:     expect.any(Object),
         included: [],
-        links:    {},
       })
     })
 
