@@ -11,12 +11,16 @@ import { Middleware, runMiddleware } from './middleware'
 export default class ResourceRegistry<Model, Query, ID> {
 
   constructor(
-    private readonly jsonAPI: JSONAPI<Model, Query, ID>,
-    private readonly middleware: Middleware<Model, Query, ID>[] = []
+    jsonAPI: JSONAPI<Model, Query, ID>,
+    middleware: Middleware<Model, Query, ID>[] = []
   ) {
+    this.jsonAPI = jsonAPI
+    this.middleware = middleware
   }
 
-  private readonly resources: Map<string, Resource<any, any, any>> = new Map()
+  private readonly resources:  Map<string, Resource<any, any, any>> = new Map()
+  private readonly jsonAPI:    JSONAPI<any, any, any>
+  private readonly middleware: Middleware<any, any, any>[]
 
   // #region Registering
 
@@ -33,15 +37,15 @@ export default class ResourceRegistry<Model, Query, ID> {
     }
   }
 
-  public modify(type: string, fn: (config: ResourceConfig<Model, Query, ID>) => void) {
-    const resource = this.get(type)
+  public modify<M extends Model, Q extends Query, I extends ID>(type: string, fn: (config: ResourceConfig<M, Q, I>) => void) {
+    const resource = this.get(type) as Resource<M, Q, I>
     fn(resource.config)
   }
 
-  private registerResource(type: string, resourceConfig: ResourceConfig<Model, Query, ID>) {
+  private registerResource<M extends Model, Q extends Query, I extends ID>(type: string, resourceConfig: ResourceConfig<M, Q, I>) {
     runMiddleware(this.middleware, resourceConfig)
 
-    const resource = new Resource(this.jsonAPI, type, resourceConfig)
+    const resource = new Resource<M, Q, I>(this.jsonAPI, type, resourceConfig)
     this.resources.set(type, resource)
 
     config.logger.debug(chalk`-> Registered resource {yellow ${resource.plural}}\n`)

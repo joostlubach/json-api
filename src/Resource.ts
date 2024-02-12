@@ -95,11 +95,7 @@ export default class Resource<Model, Query, ID> {
 
   public async applyScope(query: Query, context: RequestContext): Promise<Query> {
     if (this.config.scope == null) { return query }
-    return await this.config.scope.call(this, query, context)
-  }
-
-  public async getDefaults(context: RequestContext): Promise<Record<string, any> | null> {
-    return this.config.defaults?.call(this, context) ?? null
+    return await this.config.scope.query.call(this, query, context)
   }
 
   public async applyFilters(query: Query, filters: Record<string, any>, adapter: Adapter<Model, Query, ID>, context: RequestContext): Promise<Query> {
@@ -350,6 +346,9 @@ export default class Resource<Model, Query, ID> {
     // TODO: Insert scope & defaults.
 
     const model = await adapter.create(document, requestPack, options)
+    if (this.config.scope != null) {
+      this.config.scope.ensure.call(this, model, context)
+    }
     return await this.documentPack(model, adapter, context, options)
   }
 
@@ -365,6 +364,9 @@ export default class Resource<Model, Query, ID> {
     const document = this.extractRequestDocument(requestPack, 'id' in locator ? locator.id : null)
     const original = await this.getModel(locator, adapter, context)
     const model = await adapter.replace(original, document, requestPack, options)
+    if (this.config.scope != null) {
+      this.config.scope.ensure.call(this, model, context)
+    }
 
     return await this.documentPack(model, adapter, context, options)
   }
@@ -381,6 +383,9 @@ export default class Resource<Model, Query, ID> {
     const document = this.extractRequestDocument(requestPack, 'id' in locator ? locator.id : null)
     const original = await this.getModel(locator, adapter, context)
     const model = await adapter.update(original, document, requestPack, options)
+    if (this.config.scope != null) {
+      this.config.scope.ensure.call(this, model, context)
+    }
 
     return await this.documentPack(model, adapter, context, options)
   }

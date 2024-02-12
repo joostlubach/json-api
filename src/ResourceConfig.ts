@@ -53,10 +53,7 @@ export interface ResourceConfig<Model, Query, ID> {
   // #region Data retrieval
 
   /** A scope configuration. */
-  scope?: ScopeFunction<Model, Query, ID>
-
-  /** Defaults for a new object. */
-  defaults?: DefaultsFunction<Model, Query, ID>
+  scope?: ScopeConfig<Model, Query, ID>
 
   /** A search configuration. */
   search?: SearchModifier<Model, Query, ID>
@@ -185,8 +182,13 @@ export type PluralRelationshipConfig<M, Q, I> = RelationshipConfigCommon<M, Q, I
 
 // #region Scope & search
 
+export interface ScopeConfig<M, Q, I> {
+  query:  ScopeFunction<M, Q, I>
+  ensure: DefaultsFunction<M, Q, I>
+}
 export type ScopeFunction<M, Q, I> = (this: Resource<M, Q, I>, query: Q, context: RequestContext) => Q | Promise<Q>
-export type DefaultsFunction<M, Q, I> = (this: Resource<M, Q, I>, context: RequestContext) => Record<string, any> | Promise<Record<string, any>>
+export type DefaultsFunction<M, Q, I> = (this: Resource<M, Q, I>, model: M, context: RequestContext) => void | Promise<void>
+
 export type ScopeOption<M, Q, I> = (this: Resource<M, Q, I>, request: Request) => any
 export type SearchModifier<M, Q, I> = (this: Resource<M, Q, I>, query: Q, term: string, context: RequestContext) => Q | Promise<Q>
 
