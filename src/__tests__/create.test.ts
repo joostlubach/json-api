@@ -68,7 +68,4 @@ describe("create", () => {
     })
   })
 
-  it.todo("should apply scope filters")
-  it.todo("should apply defaults")
-
 })

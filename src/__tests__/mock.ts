@@ -1,7 +1,6 @@
 import { isArray, isPlainObject } from 'lodash'
 import { dynamicProxy } from 'yest'
 
-import APIError from '../APIError'
 import Adapter from '../Adapter'
 import Document from '../Document'
 import JSONAPI, { JSONAPIOptions } from '../JSONAPI'
@@ -10,7 +9,6 @@ import RequestContext from '../RequestContext'
 import Resource from '../Resource'
 import {
   ActionOptions,
-  DocumentLocator,
   ListActionOptions,
   ListParams,
   Meta,
@@ -114,22 +112,19 @@ export class MockAdapter implements Adapter<Model, Query, string> {
     return [models, total]
   }
   
-  public async get(query: Query, locator: DocumentLocator<string>, options: RetrievalActionOptions): Promise<Model> {
-    const model = await this.loadModel(query, locator, options.include, this.context)
-    return model
+  public async get(query: Query, id: string, options: RetrievalActionOptions): Promise<Model | null> {
+    return db(this.resource.type).get(id, query)
   }
   
-  public async create(query: Query, document: Document<string>, meta: Meta, options: ActionOptions): Promise<Model> {
-    return db(this.resource.type).insert({...query.filters, ...document.attributes})[0]
+  public async create(document: Document<string>, meta: Meta, options: ActionOptions): Promise<Model> {
+    return db(this.resource.type).insert({...document.attributes})[0]
   }
   
-  public async replace(query: Query, locator: DocumentLocator<string>, document: Document<string>, meta: Meta, options: ActionOptions): Promise<Model> {
-    const model = await this.loadModel(query, locator, [], this.context)
+  public async replace(model: Model, document: Document<string>, meta: Meta, options: ActionOptions): Promise<Model> {
     return db(this.resource.type).insert({...document.attributes, id: model.id})[0]
   }
   
-  public async update(query: Query, locator: DocumentLocator<string>, document: Document<string>, meta: Meta, options: ActionOptions): Promise<Model> {
-    const model = await this.loadModel(query, locator, [], this.context)
+  public async update(model: Model, document: Document<string>, meta: Meta, options: ActionOptions): Promise<Model> {
     return db(this.resource.type).insert({...model, ...document.attributes})[0]
   }
   
@@ -137,14 +132,6 @@ export class MockAdapter implements Adapter<Model, Query, string> {
     return db(this.resource.type).delete(query)
   }
   
-  public async listRelated(locator: DocumentLocator<string>, relationship: string, query: Query, params: ListParams, options: RetrievalActionOptions): Promise<Model[]> {
-    throw new Error('Method not implemented.')
-  }
-  
-  public async showRelated(locator: DocumentLocator<string>, relationship: string, query: Query, options: RetrievalActionOptions): Promise<Model> {
-    throw new Error('Method not implemented.')
-  }
-
   public query(): Query {
     return {
       filters: {},
@@ -201,18 +188,6 @@ export class MockAdapter implements Adapter<Model, Query, string> {
       ...query,
       limit,
     }
-  }
-
-  private async loadModel(query: Query, locator: DocumentLocator<string>, include: string[] | undefined, context: RequestContext): Promise<Model> {
-    const [model] = DocumentLocator.isSingleton(locator)
-      ? await this.resource.loadSingleton(locator.singleton, query, include ?? [], this.context)
-      : [db(this.resource.type).get(locator.id, query)]
-
-    if (model == null) {
-      throw new APIError(404, `Model with "${JSON.stringify(locator)}" not found`)
-    }
-
-    return model
   }
 
 }

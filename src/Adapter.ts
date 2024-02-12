@@ -1,12 +1,11 @@
 
 import Document from './Document'
+import Pack from './Pack'
 import {
   ActionOptions,
-  DocumentLocator,
   Linkage,
   ListActionOptions,
   ListParams,
-  Meta,
   Relationship,
   RetrievalActionOptions,
   Sort,
@@ -18,14 +17,11 @@ export default interface Adapter<Model, Query, ID> {
 
   list(query: Query, params: ListParams, options: ListActionOptions & {totals: false}): Promise<Model[]>
   list(query: Query, params: ListParams, options: ListActionOptions): Promise<Model[] | [Model[], number]>
-  get(query: Query, locator: DocumentLocator<ID>, options: RetrievalActionOptions): Promise<Model>
-  create(query: Query, document: Document<ID>, meta: Meta, options: ActionOptions): Promise<Model>
-  replace(query: Query, locator: DocumentLocator<ID>, document: Document<ID>, meta: Meta, options: ActionOptions): Promise<Model>
-  update(query: Query, locator: DocumentLocator<ID>, document: Document<ID>, meta: Meta, options: ActionOptions): Promise<Model>
+  get(query: Query, id: ID, options: RetrievalActionOptions): Promise<Model | null>
+  create(document: Document<ID>, requestPack: Pack<ID>, options: ActionOptions): Promise<Model>
+  replace(model: Model, document: Document<ID>, requestPack: Pack<ID>, options: ActionOptions): Promise<Model>
+  update(model: Model, document: Document<ID>, requestPack: Pack<ID>, options: ActionOptions): Promise<Model>
   delete(query: Query): Promise<Array<Model | ID>>
-
-  listRelated(locator: DocumentLocator<ID>, relationship: string, query: Query, params: ListParams, options: ListActionOptions): Promise<Model[]>
-  showRelated(locator: DocumentLocator<ID>, relationship: string, query: Query, options: RetrievalActionOptions): Promise<Model>
 
   // #endregion
 

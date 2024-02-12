@@ -60,38 +60,35 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   public async create(resourceType: string, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
     const resource = this.registry.get(resourceType)
-    const document = resource.extractRequestDocument(requestPack, false, context)
+    const document = resource.extractRequestDocument(requestPack, null)
     const adapter = () => this.adapter(resource, context)
 
     await resource.runBeforeHandlers(context)
     return await resource.create(document, requestPack, adapter, context, options)
   }
 
-  public async replace(resourceType: string, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
+  public async replace(resourceType: string, locator: DocumentLocator<ID>, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
     const resource = this.registry.get(resourceType)
-    const document = resource.extractRequestDocument(requestPack, true, context)
     const adapter = () => this.adapter(resource, context)
 
     await resource.runBeforeHandlers(context)
-    return await resource.replace({id: document.id}, document, requestPack.meta, adapter, context, options)
+    return await resource.replace(locator,requestPack, adapter, context, options)
   }
 
-  public async update(resourceType: string, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
+  public async update(resourceType: string, locator: DocumentLocator<ID>, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
     const resource = this.registry.get(resourceType)
-    const document = resource.extractRequestDocument(requestPack, true, context)
     const adapter = () => this.adapter(resource, context)
 
     await resource.runBeforeHandlers(context)
-    return await resource.update({id: document.id}, document, requestPack.meta, adapter, context, options)
+    return await resource.update(locator, requestPack, adapter, context, options)
   }
 
   public async delete(resourceType: string, requestPack: Pack<ID>, context: RequestContext) {
     const resource = this.registry.get(resourceType)
-    const selector = resource.extractBulkSelector(requestPack, context)
     const adapter = () => this.adapter(resource, context)
 
     await resource.runBeforeHandlers(context)
-    return await resource.delete(selector, adapter, context)
+    return await resource.delete(requestPack, adapter, context)
   }
 
   // #endregion

@@ -191,7 +191,4 @@ describe("show", () => {
 
   })
 
-  it.todo("should allow retrieving a document by its singleton name")
-  it.todo("should not allow loading a singleton that's not defined")
-
 })

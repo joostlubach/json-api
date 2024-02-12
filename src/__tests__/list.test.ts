@@ -274,8 +274,57 @@ describe("list", () => {
       })
     })
 
-    it.todo("should allow pre-defined filters through labels")
-    it.todo("should handle a wildcard label")
+  })
+
+  describe("labels", () => {
+
+    beforeEach(() => {
+      jsonAPI.registry.modify('parents', cfg => {
+        cfg.search = (query, term) => {
+          return {
+            ...query,
+            filters: {
+              ...query.filters,
+              name: (name: string) => name.includes(term),
+            },
+          }
+        }
+        cfg.labels = {
+          old: query => ({
+            ...query,
+            filters: {
+              ...query.filters,
+              age: (age: number) => age >= 50,
+            },
+          }),
+        }
+      })
+    })
+
+    it("should allow pre-defined filters through labels", async () => {
+      const pack = await jsonAPI.list('parents', {label: 'old'}, context('list'))
+      expect(pack.serialize().data.map((it: any) => it.id)).toEqual(['eve', 'frank'])
+    })
+
+    it("can be combined with filters or search", async () => {
+      const pack1 = await jsonAPI.list('parents', {label: 'old', search: 'e'}, context('list'))
+      expect(pack1.serialize().data.map((it: any) => it.id)).toEqual(['eve'])
+
+      const pack2 = await jsonAPI.list('parents', {label: 'old', filters: {name: "Frank"}}, context('list'))
+      expect(pack2.serialize().data.map((it: any) => it.id)).toEqual(['frank'])
+    })
+
+    it("should update pagination accordingly", async () => {
+      const pack = await jsonAPI.list('parents', {label: 'old'}, context('list'))
+      expect(pack.serialize().meta).toEqual({
+        count:      2,
+        isFirst:    true,
+        isLast:     true,
+        nextOffset: null,
+        offset:     0,
+        total:      2,
+      })
+    })
   
   })
 

@@ -20,7 +20,6 @@ import {
   Linkage,
   ListActionOptions,
   ListParams,
-  Meta,
   ModelsToCollectionOptions,
   ModelToDocumentOptions,
   Relationship,
@@ -47,22 +46,6 @@ export default class Resource<Model, Query, ID> {
   }
 
   // #endregion
-
-  // #region Data retrieval
-
-  /**
-   * Loads a singleton.
-   * @param name The defined name of the singleton.
-   */
-  public async loadSingleton(name: string, query: Query, include: string[], context: RequestContext): Promise<[Model, Model[]]> {
-    const singleton = this.config.singletons?.[name]
-    if (singleton == null) {
-      throw new APIError(404, `Singleton \`${name}\` (of ${this.type}) not found`)
-    }
-
-    return await singleton(query, include, context)
-  }
-
 
   // #region Queries
 
@@ -141,11 +124,7 @@ export default class Resource<Model, Query, ID> {
   }
 
   public async applyLabel(query: Query, label: string, context: RequestContext): Promise<Query> {
-    let labelModifier = this.config.labels?.[label]
-    if (labelModifier == null && this.config.wildcardLabel != null) {
-      labelModifier = this.config.wildcardLabel.bind(this, label)
-    }
-
+    const labelModifier = this.config.labels?.[label]
     if (labelModifier == null) {
       throw new APIError(404, `Label \`${label}\` not found`)
     }
@@ -324,6 +303,9 @@ export default class Resource<Model, Query, ID> {
     if (this.config.list === false) {
       throw new APIError(405, `Action \`list\` not available`)
     }
+    if (this.config.list != null) {
+      return await this.config.list.call(this, params, getAdapter, context, options)
+    }
 
     if (params.limit == null && this.config.forcePagination) {
       params.limit = this.pageSize
@@ -331,9 +313,8 @@ export default class Resource<Model, Query, ID> {
 
     const {totals = this.config.totals ?? true} = options
     const adapter = getAdapter()
-    const response = this.config.list != null
-      ? await this.config.list.call(this, params, adapter, context, {...options, totals})
-      : await adapter.list(await this.listQuery(adapter, params, context), params, {...options, totals})
+    const query = await this.listQuery(adapter, params, context)
+    const response = await adapter.list(query, params, {...options, totals})
 
     const [models, total] = response.length === 2 && typeof response[1] === 'number'
       ? response as [Model[], number]
@@ -343,14 +324,15 @@ export default class Resource<Model, Query, ID> {
   }
 
   public async show(locator: DocumentLocator<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}): Promise<Pack<ID>> {
-    if (this.config.get === false) {
+    if (this.config.show === false) {
       throw new APIError(405, `Action \`show\` not available`)
+    }
+    if (this.config.show != null) {
+      return await this.config.show.call(this, locator, getAdapter, context, options)
     }
 
     const adapter = getAdapter()
-    const model = this.config.get != null
-      ? await this.config.get.call(this, locator, adapter, context, options)
-      : await adapter.get(await this.listQuery(adapter, {}, context), locator, options)
+    const model = await this.getModel(locator, adapter, context)
     
     return await this.documentPack(model, adapter, context, options)
   }
@@ -359,106 +341,67 @@ export default class Resource<Model, Query, ID> {
     if (this.config.create === false) {
       throw new APIError(405, `Action \`show\` not available`)
     }
+    if (this.config.create != null) {
+      return await this.config.create.call(this, document, requestPack, getAdapter, context, options)
+    }
 
     const adapter = getAdapter()
-    const model = this.config.create != null
-      ? await this.config.create.call(this, document, requestPack, adapter, context, options)
-      : await adapter.create(await this.listQuery(adapter, {}, context), document, requestPack, options)
 
+    // TODO: Insert scope & defaults.
+
+    const model = await adapter.create(document, requestPack, options)
     return await this.documentPack(model, adapter, context, options)
   }
 
-  public async replace(locator: DocumentLocator<ID>, document: Document<ID>, meta: Meta, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
+  public async replace(locator: DocumentLocator<ID>, requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
     if (this.config.replace === false) {
       throw new APIError(405, `Action \`replace\` not available`)
     }
+    if (this.config.replace != null) {
+      return await this.config.replace.call(this, locator, requestPack, getAdapter, context, options)
+    }
 
     const adapter = getAdapter()
-    const model = this.config.replace != null
-      ? await this.config.replace.call(this, locator, document, meta, adapter, context, options)
-      : await adapter.replace(await this.listQuery(adapter, {}, context), locator, document, meta, options)
+    const document = this.extractRequestDocument(requestPack, 'id' in locator ? locator.id : null)
+    const original = await this.getModel(locator, adapter, context)
+    const model = await adapter.replace(original, document, requestPack, options)
 
     return await this.documentPack(model, adapter, context, options)
   }
 
-  public async update(locator: DocumentLocator<ID>, document: Document<ID>, meta: Meta, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
+  public async update(locator: DocumentLocator<ID>, requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
     if (this.config.update === false) {
       throw new APIError(405, `Action \`update\` not available`)
     }
+    if (this.config.update != null) {
+      return await this.config.update.call(this, locator, requestPack, getAdapter, context, options)
+    }
 
     const adapter = getAdapter()
-    const model = this.config.update != null
-      ? await this.config.update.call(this, locator, document, meta, adapter, context, options)
-      : await adapter.update(await this.listQuery(adapter, {}, context), locator, document, meta, options)
+    const document = this.extractRequestDocument(requestPack, 'id' in locator ? locator.id : null)
+    const original = await this.getModel(locator, adapter, context)
+    const model = await adapter.update(original, document, requestPack, options)
 
     return await this.documentPack(model, adapter, context, options)
   }
 
-  public async delete(selector: BulkSelector<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext): Promise<Pack<ID>> {
+  public async delete(requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext): Promise<Pack<ID>> {
     if (this.config.delete === false) {
       throw new APIError(405, `Action \`delete\` not available`)
     }
+    if (this.config.delete != null) {
+      return await this.config.delete.call(this, requestPack, getAdapter, context)
+    }
 
     const adapter = getAdapter()
-    const models = this.config.delete != null
-      ? await this.config.delete.call(this, selector, adapter, context)
-      : await adapter.delete(await this.bulkSelectorQuery(adapter, selector, context))
+    const selector = this.extractBulkSelector(requestPack, context)
+    const modelsOrIDs = await adapter.delete(await this.bulkSelectorQuery(adapter, selector, context))
 
-    const linkages = models.map(model => this.jsonAPI.toLinkage(model, this.type))
+    const linkages = modelsOrIDs.map(it => this.jsonAPI.toLinkage(it, this.type))
     const pack = new Pack<ID>(linkages, undefined, {
-      deletedCount: models.length,
+      deletedCount: linkages.length,
     })
     return pack
-  }
-
-  public async listRelated(
-    locator:      DocumentLocator<ID>,
-    relationship: string,
-    params:       ListParams,
-    getAdapter:      () => Adapter<Model, Query, ID>,
-    context:      RequestContext,
-    options:      ListActionOptions,
-  ): Promise<Pack<ID>> {
-    if (this.config.listRelated === false) {
-      throw new APIError(405, `Action \`listRelated\` not available`)
-    }
-
-    if (params.limit == null && this.config.forcePagination) {
-      params.limit = this.pageSize
-    }
-
-    const {totals = this.config.totals ?? true} = options
-
-    const adapter = getAdapter()
-    const response = this.config.listRelated != null
-      ? await this.config.listRelated.call(this, locator, relationship, params, adapter, context, {...options, totals})
-      : await adapter.listRelated(locator, relationship, await this.listQuery(adapter, params, context), params, {...options, totals})
-
-    const [models, total] = response.length === 2 && typeof response[1] === 'number'
-      ? response as [Model[], number]
-      : [response as Model[], undefined]
-
-    const pack = await this.collectionPack(models, adapter, params.offset, total, context, options)
-    return pack
-  }
-
-  public async showRelated(
-    locator:      DocumentLocator<ID>,
-    relationship: string,
-    getAdapter:      () => Adapter<Model, Query, ID>,
-    context:      RequestContext,
-    options:      ActionOptions,
-  ): Promise<Pack<ID>> {
-    if (this.config.showRelated === false) {
-      throw new APIError(405, `Action \`showRelated\` not available`)
-    }
-
-    const adapter = getAdapter()
-    const models = this.config.showRelated != null
-      ? await this.config.showRelated.call(this, locator, relationship, adapter, context, options)
-      : await adapter.showRelated(locator, relationship, await this.listQuery(adapter, {}, context), options)
-
-    return await this.documentPack(models, adapter, context, options)
   }
 
   private async collectionPack(models: Model[], adapter: Adapter<Model, Query, ID>, offset: number | undefined, total: number | undefined, context: RequestContext, options: RetrievalActionOptions = {}) {
@@ -503,6 +446,30 @@ export default class Resource<Model, Query, ID> {
     return await includer.collect(documents, paths)
   }
 
+  private async getModel(locator: DocumentLocator<ID>, adapter: Adapter<Model, Query, ID>, context: RequestContext) {
+    const query = await this.listQuery(adapter, {}, context)
+    if ('singleton' in locator) {
+      const singleton = this.config.singletons?.[locator.singleton]
+      if (singleton == null) {
+        throw new APIError(404, `Singleton \`${locator.singleton}\` (of ${this.type}) not found`)
+      }
+  
+      const model = await singleton(query, context)
+      if (model == null) {
+        throw new APIError(404, `Singleton \`${locator.singleton}\` (of ${this.type}) not found`)
+      }
+  
+      return model
+    } else {
+      const model = await adapter.get(query, locator.id, {})
+      if (model == null) {
+        throw new APIError(404, `Resource \`${this.type}\` with ID \`${locator.id}\` not found`)
+      }
+
+      return model
+    }
+  }
+
   // #endregion
 
   // #region Custom actions
@@ -513,13 +480,7 @@ export default class Resource<Model, Query, ID> {
       throw new APIError(405, `Action \`${name}\` not found`)
     }
 
-    const adapter = getAdapter()
-    const responsePack = await action.action.call(this, requestPack, adapter, context, options)
-    await this.injectPaginationMeta(responsePack, responsePack.meta.offset, responsePack.meta.total, context)
-
-    await this.injectPackMeta(responsePack, null, context)
-
-    return responsePack
+    return await action.action.call(this, requestPack, getAdapter, context, options)
   }
 
   public async callDocumentAction(name: string, locator: DocumentLocator<ID>, requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}) {
@@ -528,14 +489,7 @@ export default class Resource<Model, Query, ID> {
       throw new APIError(405, `Action \`${name}\` not found`)
     }
 
-    const adapter = getAdapter()
-    const model = await adapter.get(await this.listQuery(adapter, {}, context), locator, options)
-
-    const responsePack = await action.action.call(this, model, requestPack, adapter, context, options)
-    
-    await this.injectPackMeta(responsePack, model, context)
-    
-    return responsePack
+    return await action.action.call(this, locator, requestPack, getAdapter, context, options)
   }
 
   public get collectionActions() {
@@ -588,11 +542,11 @@ export default class Resource<Model, Query, ID> {
 
   // #region Request extracters
 
-  public extractRequestDocument(pack: Pack<ID>, requireID: true, context: RequestContext): Document<ID> & {id: string}
-  public extractRequestDocument(pack: Pack<ID>, requireID: boolean, context: RequestContext): Document<ID>
-  public extractRequestDocument(pack: Pack<ID>, requireID: boolean, context: RequestContext): Document<ID> {
+  public extractRequestDocument(pack: Pack<ID>, expectID: ID): Document<ID> & {id: string}
+  public extractRequestDocument(pack: Pack<ID>, expectID: null): Document<ID>
+  public extractRequestDocument(pack: Pack<ID>, expectID: ID | null): Document<ID>
+  public extractRequestDocument(pack: Pack<ID>, expectID: ID | null): Document<ID> {
     const document = pack.data
-    const idParam = context.param('id', string({required: false}))
 
     if (document == null) {
       throw new APIError(400, "No document sent")
@@ -600,10 +554,10 @@ export default class Resource<Model, Query, ID> {
     if (!(document instanceof Document)) {
       throw new APIError(400, "Expected Document")
     }
-    if (requireID && document.id == null) {
+    if (expectID != null && document.id == null) {
       throw new APIError(400, "Document ID required")
     }
-    if (document.id != null && idParam != null && document.id !== idParam) {
+    if (expectID != null && document.id !== expectID) {
       throw new APIError(409, "Document ID does not match endpoint ID")
     }
     if (document.resource.type !== this.type) {

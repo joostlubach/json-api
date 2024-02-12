@@ -5,15 +5,7 @@ import Document from './Document'
 import Pack from './Pack'
 import RequestContext from './RequestContext'
 import Resource from './Resource'
-import {
-  ActionOptions,
-  BulkSelector,
-  DocumentLocator,
-  Linkage,
-  ListParams,
-  Meta,
-  Relationship,
-} from './types'
+import { ActionOptions, DocumentLocator, Linkage, ListParams, Meta, Relationship } from './types'
 
 export type ResourceConfigMap = Record<string, ResourceConfig<any, any, any>>
 
@@ -81,9 +73,6 @@ export interface ResourceConfig<Model, Query, ID> {
   /** Filter configuration. */
   filters?: FilterMap<Query>
 
-  /** A wildcard label configuration. */
-  wildcardLabel?: WildcardLabelModifier<Model, Query, ID>
-
   // #endregion
 
   // #region Meta
@@ -111,8 +100,8 @@ export interface ResourceConfig<Model, Query, ID> {
   /** A custom `list` action or `false` to disable this action. */
   list?: false | ListAction<Model, Query, ID>
 
-  /** A custom `get` action or `false` to disable this action. */
-  get?: false | GetAction<Model, Query, ID>
+  /** A custom `show` action or `false` to disable this action. */
+  show?: false | GetAction<Model, Query, ID>
 
   /** A custom `create` action or `false` to disable this action. */
   create?: false | CreateAction<Model, Query, ID>
@@ -125,12 +114,6 @@ export interface ResourceConfig<Model, Query, ID> {
 
   /** A custom `delete` action or `false` to disable this action. */
   delete?: false | DeleteAction<Model, Query, ID>
-
-  /** A custom `listRelated` action or `false` to disable this action. */
-  listRelated?: false | ListRelatedAction<Model, Query, ID>
-
-  /** A custom `showRelated` action or `false` to disable this action. */
-  showRelated?: false | GetRelatedAction<Model, Query, ID>
 
   /** Custom collection actions for this resource. */
   collectionActions?: CustomCollectionAction<Model, Query, ID>[]
@@ -212,7 +195,7 @@ export type LabelModifier<M, Q, I> = (this: Resource<M, Q, I>, query: Q, context
 export type WildcardLabelModifier<M, Q, I> = (this: Resource<M, Q, I>, label: string, query: Q, context: RequestContext) => Q
 
 export type SingletonMap<Q, M> = Record<string, Singleton<Q, M>>
-export type Singleton<Q, M> = (query: Q, include: string[], context: RequestContext) => Promise<[M, any[]]>
+export type Singleton<Q, M> = (query: Q, context: RequestContext) => Promise<M | null>
 
 export type SortMap<Q> = Record<string, SortModifier<Q>>
 export type SortModifier<Q> = (query: Q, direction: 1 | -1, context: RequestContext) => Q
@@ -230,74 +213,53 @@ export type BeforeHandler = (context: RequestContext) => void | Promise<void>
 export type ListAction<M, Q, I> = (
   this:    Resource<M, Q, I>,
   params:  ListParams,
-  adapter: Adapter<M, Q, I>,
+  adapter: () => Adapter<M, Q, I>,
   context: RequestContext,
   options: ActionOptions
-) => Promise<M[] | [M[], number]>
+) => Promise<Pack<I>>
 
 export type GetAction<M, Q, I> = (
   this:    Resource<M, Q, I>,
   locator: DocumentLocator<I>,
-  adapter: Adapter<M, Q, I>,
+  adapter: () => Adapter<M, Q, I>,
   context: RequestContext,
   options: ActionOptions
-) => Promise<M>
+) => Promise<Pack<I>>
 
 export type CreateAction<M, Q, I> = (
   this:     Resource<M, Q, I>,
   document: Document<I>,
   pack:     Pack<I>,
-  adapter:  Adapter<M, Q, I>,
+  adapter:  () => Adapter<M, Q, I>,
   context:  RequestContext,
   options:  ActionOptions
-) => Promise<M>
+) => Promise<Pack<I>>
 
 export type ReplaceAction<M, Q, I> = (
-  this:     Resource<M, Q, I>,
-  locator:  DocumentLocator<I>,
-  document: Document<I>,
-  meta:     Meta,
-  adapter:  Adapter<M, Q, I>,
-  context:  RequestContext,
-  options:  ActionOptions
-) => Promise<M>
+  this:        Resource<M, Q, I>,
+  locator:     DocumentLocator<I>,
+  requestPack: Pack<I>,
+  adapter:     () => Adapter<M, Q, I>,
+  context:     RequestContext,
+  options:     ActionOptions
+) => Promise<Pack<I>>
 
 export type UpdateAction<M, Q, I> = (
-  this:     Resource<M, Q, I>,
-  locator:  DocumentLocator<I>,
-  document: Document<I>,
-  meta:     Meta,
-  adapter:  Adapter<M, Q, I>,
-  context:  RequestContext,
-  options:  ActionOptions
-) => Promise<M>
+  this:        Resource<M, Q, I>,
+  locator:     DocumentLocator<I>,
+  requestPack: Pack<I>,
+  adapter:     () => Adapter<M, Q, I>,
+  context:     RequestContext,
+  options:     ActionOptions
+) => Promise<Pack<I>>
 
 export type DeleteAction<M, Q, I> = (
-  this:     Resource<M, Q, I>,
-  selector: BulkSelector<I>,
-  adapter:  Adapter<M, Q, I>,
-  context:  RequestContext
-) => Promise<Array<M | I>>
+  this:        Resource<M, Q, I>,
+  requestPack: Pack<I>,
+  adapter:     () => Adapter<M, Q, I>,
+  context:     RequestContext
+) => Promise<Pack<I>>
 
-
-export type ListRelatedAction<M, Q, I> = (
-  this:         Resource<M, Q, I>,
-  locator:      DocumentLocator<I>,
-  relationship: string,
-  params:       ListParams,
-  adapter:      Adapter<M, Q, I>,
-  context:      RequestContext,
-  options:      ActionOptions
-) => Promise<M[] | [M[], number]>
-
-export type GetRelatedAction<M, Q, I> = (
-  this:         Resource<M, Q, I>,
-  locator:      DocumentLocator<I>,
-  relationship: string,
-  adapter:      Adapter<M, Q, I>,
-  context:      RequestContext,
-  options:      ActionOptions
-) => Promise<M>
 
 // #endregion
 
@@ -305,13 +267,13 @@ export type GetRelatedAction<M, Q, I> = (
 
 export interface CustomCollectionAction<M, Q, I> {
   name:    string
-  action:  (this: Resource<M, Q, I>, pack: Pack<I>, adapter: Adapter<M, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
+  action:  (this: Resource<M, Q, I>, pack: Pack<I>, adapter: () => Adapter<M, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
   router?: CustomActionRouterOptions
 }
 
 export interface CustomDocumentAction<M, Q, I> {
   name:    string
-  action:  (this: Resource<M, Q, I>, model: M, pack: Pack<I>, adapter: Adapter<M, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
+  action:  (this: Resource<M, Q, I>, locator: DocumentLocator<I>, pack: Pack<I>, adapter: () => Adapter<M, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
   router?: CustomActionRouterOptions
 }
 
