@@ -1,8 +1,9 @@
 import { context, mockJSONAPI } from './mock'
 
-import { delay } from 'yest'
+import { delay, expectAsyncError } from 'yest'
 import { slugify } from 'ytil'
 
+import APIError from '../APIError'
 import db from './db'
 
 describe("show", () => {
@@ -188,7 +189,61 @@ describe("show", () => {
     expect(out.data.meta).toEqual(
       {action: 'my-show-action', slug: 'bob'},
     )
-
   })
+
+  it("should raise 404 if the document was not found", async () => {
+    await expectAsyncError(() => (
+      jsonAPI.show('parents', {id: 'unknown'}, context('show'))
+    ), APIError, error => {
+      expect(error.status).toEqual(404)
+    })
+  })
+
+  describe("singletons", () => {
+
+    it("should retrieving a singleton", async () => {
+      jsonAPI.registry.modify('children', cfg => {
+        cfg.singletons = {
+          firstborn: async query => {
+            const children = db('children').list(query)
+            children.sort((a, b) => b.age - a.age)
+            return children[0]
+          },
+        }
+      })
+
+      const pack = await jsonAPI.show('children', {singleton: 'firstborn'}, context('show'))
+      expect(pack.serialize().data).toEqual({
+        type:          'children',
+        id:            'henry',
+        attributes:    expect.objectContaining({}),
+        relationships: expect.objectContaining({}),
+      })
+    })
+
+    it("should raise 404 if the singleton was not configured", async () => {
+      await expectAsyncError(() => (
+        jsonAPI.show('children', {singleton: 'firstborn'}, context('show'))
+      ), APIError, error => {
+        expect(error.status).toEqual(404)
+      })
+    })
+
+    it("should raise 404 if the adapter returned `null`", async () => {
+      jsonAPI.registry.modify('children', cfg => {
+        cfg.singletons = {
+          firstborn: async query => null,
+        }
+      })
+
+      await expectAsyncError(() => (
+        jsonAPI.show('children', {singleton: 'firstborn'}, context('show'))
+      ), APIError, error => {
+        expect(error.status).toEqual(404)
+      })
+    })
+  
+  })
+  
 
 })

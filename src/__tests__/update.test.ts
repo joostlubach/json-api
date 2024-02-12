@@ -16,7 +16,7 @@ describe("update", () => {
 
   it("should allow updating a document", async () => {
     const requestPack = jsonAPI.documentPack('parents', 'alice', {age: 40})
-    const pack = await jsonAPI.update('parents', {id: 'alice'}, requestPack, context('update'))
+    const pack = await jsonAPI.update('parents', 'alice', requestPack, context('update'))
     expect(pack.serialize()).toEqual({
       data: {
         type: 'parents',
@@ -47,7 +47,7 @@ describe("update", () => {
   it("should require an ID", async () => {
     const requestPack = jsonAPI.documentPack('parents', null, {})
     await expectAsyncError(() => (
-      jsonAPI.update('parents', {id: 'alice'}, requestPack, context('update'))
+      jsonAPI.update('parents', 'alice', requestPack, context('update'))
     ), APIError, error => {
       expect(error.status).toEqual(400)
     })
@@ -56,7 +56,7 @@ describe("update", () => {
   it("should not accept a mismatch between pack type and document", async () => {
     const requestPack = jsonAPI.documentPack('children', 'alice', {})
     await expectAsyncError(() => (
-      jsonAPI.update('parents', {id: 'alice'}, requestPack, context('update'))
+      jsonAPI.update('parents', 'alice', requestPack, context('update'))
     ), APIError, error => {
       expect(error.status).toEqual(409)
     })
@@ -65,7 +65,7 @@ describe("update", () => {
   it("should not accept a mismatch between locator and document", async () => {
     const requestPack = jsonAPI.documentPack('parents', 'alice', {})
     await expectAsyncError(() => (
-      jsonAPI.update('parents', {id: 'bob'}, requestPack, context('update'))
+      jsonAPI.update('parents', 'bob', requestPack, context('update'))
     ), APIError, error => {
       expect(error.status).toEqual(409)
     })
@@ -74,7 +74,7 @@ describe("update", () => {
   it("should not allow replacing a document that does not exist", async () => {
     const requestPack = jsonAPI.documentPack('parents', 'zachary', {})
     await expectAsyncError(() => (
-      jsonAPI.update('parents', {id: 'zachary'}, requestPack, context('update'))
+      jsonAPI.update('parents', 'zachary', requestPack, context('update'))
     ), APIError, error => {
       expect(error.status).toEqual(404)
     })
@@ -82,7 +82,7 @@ describe("update", () => {
 
   it("should not accept an array for data", async () => {
     await expectAsyncError(() => (
-      jsonAPI.update('parents', {id: 'alice'}, Pack.deserialize(jsonAPI.registry, {
+      jsonAPI.update('parents', 'alice', Pack.deserialize(jsonAPI.registry, {
         data: [],
       }), context('update'))
     ), APIError, error => {

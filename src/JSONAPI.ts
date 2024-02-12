@@ -67,20 +67,20 @@ export default abstract class JSONAPI<Model, Query, ID> {
     return await resource.create(document, requestPack, adapter, context, options)
   }
 
-  public async replace(resourceType: string, locator: DocumentLocator<ID>, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
+  public async replace(resourceType: string, id: ID, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
     const resource = this.registry.get(resourceType)
     const adapter = () => this.adapter(resource, context)
 
     await resource.runBeforeHandlers(context)
-    return await resource.replace(locator,requestPack, adapter, context, options)
+    return await resource.replace(id,requestPack, adapter, context, options)
   }
 
-  public async update(resourceType: string, locator: DocumentLocator<ID>, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
+  public async update(resourceType: string, id: ID, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
     const resource = this.registry.get(resourceType)
     const adapter = () => this.adapter(resource, context)
 
     await resource.runBeforeHandlers(context)
-    return await resource.update(locator, requestPack, adapter, context, options)
+    return await resource.update(id, requestPack, adapter, context, options)
   }
 
   public async delete(resourceType: string, requestPack: Pack<ID>, context: RequestContext) {

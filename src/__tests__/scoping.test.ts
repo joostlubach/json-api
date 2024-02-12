@@ -47,6 +47,18 @@ describe("scoping", () => {
   })
 
   describe("show", () => {
+
+    beforeEach(() => {
+      jsonAPI.registry.modify('children', cfg => {
+        cfg.singletons = {
+          firstborn: async query => {
+            const children = db('children').list(query)
+            children.sort((a, b) => b.age - a.age)
+            return children[0]
+          },
+        }
+      })
+    })
     
     it("should only consider data from the current scope", async () => {
       const pack = await jsonAPI.show('children', {id: 'charlie'}, context('show', {parent: 'alice'}))
@@ -57,6 +69,14 @@ describe("scoping", () => {
       ), APIError, error => {
         expect(error.status).toEqual(404)
       })
+    })
+
+    it("should also work with singletons", async () => {
+      const pack1 = await jsonAPI.show('children', {singleton: 'firstborn'}, context('show', {parent: 'alice'}))
+      expect(pack1.serialize().data.id).toEqual('dolores')
+
+      const pack2 = await jsonAPI.show('children', {singleton: 'firstborn'}, context('show', {parent: 'eve'}))
+      expect(pack2.serialize().data.id).toEqual('henry')
     })
 
   })
@@ -93,12 +113,12 @@ describe("scoping", () => {
     
     it("should only consider data from the current scope", async () => {
       const requestPack1 = jsonAPI.documentPack('children', 'charlie', {name: "Charlie 2", parents: ['alice', 'bob']})
-      const pack = await jsonAPI.replace('children', {id: 'charlie'}, requestPack1, context('replace', {parent: 'alice'}))
+      const pack = await jsonAPI.replace('children', 'charlie', requestPack1, context('replace', {parent: 'alice'}))
       expect(pack.serialize().data.id).toEqual('charlie')
 
       const requestPack2 = jsonAPI.documentPack('children', 'isaac', {name: "Isaac 2"})
       await expectAsyncError(() => (
-        jsonAPI.replace('children', {id: 'isaac'}, requestPack2, context('replace', {parent: 'alice'}))
+        jsonAPI.replace('children', 'isaac', requestPack2, context('replace', {parent: 'alice'}))
       ), APIError, error => {
         expect(error.status).toEqual(404)
       })
@@ -106,7 +126,7 @@ describe("scoping", () => {
     
     it("should apply scope defaults", async () => {
       const requestPack = jsonAPI.documentPack('children', 'charlie', {name: "Charlie 2", age: 10, parents: ['alice', 'bob']})
-      const pack = await jsonAPI.replace('children', {id: 'charlie'}, requestPack, context('replace', {parent: 'alice'}))
+      const pack = await jsonAPI.replace('children', 'charlie', requestPack, context('replace', {parent: 'alice'}))
       expect(pack.serialize().data).toEqual({
         id:         'charlie',
         type:       'children',
@@ -122,7 +142,7 @@ describe("scoping", () => {
 
     it("should overwrite any maliciously added data to break out of the scope", async () => {
       const requestPack = jsonAPI.documentPack('children', 'charlie', {name: "Charlie 2", parents: ['alice', 'bob']})
-      const pack = await jsonAPI.replace('children', {id: 'charlie'}, requestPack, context('replace', {parent: 'alice'}))
+      const pack = await jsonAPI.replace('children', 'charlie', requestPack, context('replace', {parent: 'alice'}))
       expect(pack.serialize().data.relationships).toEqual({
         parents: {data: [{id: 'alice', type: 'parents'}]},
       })      
@@ -134,12 +154,12 @@ describe("scoping", () => {
     
     it("should only consider data from the current scope", async () => {
       const requestPack1 = jsonAPI.documentPack('children', 'charlie', {name: "Charlie 2"})
-      const pack = await jsonAPI.update('children', {id: 'charlie'}, requestPack1, context('update', {parent: 'alice'}))
+      const pack = await jsonAPI.update('children', 'charlie', requestPack1, context('update', {parent: 'alice'}))
       expect(pack.serialize().data.id).toEqual('charlie')
 
       const requestPack2 = jsonAPI.documentPack('children', 'isaac', {name: "Isaac 2"})
       await expectAsyncError(() => (
-        jsonAPI.update('children', {id: 'isaac'}, requestPack2, context('update', {parent: 'alice'}))
+        jsonAPI.update('children', 'isaac', requestPack2, context('update', {parent: 'alice'}))
       ), APIError, error => {
         expect(error.status).toEqual(404)
       })
@@ -152,7 +172,7 @@ describe("scoping", () => {
       // be a problem. And if it is, any code can use the scope.ensure method to perform some custom logic.
 
       const requestPack = jsonAPI.documentPack('children', 'charlie', {name: "Charlie 2", age: 10, parents: ['alice', 'bob']})
-      const pack = await jsonAPI.update('children', {id: 'charlie'}, requestPack, context('update', {parent: 'alice'}))
+      const pack = await jsonAPI.update('children', 'charlie', requestPack, context('update', {parent: 'alice'}))
       expect(pack.serialize().data.relationships).toEqual({
         parents: {
           data: [

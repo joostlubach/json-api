@@ -352,17 +352,17 @@ export default class Resource<Model, Query, ID> {
     return await this.documentPack(model, adapter, context, options)
   }
 
-  public async replace(locator: DocumentLocator<ID>, requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
+  public async replace(id: ID, requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
     if (this.config.replace === false) {
       throw new APIError(405, `Action \`replace\` not available`)
     }
     if (this.config.replace != null) {
-      return await this.config.replace.call(this, locator, requestPack, getAdapter, context, options)
+      return await this.config.replace.call(this, id, requestPack, getAdapter, context, options)
     }
 
     const adapter = getAdapter()
-    const document = this.extractRequestDocument(requestPack, 'id' in locator ? locator.id : null)
-    const original = await this.getModel(locator, adapter, context)
+    const document = this.extractRequestDocument(requestPack, id)
+    const original = await this.getModel({id}, adapter, context)
     const model = await adapter.replace(original, document, requestPack, options)
     if (this.config.scope != null) {
       this.config.scope.ensure.call(this, model, context)
@@ -371,17 +371,17 @@ export default class Resource<Model, Query, ID> {
     return await this.documentPack(model, adapter, context, options)
   }
 
-  public async update(locator: DocumentLocator<ID>, requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
+  public async update(id: ID, requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
     if (this.config.update === false) {
       throw new APIError(405, `Action \`update\` not available`)
     }
     if (this.config.update != null) {
-      return await this.config.update.call(this, locator, requestPack, getAdapter, context, options)
+      return await this.config.update.call(this, id, requestPack, getAdapter, context, options)
     }
 
     const adapter = getAdapter()
-    const document = this.extractRequestDocument(requestPack, 'id' in locator ? locator.id : null)
-    const original = await this.getModel(locator, adapter, context)
+    const document = this.extractRequestDocument(requestPack, id)
+    const original = await this.getModel({id}, adapter, context)
     const model = await adapter.update(original, document, requestPack, options)
     if (this.config.scope != null) {
       this.config.scope.ensure.call(this, model, context)

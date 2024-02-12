@@ -239,7 +239,7 @@ export type CreateAction<M, Q, I> = (
 
 export type ReplaceAction<M, Q, I> = (
   this:        Resource<M, Q, I>,
-  locator:     DocumentLocator<I>,
+  id:          I,
   requestPack: Pack<I>,
   adapter:     () => Adapter<M, Q, I>,
   context:     RequestContext,
@@ -248,7 +248,7 @@ export type ReplaceAction<M, Q, I> = (
 
 export type UpdateAction<M, Q, I> = (
   this:        Resource<M, Q, I>,
-  locator:     DocumentLocator<I>,
+  id:          I,
   requestPack: Pack<I>,
   adapter:     () => Adapter<M, Q, I>,
   context:     RequestContext,
