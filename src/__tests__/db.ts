@@ -85,6 +85,10 @@ export class Db {
     return deleted
   }
 
+  public ids() {
+    return this.models.map(it => it.id)
+  }
+
   public clear() {
     this.models = []
   }

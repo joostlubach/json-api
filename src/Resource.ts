@@ -708,22 +708,22 @@ export default class Resource<Model, Query, ID> {
   }
 
   private extractBulkSelectorIDs(data: any): ID[] {
-    if (!(data instanceof Collection)) {
-      throw new APIError(400, "Collection expected")
+    if (!isArray(data)) {
+      throw new APIError(400, "Array expected")
     }
 
-    const ids: string[] = []
+    const ids: Array<string | number> = []
     for (const linkage of data) {
-      if (!Linkage.isLinkage(linkage)) {
+      if (!Linkage.isLinkage<string | number>(linkage)) {
         throw new APIError(400, `Invalid linkage: ${JSON.stringify(linkage)}`)
       }
-
-      if (linkage.resource.type !== this.type) {
+      if (linkage.type !== this.type) {
         throw new APIError(409, "Linkage type does not match endpoint type")
       }
       if (linkage.id == null) {
         throw new APIError(400, "ID required in linkage")
       }
+
       ids.push(linkage.id)
     }
 

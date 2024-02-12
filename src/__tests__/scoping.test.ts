@@ -1,7 +1,8 @@
 
-import { mockJSONAPI } from './mock'
+import { context, mockJSONAPI } from './mock'
 
-import RequestContext from '../RequestContext'
+
+import Pack from '../Pack'
 import db from './db'
 
 describe("scoping", () => {
@@ -12,13 +13,10 @@ describe("scoping", () => {
     db.seed()
   })
 
-  function context(action: string) {
-    return new RequestContext(action, {})
-  }
-
   describe.each([
     {action: 'list', call: () => jsonAPI.list('parents', {filters: {id: 'alice'}}, context('list'), {})},
     {action: 'show', call: () => jsonAPI.show('parents', {id: 'alice'}, context('show'), {})},
+    {action: 'delete', call: () => jsonAPI.delete('parents', Pack.deserialize(jsonAPI.registry, {meta: {filters: {id: 'alice'}}}), context('show'))},
   ])("$action", ({call}) => {
 
     it.todo("should only consider data from the current scope")

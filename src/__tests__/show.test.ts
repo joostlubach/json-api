@@ -1,9 +1,8 @@
-import { mockJSONAPI } from './mock'
+import { context, mockJSONAPI } from './mock'
 
 import { delay } from 'yest'
 import { slugify } from 'ytil'
 
-import RequestContext from '../RequestContext'
 import db from './db'
 
 describe("show", () => {
@@ -13,10 +12,6 @@ describe("show", () => {
   beforeEach(() => {
     db.seed()
   })
-
-  function context(action: string) {
-    return new RequestContext(action, {})
-  }
 
   it.each([
     {id: 'alice', name: "Alice", age: 30},

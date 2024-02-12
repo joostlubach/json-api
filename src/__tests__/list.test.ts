@@ -1,10 +1,9 @@
-import { mockJSONAPI } from './mock'
+import { context, mockJSONAPI } from './mock'
 
 import { omit } from 'lodash'
 import { delay } from 'yest'
 import { slugify } from 'ytil'
 
-import RequestContext from '../RequestContext'
 import db from './db'
 
 describe("list", () => {
@@ -14,10 +13,6 @@ describe("list", () => {
   beforeEach(() => {
     db.seed()
   })
-
-  function context(action: string) {
-    return new RequestContext(action, {})
-  }
 
   describe("without parameters", () => {
 
@@ -286,8 +281,6 @@ describe("list", () => {
 
   describe("searching", () => {
 
-    let out: any
-
     beforeEach(() => {
       jsonAPI.registry.modify('parents', cfg => {
         cfg.search = (query, term) => {
@@ -306,9 +299,8 @@ describe("list", () => {
       const pack = await jsonAPI.list('parents', {
         search: "e",
       }, context('list'))
-      out = pack.serialize()
 
-      expect(out).toEqual({
+      expect(pack.serialize()).toEqual({
         data: [
           expect.objectContaining({type: 'parents', id: 'alice'}),
           expect.objectContaining({type: 'parents', id: 'eve'}),
@@ -322,9 +314,8 @@ describe("list", () => {
       const pack = await jsonAPI.list('parents', {
         search: "e",
       }, context('list'))
-      out = pack.serialize()
 
-      expect(out.meta).toEqual({
+      expect(pack.serialize().meta).toEqual({
         count:      2,
         isFirst:    true,
         isLast:     true,

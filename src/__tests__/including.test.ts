@@ -1,6 +1,5 @@
-import { MockJSONAPI } from './mock'
+import { context, MockJSONAPI } from './mock'
 
-import RequestContext from '../RequestContext'
 import db, { Parent } from './db'
 
 describe("including", () => {
@@ -14,10 +13,6 @@ describe("including", () => {
     // sort of works. This exemplifies JSON API better.
     jsonAPI = new MockJSONAPI()
   })
-
-  function context(action: string) {
-    return new RequestContext(action, {})
-  }
 
   describe.each([
     {action: 'list', call: (include: string[]) => jsonAPI.list('parents', {filters: {id: 'alice'}}, context('list'), {include})},

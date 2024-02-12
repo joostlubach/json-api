@@ -34,7 +34,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
   public readonly registry: ResourceRegistry<Model, Query, ID>
   
   public abstract adapter(resource: Resource<Model, Query, ID>, context: RequestContext): Adapter<Model, Query, ID>
-  public abstract parseID(id: string): ID
+  public abstract parseID(id: string | number): ID
   
   // #region Registration
   
@@ -65,6 +65,15 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
     await resource.runBeforeHandlers(context)
     return await resource.create(document, requestPack, adapter, context, options)
+  }
+
+  public async replace(resourceType: string, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
+    const resource = this.registry.get(resourceType)
+    const document = resource.extractRequestDocument(requestPack, true, context)
+    const adapter = () => this.adapter(resource, context)
+
+    await resource.runBeforeHandlers(context)
+    return await resource.replace({id: document.id}, document, requestPack.meta, adapter, context, options)
   }
 
   public async update(resourceType: string, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {

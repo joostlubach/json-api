@@ -1,40 +1,22 @@
-import { MockJSONAPI } from './mock'
+import { context, mockJSONAPI } from './mock'
 
 import { expectAsyncError } from 'yest'
 
 import APIError from '../APIError'
 import Pack from '../Pack'
-import RequestContext from '../RequestContext'
-import db, { Model, Query } from './db'
+import db from './db'
 
 describe("create", () => {
 
-  let jsonAPI: MockJSONAPI
-
-  beforeEach(() => {
-    // Rather than creating mock functions, we, we've created a mock DB with a mock adapter that actually
-    // sort of works. This exemplifies JSON API better.
-    jsonAPI = new MockJSONAPI()
-  })
-
-  function context(action: string) {
-    return new RequestContext(action, {})
-  }
-
-  function documentPack(type: string, attributes: Record<string, any>) {
-    return Pack.deserialize<Model, Query, string>(jsonAPI.registry, {
-      data: {
-        type,
-        attributes,
-      },
-    }) 
-  }
+  const jsonAPI = mockJSONAPI()
 
   it("should allow creating a document", async () => {
-    const pack = await jsonAPI.create('parents', documentPack('parents', {
+    const requestPack = jsonAPI.documentPack('parents', null, {
       name: "Alice",
       age:  30,
-    }), context('create'))
+    })
+
+    const pack = await jsonAPI.create('parents', requestPack, context('create'))
     expect(pack.serialize()).toEqual({
       data: {
         type: 'parents',
@@ -61,11 +43,13 @@ describe("create", () => {
   })
 
   it("should not accept a mismatch between pack type and document", async () => {
+    const requestPack = jsonAPI.documentPack('children', null, {
+      name: "Eve",
+      age:  10,
+    })
+
     await expectAsyncError(() => (
-      jsonAPI.create('parents', documentPack('children', {
-        name: "Eve",
-        age:  10,
-      }), context('create'))
+      jsonAPI.create('parents', requestPack, context('create'))
     ), APIError, error => {
       expect(error.status).toEqual(409)
     })

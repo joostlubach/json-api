@@ -1,11 +1,13 @@
-import RequestContext from 'RequestContext'
-import Resource from 'Resource'
+import { isArray, isPlainObject } from 'lodash'
 import { dynamicProxy } from 'yest'
 
 import APIError from '../APIError'
 import Adapter from '../Adapter'
 import Document from '../Document'
 import JSONAPI, { JSONAPIOptions } from '../JSONAPI'
+import Pack from '../Pack'
+import RequestContext from '../RequestContext'
+import Resource from '../Resource'
 import {
   ActionOptions,
   DocumentLocator,
@@ -19,6 +21,10 @@ import db, { Model, Query } from './db'
 
 export function mockJSONAPI(options?: JSONAPIOptions<Model, Query, string>) {
   return dynamicProxy(() => new MockJSONAPI(options))
+}
+
+export function context(action: string, params: Record<string, any> = {}) {
+  return new RequestContext(action, params)
 }
 
 export class MockJSONAPI extends JSONAPI<Model, Query, string> {
@@ -57,6 +63,35 @@ export class MockJSONAPI extends JSONAPI<Model, Query, string> {
     return id
   }
 
+  public documentPack(type: string, id: string | null, attributes: Record<string, any>) {
+    return Pack.deserialize<Model, Query, string>(this.registry, {
+      data: {
+        type,
+        id,
+        attributes,
+      },
+    }) 
+  }
+  
+  public bulkSelectorPack(type: string, ids: string[]): Pack<string>
+  public bulkSelectorPack(type: string, filters: Record<string, any>): Pack<string>
+  public bulkSelectorPack(type: string, search: string): Pack<string>
+  public bulkSelectorPack(type: string, arg: any): Pack<string> {
+    if (isArray(arg)) {
+      return Pack.deserialize<Model, Query, string>(this.registry, {
+        data: arg.map(id => ({type, id})),
+      })
+    } else if (isPlainObject(arg)) {
+      return Pack.deserialize<Model, Query, string>(this.registry, {
+        meta: {filters: arg},
+      })
+    } else {
+      return Pack.deserialize<Model, Query, string>(this.registry, {
+        meta: {search: arg},
+      })
+    }
+  }
+  
 }
 
 export class MockAdapter implements Adapter<Model, Query, string> {
@@ -86,7 +121,7 @@ export class MockAdapter implements Adapter<Model, Query, string> {
   
   public async replace(query: Query, locator: DocumentLocator<string>, document: Document<string>, meta: Meta, options: ActionOptions): Promise<Model> {
     const model = await this.loadModel(query, locator, [], this.context)
-    return db(this.resource.type).insert(query, {...document.attributes, id: model.id})[0]
+    return db(this.resource.type).insert({...document.attributes, id: model.id})[0]
   }
   
   public async update(query: Query, locator: DocumentLocator<string>, document: Document<string>, meta: Meta, options: ActionOptions): Promise<Model> {

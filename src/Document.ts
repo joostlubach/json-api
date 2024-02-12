@@ -1,3 +1,4 @@
+import { isPlainObject } from 'lodash'
 import { objectEntries, objectKeys } from 'ytil'
 
 import APIError from './APIError'
@@ -36,7 +37,15 @@ export default class Document<ID> {
     return {type: this.resource.type, id: this.id}
   }
 
-  public static deserialize<M, Q, I>(registry: ResourceRegistry<M, Q, I>, serialized: Record<string, any>, detail: boolean = true): Document<I> {
+  public static canDeserialize(serialized: Record<string, any>) {
+    if (!('type' in serialized) || typeof serialized.type !== 'string') { return false }
+    if (!('attributes' in serialized) || !isPlainObject(serialized.attributes)) { return false }
+    if ('relationships' in serialized && !isPlainObject(serialized.relationships)) { return false }
+    if ('meta' in serialized && !isPlainObject(serialized.meta)) { return false }
+    return true
+  }
+
+  public static deserialize<M, Q, I>(registry: ResourceRegistry<M, Q, I>, serialized: Record<string, any>): Document<I> {
     if (serialized.type == null) {
       throw new APIError(400, "missing 'type' node")
     }

@@ -1,11 +1,10 @@
-import { mockJSONAPI } from './mock'
+import { context, mockJSONAPI } from './mock'
 
 import { expectAsyncError } from 'yest'
 
 import APIError from '../APIError'
 import Pack from '../Pack'
-import RequestContext from '../RequestContext'
-import db, { Model, Query } from './db'
+import db from './db'
 
 describe("update", () => {
 
@@ -15,22 +14,8 @@ describe("update", () => {
     db.seed()
   })
 
-  function context(action: string) {
-    return new RequestContext(action, {})
-  }
-
-  function documentPack(type: string, id: string, attributes: Record<string, any>) {
-    return Pack.deserialize<Model, Query, string>(jsonAPI.registry, {
-      data: {
-        type,
-        id,
-        attributes,
-      },
-    }) 
-  }
-
   it("should allow updating a document", async () => {
-    const requestPack = documentPack('parents', 'alice', {age: 40})
+    const requestPack = jsonAPI.documentPack('parents', 'alice', {age: 40})
     const pack = await jsonAPI.update('parents', requestPack, context('update'))
     expect(pack.serialize()).toEqual({
       data: {
@@ -62,18 +47,29 @@ describe("update", () => {
   it.todo("should allow updating relationships")
 
   it("should require an ID", async () => {
+    const requestPack = jsonAPI.documentPack('parents', null, {})
     await expectAsyncError(() => (
-      jsonAPI.update('parents', documentPack('parents', undefined as unknown as string, {}), context('update'))
+      jsonAPI.update('parents', requestPack, context('update'))
     ), APIError, error => {
       expect(error.status).toEqual(400)
     })
   })
 
   it("should not accept a mismatch between pack type and document", async () => {
+    const requestPack = jsonAPI.documentPack('children', 'alice', {})
     await expectAsyncError(() => (
-      jsonAPI.update('parents', documentPack('children', 'alice', {}), context('update'))
+      jsonAPI.update('parents', requestPack, context('update'))
     ), APIError, error => {
       expect(error.status).toEqual(409)
+    })
+  })
+
+  it("should not allow replacing a document that does not exist", async () => {
+    const requestPack = jsonAPI.documentPack('parents', 'zachary', {})
+    await expectAsyncError(() => (
+      jsonAPI.update('parents', requestPack, context('update'))
+    ), APIError, error => {
+      expect(error.status).toEqual(404)
     })
   })
 

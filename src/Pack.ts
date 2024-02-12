@@ -37,17 +37,27 @@ export default class Pack<ID> {
       throw new APIError(400, `Malformed pack: extraneous nodes ${Object.keys(rest).join(', ')} found`)
     }
 
-    const data = dataRaw == null
-      ? null
-      : isArray(dataRaw)
-        ? Collection.deserialize(registry, dataRaw)
-        : Document.deserialize(registry, dataRaw)
-
-    const included = includedRaw == null
-      ? new Collection<I>([])
-      : Collection.deserialize(registry, includedRaw)
-
+    const data = this.deserializeData(registry, dataRaw)
+    const included = includedRaw == null ? new Collection<I>([]) : Collection.deserialize(registry, includedRaw)
     return new Pack<I>(data, included, meta)
+  }
+
+  private static deserializeData<M, Q, I>(registry: ResourceRegistry<M, Q, I>, raw: any): Collection<I> | Document<I> | any[] | any | null {
+    if (raw == null) { return null }
+    if (isArray(raw)) {
+      const items = raw.map(it => this.deserializeData(registry, it))
+      if (items.length > 0 && items.every(it => it instanceof Document)) {
+        return new Collection(items)
+      } else {
+        return items
+      }
+    }
+
+    if (Document.canDeserialize(raw)) {
+      return Document.deserialize(registry, raw)
+    } else {
+      return raw
+    }
   }
 
   public serialize(): any {

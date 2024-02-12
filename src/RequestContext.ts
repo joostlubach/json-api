@@ -12,12 +12,11 @@ import { Constructor } from 'ytil'
 
 import APIError from './APIError'
 
-export default class RequestContext<P = Record<string, any>> {
+export default class RequestContext<P extends Record<string, any> = Record<string, any>> {
 
   constructor(
     public readonly action: string,
     private readonly params: P,
-    public readonly requestURI?: URL,
     deps?: DependencyProvider,
   ) {
     this.deps = new DependencyProvider({upstream: deps})
