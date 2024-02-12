@@ -64,7 +64,7 @@ export class Db {
 
   public insert(...items: Record<string, any>[]) {
     return items.map(attrs => {
-      const id = attrs.id ?? slugify(attrs.name)
+      const id = attrs.id ?? (attrs.name == null ? undefined : slugify(attrs.name))
       const model = {...attrs, id} as Model
       this.models = this.models.filter(it => it.id !== model.id)
       this.models.push(model)
@@ -83,6 +83,10 @@ export class Db {
       }
     })
     return deleted
+  }
+
+  public clear() {
+    this.models = []
   }
 
   private match(query: Query, model: Model) {
@@ -106,9 +110,7 @@ export class Db {
 
   private load(query: Query | undefined, id: string) {
     const models = query == null ? this.models : this.list(query)
-    const model = models.find(it => it.id === id)
-    if (model == null) { throw new NotFoundError() }
-    return model
+    return models.find(it => it.id === id) ?? null
   }
 
 }
@@ -140,7 +142,14 @@ namespace db {
       {name: "Henry", age: 25},
     ])
   }
+
+  export function clear() {
+    db('parents').clear()
+    db('children').clear()
+  }
 }
+
+afterEach(() => db.clear())
 
 export default db
 
@@ -160,5 +169,3 @@ function createFamily(
     ;((parentModels[1] as Parent).children ??= []).push(childModel.id)
   }
 }
-
-export class NotFoundError extends Error {}

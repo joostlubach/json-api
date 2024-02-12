@@ -1,4 +1,4 @@
-import { MockJSONAPI } from './mock'
+import { mockJSONAPI } from './mock'
 
 import { delay } from 'yest'
 import { slugify } from 'ytil'
@@ -8,14 +8,10 @@ import db from './db'
 
 describe("show", () => {
 
-  let jsonAPI: MockJSONAPI
+  const jsonAPI = mockJSONAPI()
 
   beforeEach(() => {
     db.seed()
-
-    // Rather than creating mock functions, we, we've created a mock DB with a mock adapter that actually
-    // sort of works. This exemplifies JSON API better.
-    jsonAPI = new MockJSONAPI()
   })
 
   function context(action: string) {
@@ -199,5 +195,8 @@ describe("show", () => {
     )
 
   })
+
+  it.todo("should allow retrieving a document by its singleton name")
+  it.todo("should not allow loading a singleton that's not defined")
 
 })

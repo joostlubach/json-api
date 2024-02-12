@@ -1,6 +1,8 @@
 import RequestContext from 'RequestContext'
 import Resource from 'Resource'
+import { dynamicProxy } from 'yest'
 
+import APIError from '../APIError'
 import Adapter from '../Adapter'
 import Document from '../Document'
 import JSONAPI, { JSONAPIOptions } from '../JSONAPI'
@@ -14,6 +16,10 @@ import {
   Sort,
 } from '../types'
 import db, { Model, Query } from './db'
+
+export function mockJSONAPI(options?: JSONAPIOptions<Model, Query, string>) {
+  return dynamicProxy(() => new MockJSONAPI(options))
+}
 
 export class MockJSONAPI extends JSONAPI<Model, Query, string> {
 
@@ -85,7 +91,7 @@ export class MockAdapter implements Adapter<Model, Query, string> {
   
   public async update(query: Query, locator: DocumentLocator<string>, document: Document<string>, meta: Meta, options: ActionOptions): Promise<Model> {
     const model = await this.loadModel(query, locator, [], this.context)
-    return db(this.resource.type).insert(query, {...model, ...document.attributes})[0]
+    return db(this.resource.type).insert({...model, ...document.attributes})[0]
   }
   
   public async delete(query: Query): Promise<Model[]> {
@@ -162,6 +168,10 @@ export class MockAdapter implements Adapter<Model, Query, string> {
     const [model] = DocumentLocator.isSingleton(locator)
       ? await this.resource.loadSingleton(locator.singleton, query, include ?? [], this.context)
       : [db(this.resource.type).get(locator.id, query)]
+
+    if (model == null) {
+      throw new APIError(404, `Model with "${JSON.stringify(locator)}" not found`)
+    }
 
     return model
   }

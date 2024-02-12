@@ -1,4 +1,4 @@
-import { MockJSONAPI } from './mock'
+import { mockJSONAPI } from './mock'
 
 import { omit } from 'lodash'
 import { delay } from 'yest'
@@ -9,14 +9,10 @@ import db from './db'
 
 describe("list", () => {
 
-  let jsonAPI: MockJSONAPI
+  const jsonAPI = mockJSONAPI()
 
   beforeEach(() => {
     db.seed()
-
-    // Rather than creating mock functions, we, we've created a mock DB with a mock adapter that actually
-    // sort of works. This exemplifies JSON API better.
-    jsonAPI = new MockJSONAPI()
   })
 
   function context(action: string) {
@@ -282,6 +278,9 @@ describe("list", () => {
         total:      2,
       })
     })
+
+    it.todo("should allow pre-defined filters through labels")
+    it.todo("should handle a wildcard label")
   
   })
 

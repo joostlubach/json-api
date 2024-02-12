@@ -11,21 +11,14 @@ import IncludeCollector from './IncludeCollector'
 import JSONAPI from './JSONAPI'
 import Pack from './Pack'
 import RequestContext from './RequestContext'
-import {
-  AttributeConfig,
-  FilterMap,
-  LabelMap,
-  RelationshipConfig,
-  ResourceConfig,
-  SingletonMap,
-  SortMap,
-} from './ResourceConfig'
+import { AttributeConfig, RelationshipConfig, ResourceConfig } from './ResourceConfig'
 import config from './config'
 import {
   ActionOptions,
   BulkSelector,
   DocumentLocator,
   Linkage,
+  ListActionOptions,
   ListParams,
   Meta,
   ModelsToCollectionOptions,
@@ -58,32 +51,11 @@ export default class Resource<Model, Query, ID> {
   // #region Data retrieval
 
   /**
-   * Gets all defined labels.
-   */
-  public get labels(): LabelMap<Model, Query, ID> {
-    return this.config.labels ?? {}
-  }
-
-  /**
-   * Gets all defined label names.
-   */
-  public get labelNames(): string[] {
-    return Object.keys(this.labels)
-  }
-
-  /**
-   * Gets all defined singletons.
-   */
-  public get singletons(): SingletonMap<Query, Model> {
-    return this.config.singletons ?? {}
-  }
-
-  /**
    * Loads a singleton.
    * @param name The defined name of the singleton.
    */
   public async loadSingleton(name: string, query: Query, include: string[], context: RequestContext): Promise<[Model, Model[]]> {
-    const singleton = this.singletons[name]
+    const singleton = this.config.singletons?.[name]
     if (singleton == null) {
       throw new APIError(404, `Singleton \`${name}\` (of ${this.type}) not found`)
     }
@@ -91,24 +63,6 @@ export default class Resource<Model, Query, ID> {
     return await singleton(query, include, context)
   }
 
-  /**
-   * Gets all defined singleton names.
-   */
-  public get singletonNames(): string[] {
-    return Object.keys(this.singletons)
-  }
-
-  public get totals() {
-    return this.config.totals ?? true
-  }
-
-  public get sorts(): SortMap<Query> {
-    return this.config.sorts ?? {}
-  }
-
-  public get filters(): FilterMap<Query> {
-    return this.config.filters ?? {}
-  }
 
   // #region Queries
 
@@ -167,7 +121,7 @@ export default class Resource<Model, Query, ID> {
 
   public async applyFilters(query: Query, filters: Record<string, any>, adapter: Adapter<Model, Query, ID>, context: RequestContext): Promise<Query> {
     for (const [name, value] of objectEntries(filters)) {
-      const modifier = this.filters[name]
+      const modifier = this.config.filters?.[name]
       if (modifier != null) {
         query = await modifier.call(this, query, value, context)
       } else {
@@ -187,7 +141,7 @@ export default class Resource<Model, Query, ID> {
   }
 
   public async applyLabel(query: Query, label: string, context: RequestContext): Promise<Query> {
-    let labelModifier = this.labels[label]
+    let labelModifier = this.config.labels?.[label]
     if (labelModifier == null && this.config.wildcardLabel != null) {
       labelModifier = this.config.wildcardLabel.bind(this, label)
     }
@@ -201,7 +155,7 @@ export default class Resource<Model, Query, ID> {
 
   public async applySorts(query: Query, sorts: Sort[], adapter: Adapter<Model, Query, ID>, context: RequestContext): Promise<Query> {
     for (const sort of sorts) {
-      const modifier = this.sorts[sort.field]
+      const modifier = this.config.sorts?.[sort.field]
       if (modifier != null) {
         query = await modifier.call(this, query, sort.direction, context)
       } else {
@@ -259,17 +213,25 @@ export default class Resource<Model, Query, ID> {
       if (Relationship.isRelationship(value)) {
         return value
       } else if (value == null) {
-        return {data: null}
+        return {data: relationship.plural ? [] : null}
       }
 
       const {type} = relationship
       if (type == null) {
-        throw new APIError(409, `Relationship "${name}" is polymorphic but its getter doesn't return linkages.`)
+        throw new APIError(509, `Relationship "${name}" is polymorphic but its getter doesn't return linkages.`)
       }
 
       const data = isArray(value)
         ? value.map(it => this.jsonAPI.toLinkage(it, type))
         : this.jsonAPI.toLinkage(value, type)
+
+      if (isArray(data) !== relationship.plural) {
+        if (relationship.plural) {
+          throw new APIError(509, `Relationship "${name}" is plural, but does not yield an array.`)
+        } else {
+          throw new APIError(509, `Relationship "${name}" is singular, but yields an array.`)
+        }
+      }
 
       return {data}
     }
@@ -358,7 +320,7 @@ export default class Resource<Model, Query, ID> {
     }
   }
 
-  public async list(params: ListParams, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}): Promise<Pack<ID>> {
+  public async list(params: ListParams, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ListActionOptions = {}): Promise<Pack<ID>> {
     if (this.config.list === false) {
       throw new APIError(405, `Action \`list\` not available`)
     }
@@ -367,10 +329,11 @@ export default class Resource<Model, Query, ID> {
       params.limit = this.pageSize
     }
 
+    const {totals = this.config.totals ?? true} = options
     const adapter = getAdapter()
     const response = this.config.list != null
-      ? await this.config.list.call(this, params, adapter, context, options)
-      : await adapter.list(await this.listQuery(adapter, params, context), params, options)
+      ? await this.config.list.call(this, params, adapter, context, {...options, totals})
+      : await adapter.list(await this.listQuery(adapter, params, context), params, {...options, totals})
 
     const [models, total] = response.length === 2 && typeof response[1] === 'number'
       ? response as [Model[], number]
@@ -454,7 +417,7 @@ export default class Resource<Model, Query, ID> {
     params:       ListParams,
     getAdapter:      () => Adapter<Model, Query, ID>,
     context:      RequestContext,
-    options:      ActionOptions,
+    options:      ListActionOptions,
   ): Promise<Pack<ID>> {
     if (this.config.listRelated === false) {
       throw new APIError(405, `Action \`listRelated\` not available`)
@@ -464,10 +427,12 @@ export default class Resource<Model, Query, ID> {
       params.limit = this.pageSize
     }
 
+    const {totals = this.config.totals ?? true} = options
+
     const adapter = getAdapter()
     const response = this.config.listRelated != null
-      ? await this.config.listRelated.call(this, locator, relationship, params, adapter, context, options)
-      : await adapter.listRelated(locator, relationship, await this.listQuery(adapter, params, context), params, options)
+      ? await this.config.listRelated.call(this, locator, relationship, params, adapter, context, {...options, totals})
+      : await adapter.listRelated(locator, relationship, await this.listQuery(adapter, params, context), params, {...options, totals})
 
     const [models, total] = response.length === 2 && typeof response[1] === 'number'
       ? response as [Model[], number]
@@ -542,12 +507,13 @@ export default class Resource<Model, Query, ID> {
 
   // #region Custom actions
 
-  public async callCollectionAction(name: string, requestPack: Pack<ID>, adapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}) {
+  public async callCollectionAction(name: string, requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}) {
     const action = this.config.collectionActions?.find(it => it.name === name)
     if (action == null) {
       throw new APIError(405, `Action \`${name}\` not found`)
     }
 
+    const adapter = getAdapter()
     const responsePack = await action.action.call(this, requestPack, adapter, context, options)
     await this.injectPaginationMeta(responsePack, responsePack.meta.offset, responsePack.meta.total, context)
 
@@ -600,12 +566,9 @@ export default class Resource<Model, Query, ID> {
       detail = true,
     } = options
 
+    const id = await this.getAttribute(model, this.config.idAttribute ?? 'id', {}, adapter, context)
     const attributes: Record<string, any> = {}
     const relationships: Record<string, Relationship<ID>> = {}
-
-    const id = adapter.getID != null
-      ? adapter.getID(model)
-      : (model as any).id
 
     for (const [name, attribute] of Object.entries(this.attributes)) {
       if (!await this.attributeAvailable(attribute, model, detail, context)) { continue }
@@ -713,7 +676,7 @@ export default class Resource<Model, Query, ID> {
 
   public extractDocumentLocator(context: RequestContext): DocumentLocator<ID> {
     const id = context.param('id', string())
-    if (this.singletonNames.includes(id)) {
+    if (this.config.singletons != null && id in this.config.singletons) {
       return {singleton: id}
     } else {
       return {id: this.jsonAPI.parseID(id)}

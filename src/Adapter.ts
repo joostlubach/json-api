@@ -24,7 +24,7 @@ export default interface Adapter<Model, Query, ID> {
   update(query: Query, locator: DocumentLocator<ID>, document: Document<ID>, meta: Meta, options: ActionOptions): Promise<Model>
   delete(query: Query): Promise<Array<Model | ID>>
 
-  listRelated(locator: DocumentLocator<ID>, relationship: string, query: Query, params: ListParams, options: RetrievalActionOptions): Promise<Model[]>
+  listRelated(locator: DocumentLocator<ID>, relationship: string, query: Query, params: ListParams, options: ListActionOptions): Promise<Model[]>
   showRelated(locator: DocumentLocator<ID>, relationship: string, query: Query, options: RetrievalActionOptions): Promise<Model>
 
   // #endregion
@@ -41,11 +41,13 @@ export default interface Adapter<Model, Query, ID> {
   
   // #endregion
   
-  // #region Serialization
+  // #region (De)serialization
   
-  getID?(model: Model): ID | Promise<ID>
-  getAttribute?(model: Model, attribute: string): any | Promise<any>
-  getRelationship?(model: Model, relationship: string): Relationship<ID> | ID | Linkage<ID> | Promise<ID | Linkage<ID>>
+  getAttribute?(model: Model, name: string): any | Promise<any>
+  getRelationship?(model: Model, name: string): Relationship<ID> | ID | Linkage<ID> | Promise<ID | Linkage<ID>>
+
+  setAttribute?(model: Model, name: string, value: any): void | Promise<void>
+  setRelationship?(model: Model, name: string, relationship: Relationship<ID>): void | Promise<void>
 
   // #endregion
 

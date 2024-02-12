@@ -1,5 +1,4 @@
 import { isObject } from 'lodash'
-import { string } from 'validator/types'
 import { wrapArray } from 'ytil'
 
 import Adapter from './Adapter'
@@ -79,11 +78,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   public async delete(resourceType: string, requestPack: Pack<ID>, context: RequestContext) {
     const resource = this.registry.get(resourceType)
-    
-    const idParam = context.param('id', string())
     const selector = resource.extractBulkSelector(requestPack, context)
-
-
     const adapter = () => this.adapter(resource, context)
 
     await resource.runBeforeHandlers(context)
