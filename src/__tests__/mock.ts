@@ -63,6 +63,10 @@ export class MockJSONAPI extends JSONAPI<Model, Query, string> {
     return id
   }
 
+  public nullPack() {
+    return Pack.deserialize<Model, Query, string>(this.registry, {data: null})
+  }
+
   public documentPack(type: string, id: string | null, attributes: Record<string, any>) {
     return Pack.deserialize<Model, Query, string>(this.registry, {
       data: {

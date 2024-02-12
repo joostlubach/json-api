@@ -13,7 +13,6 @@ import {
   ListParams,
   Meta,
   Relationship,
-  ResourceID,
 } from './types'
 
 export type ResourceConfigMap = Record<string, ResourceConfig<any, any, any>>
@@ -137,15 +136,14 @@ export interface ResourceConfig<Model, Query, ID> {
   collectionActions?: CustomCollectionAction<Model, Query, ID>[]
 
   /** Custom document actions for this resource. */
-  documentActions?:   CustomDocumentAction<Model, Query, ID>[]
+  documentActions?: CustomDocumentAction<Model, Query, ID>[]
 
   // #endregion
 
 }
 
-// #endregion
-// Attribute types
-#region 
+// #region Attribute types
+
 export type AttributeMap<M, Q, I> = Record<string, AttributeConfig<M, Q, I> | true>
 export interface AttributeConfig<M, Q, I> {
   writable?: boolean | AttributeIf<M, Q, I> | 'create'
@@ -160,13 +158,15 @@ export type AttributeGetter<M, Q, I> = (this: Resource<M, Q, I>, item: M, contex
 export type AttributeSetter<M, Q, I> = (this: Resource<M, Q, I>, item: M, value: unknown, context: RequestContext) => void | Promise<void>
 
 // #endregion
-// Meta & link #region types
+
+// #region Meta types
 
 export type DynamicMeta<M, Q, I> = (this: Resource<M, Q, I>, meta: Meta, model: M | null, context: RequestContext) => Meta | Promise<Meta>
 export type DynamicDocumentMeta<M, Q, I> = (this: Resource<M, Q, I>, meta: Meta, model: M, context: RequestContext) => Meta | Promise<Meta>
 
 // #endregion
-// Relationship #region types
+
+// #region Relationship #region types
 
 export type RelationshipMap<M, Q, I> = Record<string, RelationshipConfig<M, Q, I>>
 export type RelationshipConfig<M, Q, I> = SingularRelationshipConfig<M, Q, I> | PluralRelationshipConfig<M, Q, I>
@@ -201,7 +201,7 @@ export type PluralRelationshipConfig<M, Q, I> = RelationshipConfigCommon<M, Q, I
 // #endregion
 
 // #region Scope & search
-#region 
+
 export type ScopeFunction<M, Q, I> = (this: Resource<M, Q, I>, query: Q, context: RequestContext) => Q | Promise<Q>
 export type DefaultsFunction<M, Q, I> = (this: Resource<M, Q, I>, context: RequestContext) => Record<string, any> | Promise<Record<string, any>>
 export type ScopeOption<M, Q, I> = (this: Resource<M, Q, I>, request: Request) => any
@@ -221,9 +221,10 @@ export type FilterMap<Q> = Record<string, FilterModifier<Q>>
 export type FilterModifier<Q> = (query: Q, value: any, context: RequestContext) => Q | Promise<Q>
 
 // #endregion
-// Actions
 
-#region export type AuthenticateHandler = (context: RequestContext) => void | Promise<void>
+// #region Actions
+
+export type AuthenticateHandler = (context: RequestContext) => void | Promise<void>
 export type BeforeHandler = (context: RequestContext) => void | Promise<void>
 
 export type ListAction<M, Q, I> = (
@@ -233,6 +234,7 @@ export type ListAction<M, Q, I> = (
   context: RequestContext,
   options: ActionOptions
 ) => Promise<M[] | [M[], number]>
+
 export type GetAction<M, Q, I> = (
   this:    Resource<M, Q, I>,
   locator: DocumentLocator<I>,
@@ -240,6 +242,7 @@ export type GetAction<M, Q, I> = (
   context: RequestContext,
   options: ActionOptions
 ) => Promise<M>
+
 export type CreateAction<M, Q, I> = (
   this:     Resource<M, Q, I>,
   document: Document<I>,
@@ -248,6 +251,7 @@ export type CreateAction<M, Q, I> = (
   context:  RequestContext,
   options:  ActionOptions
 ) => Promise<M>
+
 export type ReplaceAction<M, Q, I> = (
   this:     Resource<M, Q, I>,
   locator:  DocumentLocator<I>,
@@ -257,6 +261,7 @@ export type ReplaceAction<M, Q, I> = (
   context:  RequestContext,
   options:  ActionOptions
 ) => Promise<M>
+
 export type UpdateAction<M, Q, I> = (
   this:     Resource<M, Q, I>,
   locator:  DocumentLocator<I>,
@@ -266,12 +271,14 @@ export type UpdateAction<M, Q, I> = (
   context:  RequestContext,
   options:  ActionOptions
 ) => Promise<M>
+
 export type DeleteAction<M, Q, I> = (
   this:     Resource<M, Q, I>,
   selector: BulkSelector<I>,
   adapter:  Adapter<M, Q, I>,
   context:  RequestContext
 ) => Promise<Array<M | I>>
+
 
 export type ListRelatedAction<M, Q, I> = (
   this:         Resource<M, Q, I>,
@@ -293,20 +300,24 @@ export type GetRelatedAction<M, Q, I> = (
 ) => Promise<M>
 
 // #endregion
-// Custom actions
-#region 
+
+// #region Custom actions
+
 export interface CustomCollectionAction<M, Q, I> {
-  name:         string
-  method:       'get' | 'post' | 'put' | 'delete'
-  deserialize?: boolean
-  action:       (this: Resource<M, Q, I>, pack: Pack<I>, adapter: Adapter<M, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
+  name:    string
+  action:  (this: Resource<M, Q, I>, pack: Pack<I>, adapter: Adapter<M, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
+  router?: CustomActionRouterOptions
 }
 
 export interface CustomDocumentAction<M, Q, I> {
-  name:         string
-  method:       'get' | 'post' | 'put' | 'delete'
+  name:    string
+  action:  (this: Resource<M, Q, I>, model: M, pack: Pack<I>, adapter: Adapter<M, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
+  router?: CustomActionRouterOptions
+}
+
+export interface CustomActionRouterOptions {
+  method?:      'get' | 'post' | 'put' | 'delete'
   deserialize?: boolean
-  action:       (this: Resource<M, Q, I>, model: M, pack: Pack<I>, adapter: Adapter<M, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
 }
 
 // #endregion

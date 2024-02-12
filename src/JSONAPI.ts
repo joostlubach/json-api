@@ -98,7 +98,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   // #region Custom actions
 
-  public async collectionAction(resourceType: string, action: string, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
+  public async collectionAction(resourceType: string, action: string, requestPack: Pack<any>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<any>> {
     const resource = this.registry.get(resourceType)
     const adapter = () => this.adapter(resource, context)
 
@@ -106,7 +106,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
     return await resource.callCollectionAction(action, requestPack, adapter, context, options)
   }
 
-  public async documentAction(resourceType: string, locator: DocumentLocator<ID>, action: string, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
+  public async documentAction(resourceType: string, locator: DocumentLocator<ID>, action: string, requestPack: Pack<any>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<any>> {
     const resource = this.registry.get(resourceType)
     const adapter = () => this.adapter(resource, context)
 
