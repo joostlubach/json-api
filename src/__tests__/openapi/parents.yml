@@ -1,0 +1,3 @@
+actions:
+  list:
+    summary: List all parents

@@ -333,14 +333,15 @@ export default class Resource<Model, Query, ID> {
     return await this.documentPack(model, adapter, context, options)
   }
 
-  public async create(document: Document<ID>, requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
+  public async create(requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
     if (this.config.create === false) {
       throw new APIError(405, `Action \`show\` not available`)
     }
     if (this.config.create != null) {
-      return await this.config.create.call(this, document, requestPack, getAdapter, context, options)
+      return await this.config.create.call(this, requestPack, getAdapter, context, options)
     }
 
+    const document = this.extractRequestDocument(requestPack, null)
     const adapter = getAdapter()
 
     // TODO: Insert scope & defaults.
@@ -633,9 +634,11 @@ export default class Resource<Model, Query, ID> {
     return {offset, limit}
   }
 
-  public extractDocumentLocator(context: RequestContext): DocumentLocator<ID> {
+  public extractDocumentLocator(context: RequestContext, singleton: false): {id: ID}
+  public extractDocumentLocator(context: RequestContext, singleton?: boolean): DocumentLocator<ID>
+  public extractDocumentLocator(context: RequestContext, singleton: boolean = false): DocumentLocator<ID> {
     const id = context.param('id', string())
-    if (this.config.singletons != null && id in this.config.singletons) {
+    if (singleton && this.config.singletons != null && id in this.config.singletons) {
       return {singleton: id}
     } else {
       return {id: this.jsonAPI.parseID(id)}
@@ -691,9 +694,4 @@ export default class Resource<Model, Query, ID> {
 
   // #endregion
 
-}
-
-export interface QueryOptions {
-  label?:   string
-  filters?: Record<string, any>
 }

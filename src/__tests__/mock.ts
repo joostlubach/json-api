@@ -16,6 +16,7 @@ import {
   Sort,
 } from '../types'
 import db, { Model, Query } from './db'
+import * as openapi from './openapi'
 
 export function mockJSONAPI(options?: JSONAPIOptions<Model, Query, string>) {
   return dynamicProxy(() => new MockJSONAPI(options))
@@ -31,7 +32,9 @@ export class MockJSONAPI extends JSONAPI<Model, Query, string> {
     super(options)
 
     this.registry.register('parents', {
-      modelName:  'Parent',
+      modelName: 'Parent',
+      openapi:   openapi.parents,
+
       attributes: {
         name: true,
         age:  true,
@@ -42,7 +45,9 @@ export class MockJSONAPI extends JSONAPI<Model, Query, string> {
       },
     })
     this.registry.register('children', {
-      modelName:  'Child',
+      modelName: 'Child',
+      openapi:   openapi.children,
+
       attributes: {
         name: true,
         age:  true,

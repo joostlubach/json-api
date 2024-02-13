@@ -1,3 +1,4 @@
+import { Request } from 'express'
 import { isObject } from 'lodash'
 import { wrapArray } from 'ytil'
 
@@ -7,9 +8,12 @@ import RequestContext from './RequestContext'
 import Resource from './Resource'
 import ResourceRegistry from './ResourceRegistry'
 import { Middleware } from './middleware'
+import { OpenAPIGenerator, OpenAPIOptions } from './openapi'
 import {
   ActionOptions,
+  CommonActions,
   DocumentLocator,
+  JSONAPIRoutesMap as RouteMap,
   Linkage,
   ListParams,
   ModelsToCollectionOptions,
@@ -22,22 +26,27 @@ import {
  */
 export default abstract class JSONAPI<Model, Query, ID> {
 
+  // #region Constructor & properties
+
   constructor(
-    options: JSONAPIOptions<Model, Query, ID> = {},
+    public readonly options: JSONAPIOptions<Model, Query, ID> = {},
   ) {
     this.registry = new ResourceRegistry<Model, Query, ID>(
       this,
       options.middleware == null ? [] : wrapArray(options.middleware)
     )
+    this.routes = {...defaultRoutes, ...this.options.router?.routes}
   }
 
   public readonly registry: ResourceRegistry<Model, Query, ID>
+
+  // #endregion
   
+  // #region Abstract interface
+    
   public abstract adapter(resource: Resource<Model, Query, ID>, context: RequestContext): Adapter<Model, Query, ID>
   public abstract parseID(id: string | number): ID
-  
-  // #region Registration
-  
+
   // #endregion
 
   // #region CRUD
@@ -60,11 +69,10 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   public async create(resourceType: string, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
     const resource = this.registry.get(resourceType)
-    const document = resource.extractRequestDocument(requestPack, null)
     const adapter = () => this.adapter(resource, context)
 
     await resource.runBeforeHandlers(context)
-    return await resource.create(document, requestPack, adapter, context, options)
+    return await resource.create(requestPack, adapter, context, options)
   }
 
   public async replace(resourceType: string, id: ID, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
@@ -143,8 +151,81 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   // #endregion
 
+  // #region Routes
+
+  private readonly routes: RouteMap
+
+  public route<M extends Model, Q extends Query, I extends ID>(action: CommonActions) {    
+    return this.routes[action]
+  }
+
+  public customCollectionRoute(resource: Resource<any, any, any>, name: string) {
+    if (this.options.router?.routes?.customCollection === false) { return false }
+    return this.options.router?.routes?.customCollection?.(resource, name) ?? `/${resource.plural}/${name}`
+  }
+
+  public customDocumentRoute(resource: Resource<any, any, any>, name: string) {
+    if (this.options.router?.routes?.customCollection === false) { return false }
+    return this.options.router?.routes?.customCollection?.(resource, name) ?? `/${resource.plural}/${name}`
+  }
+
+  // #endregion
+
+  // #region OpenAPI
+
+  public async openAPISpec() {
+    const generator = new OpenAPIGenerator(this, this.options?.openAPI)
+    return await generator.generate()
+  }
+
+  // #endregion
+
 }
 
 export interface JSONAPIOptions<M, Q, I> {
   middleware?: Middleware<M, Q, I>[]
+  router?:     RouterOptions
+  openAPI?:    OpenAPIOptions
 }
+
+export interface RouterOptions {
+  routes?:             Partial<RouteMap>
+  requestContext?:     (action: string, request: Request) => RequestContext | Promise<RequestContext>
+  openAPI?:            OpenAPIGenerator
+  enforceContentType?: boolean
+}
+
+// #region Defaults
+  
+const defaultRoutes: RouteMap = {
+  list: {
+    method: 'get',
+    path:   resource => `/${resource.plural}/::label?`,
+  },
+  show: {
+    method: 'get',
+    path:   resource => `/${resource.plural}/:id`,
+  },
+  create: {
+    method: 'post',
+    path:   resource => `/${resource.plural}`,
+  },
+  update: {
+    method: 'patch',
+    path:   resource => `/${resource.plural}/:id`,
+  },
+  replace: {
+    method: 'put',
+    path:   resource => `/${resource.plural}/:id`,
+  },
+  delete: {
+    method: 'delete',
+    path:   resource => `/${resource.plural}`,
+  },
+
+  customCollection: name => `/{{plural}}/${name}`,
+  customDocument:   name => `/{{plural}}/:id/${name}`,
+}
+
+// #endregion
+

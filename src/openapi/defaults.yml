@@ -1,0 +1,5 @@
+actions:
+  list:
+    tags: ['{{plural}}']
+    summary: "List all {{plural}}"
+    description: "List all {{plural}}"

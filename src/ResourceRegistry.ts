@@ -51,6 +51,10 @@ export default class ResourceRegistry<Model, Query, ID> {
     config.logger.debug(chalk`-> Registered resource {yellow ${resource.plural}}\n`)
   }
 
+  public drop(name: string) {
+    this.resources.delete(name)
+  }
+
   // #endregion
 
   // #region Retrieval

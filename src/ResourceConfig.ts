@@ -1,11 +1,18 @@
 import { Request } from 'express'
 
 import Adapter from './Adapter'
-import Document from './Document'
 import Pack from './Pack'
 import RequestContext from './RequestContext'
 import Resource from './Resource'
-import { ActionOptions, DocumentLocator, Linkage, ListParams, Meta, Relationship } from './types'
+import {
+  ActionOptions,
+  DocumentLocator,
+  Linkage,
+  ListParams,
+  Meta,
+  OpenAPIMeta,
+  Relationship,
+} from './types'
 
 export type ResourceConfigMap = Record<string, ResourceConfig<any, any, any>>
 
@@ -25,6 +32,9 @@ export interface ResourceConfig<Model, Query, ID> {
 
   /** The name of the model that backs this resource. */
   modelName?: string
+
+  /** Any literal meta / texts used in OpenAPI generation. */
+  openapi?: OpenAPIMeta
 
   /** If true, this resource won't be resolved as the default resource for the given model class. */
   auxiliary?: boolean
@@ -209,7 +219,6 @@ export type FilterModifier<Q> = (query: Q, value: any, context: RequestContext) 
 
 // #region Actions
 
-export type AuthenticateHandler = (context: RequestContext) => void | Promise<void>
 export type BeforeHandler = (context: RequestContext) => void | Promise<void>
 
 export type ListAction<M, Q, I> = (
@@ -230,7 +239,6 @@ export type GetAction<M, Q, I> = (
 
 export type CreateAction<M, Q, I> = (
   this:     Resource<M, Q, I>,
-  document: Document<I>,
   pack:     Pack<I>,
   adapter:  () => Adapter<M, Q, I>,
   context:  RequestContext,

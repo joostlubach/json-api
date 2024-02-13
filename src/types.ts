@@ -1,9 +1,26 @@
 import { isArray, isPlainObject } from 'lodash'
+import { OpenAPIV3_1 } from 'openapi-types'
 import { objectKeys, objectValues } from 'ytil'
 
 import Resource from './Resource'
 
+// #region General types
+
 export type AnyResource = Resource<any, any, any>
+
+export type Include = string
+
+export type ResourceID = string | number
+export type Serialized = Record<string, any>
+export type Primitive = string | number | boolean
+
+export type ModelOf<R extends Resource<any, any, any>> = R extends Resource<infer M, any, any> ? M : never
+export type QueryOf<R extends Resource<any, any, any>> = R extends Resource<any, infer Q, any> ? Q : never
+export type IDOf<R extends Resource<any, any, any>> = R extends Resource<any, any, infer I> ? I : never
+
+// #endregion
+
+// #region DocumentLocator
 
 export type DocumentLocator<I> = IDLocator<I> | SingletonLocator
 
@@ -23,6 +40,19 @@ export const DocumentLocator: {
   },
 }
 
+// #endregion
+
+// #region Params & action options
+
+export interface ListParams {
+  filters?: Filters
+  label?:   string | null
+  search?:  string | null
+  sorts?:   Sort[]
+  offset?:  number
+  limit?:   number | null
+}
+
 export interface Filters {
   [path: string]: any
 }
@@ -31,6 +61,30 @@ export interface Sort {
   field:     string
   direction: -1 | 1
 }
+
+// Reserved for future use.
+export interface ActionOptions {}
+
+export interface RetrievalActionOptions extends ActionOptions {
+  include?: Include[]
+  detail?:  boolean
+}
+
+export interface ListActionOptions extends RetrievalActionOptions {
+  totals?: boolean
+}
+
+export interface ModelToDocumentOptions {
+  detail?: boolean
+}
+
+export interface ModelsToCollectionOptions {
+  detail?: boolean
+}
+
+// #endregion
+
+// #region Data
 
 export type Links = Record<string, string>
 export type Meta = Record<string, any>
@@ -76,6 +130,15 @@ export const Linkage: {
   },
 }
 
+export interface BulkSelector<I> {
+  ids?:     I[]
+  filters?: Record<string, any>
+  search?:  string
+}
+
+// #endregion
+
+// #region Errors
 
 export interface JSONAPIError {
   id?:     string
@@ -90,47 +153,43 @@ export interface JSONAPIError {
   }
 }
 
-// Reserved for future use.
-export interface ActionOptions {}
+// #endregion
 
-export interface RetrievalActionOptions extends ActionOptions {
-  include?: Include[]
-  detail?:  boolean
+// #region Router config
+
+export type CommonActions = 
+  | 'list' 
+  | 'show' 
+  | 'create' 
+  | 'update' 
+  | 'replace' 
+  | 'delete'
+
+export type JSONAPIRoutesMap = {
+  [action in CommonActions]: false | JSONAPIRoute
+} & {
+  customCollection: false | ((resource: Resource<any, any, any>, name: string) => string)
+  customDocument:   false | ((resource: Resource<any, any, any>, name: string) => string)
 }
 
-export interface ListActionOptions extends RetrievalActionOptions {
-  totals?: boolean
+export interface JSONAPIRoute {
+  method: Method
+  path:   (resource: Resource<any, any, any>) => string
 }
 
-export type Include = string
+export type Method =
+  | 'get' 
+  | 'post' 
+  | 'put' 
+  | 'patch' 
+  | 'delete'
 
-export interface ListParams {
-  filters?: Filters
-  label?:   string | null
-  search?:  string | null
-  sorts?:   Sort[]
-  offset?:  number
-  limit?:   number | null
-}
+// #endregion
 
-export interface BulkSelector<I> {
-  ids?:     I[]
-  filters?: Record<string, any>
-  search?:  string
-}
+// #region OpenAPI texts
 
-export type ResourceID = string | number
-export type Serialized = Record<string, any>
-export type Primitive = string | number | boolean
-
-export type ModelOf<R extends Resource<any, any, any>> = R extends Resource<infer M, any, any> ? M : never
-export type QueryOf<R extends Resource<any, any, any>> = R extends Resource<any, infer Q, any> ? Q : never
-export type IDOf<R extends Resource<any, any, any>> = R extends Resource<any, any, infer I> ? I : never
-
-export interface ModelToDocumentOptions {
-  detail?: boolean
-}
-
-export interface ModelsToCollectionOptions {
-  detail?: boolean
+export interface OpenAPIMeta {
+  singular?: string
+  plural?:   string
+  actions?:  Record<CommonActions, Omit<OpenAPIV3_1.OperationObject, 'parameters' | 'requestBody' | 'responses'>>
 }
