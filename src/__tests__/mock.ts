@@ -1,4 +1,5 @@
 import { isArray, isPlainObject } from 'lodash'
+import { OpenAPIV3_1 } from 'openapi-types'
 import { dynamicProxy } from 'yest'
 
 import Adapter from '../Adapter'
@@ -210,6 +211,14 @@ export class MockAdapter implements Adapter<Model, Query, string> {
       ...query,
       limit,
     }
+  }
+
+  public openAPISchemaForAttribute(attribute: string): OpenAPIV3_1.SchemaObject | Promise<OpenAPIV3_1.SchemaObject> {
+    return {}
+  }
+
+  public isAttributeRequired(attribute: string): boolean | Promise<boolean> {
+    return true
   }
 
 }

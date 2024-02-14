@@ -51,13 +51,9 @@ export default interface Adapter<Model, Query, ID> {
 
   // #region OpenAPI reflection
   
-  openAPI?: OpenAPIReflection
+  openAPISchemaForAttribute(name: string): OpenAPIV3_1.SchemaObject | Promise<OpenAPIV3_1.SchemaObject>
+  isAttributeRequired(name: string): boolean | Promise<boolean>
 
   // #endregion
 
-}
-
-export interface OpenAPIReflection {
-  schemaForAttribute(name: string): OpenAPIV3_1.SchemaObject
-  isAttributeRequired(name: string): boolean
 }

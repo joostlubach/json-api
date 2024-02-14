@@ -1,4 +1,4 @@
-import { context, mockJSONAPI } from './mock'
+import { context, MockAdapter, mockJSONAPI } from './mock'
 
 import { OpenAPIV3_1 } from 'openapi-types'
 
@@ -752,18 +752,81 @@ describe("openapi", () => {
 
     describe("attributes", () => {
 
-      it("should expose a ParentsAttributes with a property for each exposed attribute", async () => {
-        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
-        expect(spec.components?.schemas?.['ParentsAttributes']).toEqual({
+      let nameSchema: OpenAPIV3_1.SchemaObject
+      let ageSchema: OpenAPIV3_1.SchemaObject
+      let nameRequired: boolean
+      let ageRequired: boolean
+
+      beforeEach(() => {
+        nameSchema = {
+          type: 'string',
+        }
+
+        ageSchema = {
+          type:    'integer',
+          minimum: 0,
+          maximum: 100,
+        }
+
+        nameRequired = true
+        ageRequired = false
+
+        jest.spyOn(MockAdapter.prototype, 'openAPISchemaForAttribute')
+          .mockImplementation(name => name === 'name' ? nameSchema : ageSchema)
+
+        jest.spyOn(MockAdapter.prototype, 'isAttributeRequired')
+          .mockImplementation(name => name === 'name' ? nameRequired : ageRequired)
+      })
+
+      it("should expose a ParentsAttributes with a property for each exposed attribute using openAPI reflection from the adapter", async () => {
+        expect(await getAttributesSchema()).toEqual({
           type: 'object',
 
           properties: {
-            name: expect.any(Object),
-            age:  expect.any(Object),
+            name: {type: 'string'},
+            age:  {type: 'integer', minimum: 0, maximum: 100},
           },
-          required: expect.any(Array),
+          required: ['name'],
+        })
+
+        ageRequired = true
+        expect((await getAttributesSchema())?.required).toEqual(['name', 'age'])
+
+        ageRequired = false
+        nameRequired = false
+        expect((await getAttributesSchema())?.required).toEqual([])
+
+        nameSchema.minLength = 1
+        nameSchema.maxLength = 100
+        expect((await getAttributesSchema())?.properties?.name).toEqual({
+          type:      'string',
+          minLength: 1,
+          maxLength: 100,
         })
       })
+
+      it("should allow the adapter to return the metadata asynchronously", async () => {
+        jest.spyOn(MockAdapter.prototype, 'openAPISchemaForAttribute')
+          .mockImplementation(async name => name === 'name' ? nameSchema : ageSchema)
+
+        jest.spyOn(MockAdapter.prototype, 'isAttributeRequired')
+          .mockImplementation(async name => name === 'name' ? nameRequired : ageRequired)
+
+        expect(await getAttributesSchema()).toEqual({
+          type: 'object',
+
+          properties: {
+            name: {type: 'string'},
+            age:  {type: 'integer', minimum: 0, maximum: 100},
+          },
+          required: ['name'],
+        })
+      })
+
+      async function getAttributesSchema() {
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
+        return spec.components?.schemas?.['ParentsAttributes']
+      }
 
     })
 

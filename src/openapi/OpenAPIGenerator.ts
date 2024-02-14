@@ -1,6 +1,6 @@
 import * as FS from 'fs-extra'
 import * as YAML from 'js-yaml'
-import { camelCase, cloneDeep, isPlainObject, mapValues, upperFirst } from 'lodash'
+import { camelCase, cloneDeep, mapValues, upperFirst } from 'lodash'
 import { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types'
 import * as Path from 'path'
 import { objectKeys, sparse } from 'ytil'
@@ -9,7 +9,7 @@ import Adapter from '../Adapter'
 import JSONAPI from '../JSONAPI'
 import RequestContext from '../RequestContext'
 import Resource from '../Resource'
-import { AttributeConfig, RelationshipConfig } from '../ResourceConfig'
+import { RelationshipConfig } from '../ResourceConfig'
 import { CommonActions, Method, OpenAPIMeta } from '../types'
 import { actionParameters, errorResponseBody, requestBodies, responseBodies } from './actions'
 import {
@@ -161,19 +161,20 @@ export default class OpenAPIGenerator {
   }  
 
   private async buildAttributesSchema(resource: Resource<any, any, any>, adapter: Adapter<any, any, any>): Promise<OpenAPIV3_1.SchemaObject> {
+    const properties: Record<string, OpenAPIV3_1.SchemaObject> = {}
+    const required: string[] = []
+    await Promise.all(objectKeys(resource.config.attributes).map(async name => {
+      const schema = await adapter.openAPISchemaForAttribute(name)
+      properties[name] = schema
+      if (await adapter.isAttributeRequired(name)) {
+        required.push(name)
+      }
+    }))
+
     return {
       type: 'object',
-
-      properties: mapValues(resource.config.attributes, (_, attr) => adapter.openAPI?.schemaForAttribute(attr) ?? {}),
-      required:   objectKeys(resource.config.attributes).filter(key => {
-        const attribute = resource.config.attributes[key]
-        if (isPlainObject(attribute) && ((attribute as AttributeConfig<any, any, any>).detail || (attribute as AttributeConfig<any, any, any>).if)) {
-          // We cannot determine if the attribute is required as it is conditional upon the situation.
-          return false
-        }
-        
-        return adapter.openAPI?.isAttributeRequired(key)
-      }),
+      properties,
+      required,
     }
   }
 
