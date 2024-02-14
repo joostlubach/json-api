@@ -22,13 +22,14 @@ import {
   singularRelationship,
   validationErrorDetail,
 } from './objects'
+import { OpenAPIGeneratorOptions } from './types'
 
 export default class OpenAPIGenerator {
 
   constructor(
     private readonly jsonAPI: JSONAPI<any, any, any>,
     private readonly context: RequestContext,
-    private readonly options: OpenAPIOptions = {},
+    private readonly options: OpenAPIGeneratorOptions = {},
   ) {
     this.reset()
 
@@ -345,12 +346,6 @@ export default class OpenAPIGenerator {
 
   // #endregion
 
-}
-
-export interface OpenAPIOptions extends Partial<Omit<OpenAPIV3_1.Document, 'openapi'>> {
-  version?:      OpenAPIV3_1.Document['openapi']
-  metaDefaults?: OpenAPIMeta
-  contentType?:  string
 }
 
 const defaultContentType = 'application/vnd.api+json'

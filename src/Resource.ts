@@ -4,7 +4,7 @@ import { any, boolean, dictionary, number, string } from 'validator/types'
 import { objectEntries } from 'ytil'
 
 import APIError from './APIError'
-import Adapter from './Adapter'
+import Adapter, { GetResponse } from './Adapter'
 import Collection from './Collection'
 import Document from './Document'
 import IncludeCollector from './IncludeCollector'
@@ -143,37 +143,22 @@ export default class Resource<Model, Query, ID> {
 
   // #endregion
 
-  // #region Attributes & relationships
+  // #region Attributes
 
   public get attributes(): Record<string, AttributeConfig<Model, Query, ID>> {
     return mapValues(this.config.attributes ?? {}, val => val === true ? {} : val)
   }
 
-  public get relationships(): Record<string, RelationshipConfig<Model, Query, ID>> {
-    return this.config.relationships ?? {}
+  private async getAttributes(model: Model, detail: boolean, adapter: Adapter<Model, Query, ID>, context: RequestContext) {
+    const attributes: Record<string, any> = {}
+    for (const [name, attribute] of objectEntries(this.attributes)) {
+      if (!await this.attributeAvailable(attribute, model, true, context)) { continue }
+      attributes[name] = await this.getAttributeValue(model, name, attribute, adapter, context)
+    }
+    return attributes
   }
 
-  public async attributeAvailable(attribute: AttributeConfig<Model, Query, ID>, model: Model, detail: boolean, context: RequestContext) {
-    if (attribute.detail && !detail) { return false }
-    if (attribute.if == null) { return true }
-    return await attribute.if.call(this, model, context)
-  }
-
-  public attributeWritable(attribute: AttributeConfig<Model, Query, ID>, model: Model, detail: boolean, create: boolean, context: RequestContext) {
-    if (!this.attributeAvailable(attribute, model, detail, context)) { return false }
-    if (attribute.writable == null) { return true }
-    if (isFunction(attribute.writable)) { return attribute.writable.call(this, model, context) }
-    if (attribute.writable === 'create') { return create }
-    return attribute.writable
-  }
-
-  public async relationshipAvailable(relationship: RelationshipConfig<Model, Query, ID>, model: Model, detail: boolean, context: RequestContext) {
-    if (relationship.detail && !detail) { return false }
-    if (relationship.if == null) { return true }
-    return await relationship.if.call(this, model, context)
-  }
-
-  private async getAttribute(model: Model, name: string, attribute: AttributeConfig<Model, Query, ID>, adapter: Adapter<Model, Query, ID>, context: RequestContext) {
+  private async getAttributeValue(model: Model, name: string, attribute: AttributeConfig<Model, Query, ID>, adapter: Adapter<Model, Query, ID>, context: RequestContext) {
     if (attribute.get != null) {
       return await attribute.get.call(this, model, context)
     } else if (adapter.getAttribute != null) {
@@ -183,7 +168,68 @@ export default class Resource<Model, Query, ID> {
     }
   }
 
-  private async getRelationship(model: Model, name: string, relationship: RelationshipConfig<Model, Query, ID>, adapter: Adapter<Model, Query, ID>, context: RequestContext): Promise<Relationship<ID>> {
+  private async setAttributes(model: Model, document: Document<ID>, create: boolean, adapter: Adapter<Model, Query, ID>, context: RequestContext) {
+    for (const [name, value] of Object.entries(document.attributes)) {
+      const attribute = this.attributes[name]
+
+      if (!await this.attributeAvailable(attribute, model, true, context)) { continue }
+      if (!await this.attributeWritable(attribute, model, create, context)) {
+        throw new APIError(403, `Attribute "${name}" is not writable`)
+      }
+
+      await this.setAttribute(model, name, value, attribute, adapter, context)
+    }
+  }
+
+  private async setAttribute(model: Model, name: string, value: any, attribute: AttributeConfig<Model, Query, ID>, adapter: Adapter<Model, Query, ID>, context: RequestContext) {
+    if (attribute.set != null) {
+      return await attribute.set.call(this, model, value, context)
+    } else if (adapter.getAttribute != null) {
+      return await adapter.getAttribute(model, name)
+    } else {
+      return (model as any)[name]
+    }
+  }
+
+  public async attributeAvailable(attribute: AttributeConfig<Model, Query, ID> | undefined, model: Model, detail: boolean, context: RequestContext) {
+    if (attribute == null) { return false }
+    if (attribute.detail && !detail) { return false }
+    if (attribute.if == null) { return true }
+    if (!await attribute.if.call(this, model, context)) { return false }
+    return true
+  }
+
+  public attributeWritable(attribute: AttributeConfig<Model, Query, ID> , model: Model, create: boolean, context: RequestContext) {
+    if (attribute.writable == null) { return true }
+    if (isFunction(attribute.writable)) { return attribute.writable.call(this, model, context) }
+    if (attribute.writable === 'create') { return create }
+    return attribute.writable
+  }
+
+  // #endregion
+
+  // #region Relationships
+
+  public get relationships(): Record<string, RelationshipConfig<Model, Query, ID>> {
+    return this.config.relationships ?? {}
+  }
+
+  public async relationshipAvailable(relationship: RelationshipConfig<Model, Query, ID>, model: Model, detail: boolean, context: RequestContext) {
+    if (relationship.detail && !detail) { return false }
+    if (relationship.if == null) { return true }
+    return await relationship.if.call(this, model, context)
+  }
+
+  private async getRelationships(model: Model, detail: boolean, adapter: Adapter<Model, Query, ID>, context: RequestContext) {
+    const relationships: Record<string, Relationship<ID>> = {}
+    for (const [name, relationship] of Object.entries(this.relationships)) {
+      if (!await this.relationshipAvailable(relationship, model, detail, context)) { continue }
+      relationships[name] = await this.getRelationshipValue(model, name, relationship, adapter, context)
+    }
+    return relationships
+  }
+
+  private async getRelationshipValue(model: Model, name: string, relationship: RelationshipConfig<Model, Query, ID>, adapter: Adapter<Model, Query, ID>, context: RequestContext): Promise<Relationship<ID>> {
     const coerce = (value: Relationship<ID> | Linkage<ID> | ID | Array<Linkage<ID> | ID> | null): Relationship<ID> => {
       if (Relationship.isRelationship(value)) {
         return value
@@ -312,11 +358,15 @@ export default class Resource<Model, Query, ID> {
     const query = await this.listQuery(adapter, params, context)
     const response = await adapter.list(query, params, {...options, totals})
 
-    const [models, total] = response.length === 2 && typeof response[1] === 'number'
-      ? response as [Model[], number]
-      : [response as Model[], undefined]
-
-    return await this.collectionPack(models, adapter, params.offset, total, context, options)
+    return await this.collectionPack(
+      response.models,
+      response.included,
+      params.offset,
+      response.total,
+      adapter,
+      context,
+      options
+    )
   }
 
   public async show(locator: DocumentLocator<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}): Promise<Pack<ID>> {
@@ -328,9 +378,15 @@ export default class Resource<Model, Query, ID> {
     }
 
     const adapter = getAdapter()
-    const model = await this.getModel(locator, adapter, context)
+    const response = await this.getModel(locator, adapter, context)
     
-    return await this.documentPack(model, adapter, context, options)
+    return await this.documentPack(
+      response.model,
+      response.included,
+      adapter,
+      context,
+      options
+    )
   }
 
   public async create(requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
@@ -344,13 +400,12 @@ export default class Resource<Model, Query, ID> {
     const document = this.extractRequestDocument(requestPack, null)
     const adapter = getAdapter()
 
-    // TODO: Insert scope & defaults.
+    const model = await adapter.emptyModel()
+    await this.setAttributes(model, document, true, adapter, context)
+    await this.config.scope?.ensure.call(this, model, context)
 
-    const model = await adapter.create(document, requestPack, options)
-    if (this.config.scope != null) {
-      this.config.scope.ensure.call(this, model, context)
-    }
-    return await this.documentPack(model, adapter, context, options)
+    const response = await adapter.save(model, requestPack, options)
+    return await this.documentPack(response.model, undefined, adapter, context, options)
   }
 
   public async replace(id: ID, requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
@@ -363,13 +418,12 @@ export default class Resource<Model, Query, ID> {
 
     const adapter = getAdapter()
     const document = this.extractRequestDocument(requestPack, id)
-    const original = await this.getModel({id}, adapter, context)
-    const model = await adapter.replace(original, document, requestPack, options)
-    if (this.config.scope != null) {
-      this.config.scope.ensure.call(this, model, context)
-    }
+    const {model} = await this.getModel({id}, adapter, context)
+    await this.setAttributes(model, document, true, adapter, context)
+    await this.config.scope?.ensure.call(this, model, context)
 
-    return await this.documentPack(model, adapter, context, options)
+    const response = await adapter.save(model, requestPack, options)
+    return await this.documentPack(response.model, undefined, adapter, context, options)
   }
 
   public async update(id: ID, requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
@@ -382,13 +436,11 @@ export default class Resource<Model, Query, ID> {
 
     const adapter = getAdapter()
     const document = this.extractRequestDocument(requestPack, id)
-    const original = await this.getModel({id}, adapter, context)
-    const model = await adapter.update(original, document, requestPack, options)
-    if (this.config.scope != null) {
-      this.config.scope.ensure.call(this, model, context)
-    }
+    const {model} = await this.getModel({id}, adapter, context)
+    await this.setAttributes(model, document, false, adapter, context)
 
-    return await this.documentPack(model, adapter, context, options)
+    const response = await adapter.save(model, requestPack, options)
+    return await this.documentPack(response.model, undefined, adapter, context, options)
   }
 
   public async delete(requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext): Promise<Pack<ID>> {
@@ -410,49 +462,45 @@ export default class Resource<Model, Query, ID> {
     return pack
   }
 
-  private async collectionPack(models: Model[], adapter: Adapter<Model, Query, ID>, offset: number | undefined, total: number | undefined, context: RequestContext, options: RetrievalActionOptions = {}) {
+  private async collectionPack(models: Model[], includedModels: Model[] | undefined, offset: number | undefined, total: number | undefined, adapter: Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}) {
     const collection = await this.modelsToCollection(models, adapter, context, {
       detail: options.detail,
     })
 
-    const included = options.include != null ? (
-      await this.collectIncludes(collection.documents, options.include, context)
-    ) : (
-      []
-    )
-
-    const pack = new Pack<ID>(collection, new Collection(included))
+    const included = await this.resolveIncluded(collection.documents, includedModels, adapter, context, options)
+    const pack = new Pack<ID>(collection, included)
     await this.injectPaginationMeta(pack, offset, total, context)
     await this.injectPackMeta(pack, null, context)
 
     return pack
   }
 
-  private async documentPack(model: Model, adapter: Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}) {
+  private async documentPack(model: Model, includedModels: Model[] | undefined, adapter: Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}) {
     const document = await this.modelToDocument(model, adapter, context, {
       detail: options.detail,
     })
 
-    const included = options.include != null ? (
-      await this.collectIncludes([document], options.include, context)
-    ) : (
-      []
-    )
-
+    const included = await this.resolveIncluded([document], includedModels, adapter, context, options)
     await this.injectDocumentMeta(document, model, context)
 
-    const pack = new Pack<ID>(document, new Collection(included))
+    const pack = new Pack<ID>(document, included)
     await this.injectPackMeta(pack, model, context)
 
     return pack
   }
 
-  private async collectIncludes(documents: Document<ID>[], paths: string[], context: RequestContext) {
-    const includer = new IncludeCollector(this.jsonAPI, context)
-    return await includer.collect(documents, paths)
+  private async resolveIncluded(base: Document<ID>[], includedModels: Model[] | undefined, adapter: Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions): Promise<Collection<ID> | undefined> {
+    if (options.include == null) { return undefined }
+
+    const collector = new IncludeCollector(this.jsonAPI, context)
+    const documents = includedModels != null
+      ? await collector.wrap(includedModels)
+      : await collector.collect(base, options.include)
+
+    return new Collection(documents)
   }
 
-  private async getModel(locator: DocumentLocator<ID>, adapter: Adapter<Model, Query, ID>, context: RequestContext) {
+  private async getModel(locator: DocumentLocator<ID>, adapter: Adapter<Model, Query, ID>, context: RequestContext): Promise<GetResponse<Model> & {model: Model}> {
     const query = await this.listQuery(adapter, {}, context)
     if ('singleton' in locator) {
       const singleton = this.config.singletons?.[locator.singleton]
@@ -460,19 +508,19 @@ export default class Resource<Model, Query, ID> {
         throw new APIError(404, `Singleton \`${locator.singleton}\` (of ${this.type}) not found`)
       }
   
-      const model = await singleton(query, context)
-      if (model == null) {
+      const response = await singleton(query, context)
+      if (response.model == null) {
         throw new APIError(404, `Singleton \`${locator.singleton}\` (of ${this.type}) not found`)
       }
   
-      return model
+      return response as GetResponse<Model> & {model: Model}
     } else {
-      const model = await adapter.get(query, locator.id, {})
-      if (model == null) {
+      const response = await adapter.get(query, locator.id, {})
+      if (response.model == null) {
         throw new APIError(404, `Resource \`${this.type}\` with ID \`${locator.id}\` not found`)
       }
 
-      return model
+      return response as GetResponse<Model> & {model: Model}
     }
   }
 
@@ -526,18 +574,10 @@ export default class Resource<Model, Query, ID> {
       detail = true,
     } = options
 
-    const id = await this.getAttribute(model, this.config.idAttribute ?? 'id', {}, adapter, context)
-    const attributes: Record<string, any> = {}
-    const relationships: Record<string, Relationship<ID>> = {}
+    const id = await this.getAttributeValue(model, this.config.idAttribute ?? 'id', {}, adapter, context)
 
-    for (const [name, attribute] of Object.entries(this.attributes)) {
-      if (!await this.attributeAvailable(attribute, model, detail, context)) { continue }
-      attributes[name] = await this.getAttribute(model, name, attribute, adapter, context)
-    }
-    for (const [name, relationship] of Object.entries(this.relationships)) {
-      if (!await this.relationshipAvailable(relationship, model, detail, context)) { continue }
-      relationships[name] = await this.getRelationship(model, name, relationship, adapter, context)
-    }
+    const attributes = await this.getAttributes(model, detail, adapter, context)
+    const relationships = await this.getRelationships(model, detail, adapter, context)
 
     const document = new Document(this, id, attributes, relationships)
     await this.injectDocumentMeta(document, model, context)

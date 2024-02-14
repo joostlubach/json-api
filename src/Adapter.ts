@@ -1,13 +1,13 @@
 
 import { OpenAPIV3_1 } from 'openapi-types'
 
-import Document from './Document'
 import Pack from './Pack'
 import {
   ActionOptions,
   Linkage,
   ListActionOptions,
   ListParams,
+  Meta,
   Relationship,
   RetrievalActionOptions,
   Sort,
@@ -17,12 +17,9 @@ export default interface Adapter<Model, Query, ID> {
 
   // #region Actions
 
-  list(query: Query, params: ListParams, options: ListActionOptions & {totals: false}): Promise<Model[]>
-  list(query: Query, params: ListParams, options: ListActionOptions): Promise<Model[] | [Model[], number]>
-  get(query: Query, id: ID, options: RetrievalActionOptions): Promise<Model | null>
-  create(document: Document<ID>, requestPack: Pack<ID>, options: ActionOptions): Promise<Model>
-  replace(model: Model, document: Document<ID>, requestPack: Pack<ID>, options: ActionOptions): Promise<Model>
-  update(model: Model, document: Document<ID>, requestPack: Pack<ID>, options: ActionOptions): Promise<Model>
+  list(query: Query, params: ListParams, options: ListActionOptions): Promise<ListResponse<Model>>
+  get(query: Query, id: ID, options: RetrievalActionOptions): Promise<GetResponse<Model>>
+  save(model: Model, requestPack: Pack<ID>, options: ActionOptions): Promise<SaveResponse<Model>>
   delete(query: Query): Promise<Array<Model | ID>>
 
   // #endregion
@@ -40,6 +37,8 @@ export default interface Adapter<Model, Query, ID> {
   // #endregion
   
   // #region (De)serialization
+
+  emptyModel(): Model | Promise<Model>
   
   getAttribute?(model: Model, name: string): any | Promise<any>
   getRelationship?(model: Model, name: string): Relationship<ID> | ID | Linkage<ID> | Promise<ID | Linkage<ID>>
@@ -56,4 +55,32 @@ export default interface Adapter<Model, Query, ID> {
 
   // #endregion
 
+}
+
+export interface ListResponse<M> {
+  models:    M[]
+  total?:    number
+  included?: any[]
+  meta?:     Meta
+}
+
+export interface GetResponse<M> {
+  model:     M | null
+  included?: any[]
+  meta?:     Meta
+}
+
+export interface SaveResponse<M> {
+  model: M
+  meta?: Meta
+}
+
+export interface ReplaceResponse<M> {
+  model: M
+  meta?: Meta
+}
+
+export interface UpdateResponse<M> {
+  model: M
+  meta?: Meta
 }

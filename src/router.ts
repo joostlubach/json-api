@@ -53,7 +53,7 @@ export function router<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
 
     // Mount regular actions.
     for (const [name, action] of objectEntries(rest)) {
-      const route = jsonAPI.route(resource, name)
+      const route = jsonAPI.route(name)
       if (route === false) { continue }
 
       const path = route.path(resource)
@@ -71,7 +71,8 @@ export function router<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
 
     router.get('/openapi.json', async (req, res, next) => {
       try {
-        res.json(await jsonAPI.openAPISpec())
+        const context = await requestContext('openapi', req)
+        res.json(await jsonAPI.openAPISpec(context))
       } catch (error: any) {
         next(error)
       }
@@ -106,7 +107,7 @@ export function router<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
   }
 
   async function preAction(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
-    validateRequest(request, context, resource)
+    validateRequest(request)
 
     if (jsonAPI.options.router?.enforceContentType !== false) {
       negotiateContentType(request, response)

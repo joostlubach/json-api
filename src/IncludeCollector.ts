@@ -14,6 +14,32 @@ export default class IncludeCollector<Model, Query, ID> {
 
   private readonly collected = new Map<string, ID[]>()
 
+  /**
+   * Wraps a bunch of models of different resource types and converts them to a list of documents.
+   */
+  public async wrap(models: Model[]) {
+    const byResource = MapBuilder.groupBy(models, model => {
+      const name = this.jsonAPI.nameForModel(model)
+      return this.jsonAPI.registry.resourceForModel(name)
+    })
+
+    const collected: Document<ID>[] = []
+    for (const [resource, models] of byResource) {
+      const adapter = this.jsonAPI.adapter(resource, this.context)
+      const documents = await Promise.all(models.map(model => (
+        resource.modelToDocument(model, adapter, this.context)
+      )))
+      collected.push(...documents)
+    }
+
+    return collected
+  }
+
+  /**
+   * 
+   * @param base The base documents to start from.
+   * @param expressions The include expression.
+   */
   public async collect(base: Document<ID>[], expressions: string[]) {
     const collected: Document<ID>[] = []
 
@@ -72,7 +98,8 @@ export default class IncludeCollector<Model, Query, ID> {
       ids = ids.filter(it => !this.collected.get(type)?.includes(it))      
       
       const query = await resource.applyFilters(adapter.query(), {id: ids}, adapter, this.context)
-      for (const model of await adapter.list(query, {}, {totals: false})) {
+      const response = await adapter.list(query, {}, {totals: false})
+      for (const model of response.models) {
         const document = await resource.modelToDocument(model, adapter, this.context)
         documents.push(document)
       }

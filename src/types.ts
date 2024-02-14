@@ -1,5 +1,4 @@
 import { isArray, isPlainObject } from 'lodash'
-import { OpenAPIV3_1 } from 'openapi-types'
 import { objectKeys, objectValues } from 'ytil'
 
 import Resource from './Resource'
@@ -184,19 +183,4 @@ export type Method =
 
 // #endregion
 
-// #region OpenAPI meta
-
-export interface OpenAPIResourceMeta extends OpenAPIMeta {
-  singular?: string
-  plural?:   string
-}
-
-export interface OpenAPIMeta {
-  idType?:  'string' | 'integer'
-  actions?:  Record<CommonActions, Omit<OpenAPIV3_1.OperationObject, 'requestBody' | 'responses'> & {
-    parameters?: Record<string, Partial<OpenAPIV3_1.ParameterObject>>
-  }>
-  responses?: Record<string, Omit<OpenAPIV3_1.ResponseObject, 'content'>>
-}
-
-// #endregion
+export * from './openapi/types'

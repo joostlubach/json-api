@@ -68,4 +68,10 @@ describe("create", () => {
     })
   })
 
+  it.todo("should not allow specifying an unconfigured attribute")
+  it.todo("should not allow specifying an unavailable attribute")
+  it.todo("should not allow specifying an read-only attribute")
+  it.todo("should allow specifying an read-only-except-on-write attribute")
+  it.todo("should allow specifying an explicit ID")
+
 })

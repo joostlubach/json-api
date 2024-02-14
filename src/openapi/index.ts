@@ -1,1 +1,2 @@
-export { default as OpenAPIGenerator, OpenAPIOptions } from './OpenAPIGenerator'
+export { default as OpenAPIGenerator } from './OpenAPIGenerator'
+export * from './types'

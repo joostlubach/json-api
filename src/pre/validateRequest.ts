@@ -2,14 +2,10 @@ import { Request } from 'express'
 import { isPlainObject } from 'lodash'
 
 import APIError from '../APIError'
-import RequestContext from '../RequestContext'
-import { AnyResource } from '../types'
-import { operationForAction } from '../util'
 
-export default function validateRequest(request: Request, context: RequestContext, resource: AnyResource) {
+export default function validateRequest(request: Request) {
   validateRequestMethod(request)
   validateRequestBody(request)
-  validateOperation(context, resource)
 }
 
 export function validateRequestMethod(request: Request) {
@@ -42,11 +38,4 @@ export function needsBody(request: Request) {
   }
 
   return false
-}
-
-export function validateOperation(context: RequestContext, resource: AnyResource) {
-  const operation = operationForAction(context.action)
-  if (resource.config.readonly && operation === '$write') {
-    throw new APIError(403, "This resource is read-only")
-  }
 }

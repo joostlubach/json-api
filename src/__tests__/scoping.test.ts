@@ -54,7 +54,7 @@ describe("scoping", () => {
           firstborn: async query => {
             const children = db('children').list(query)
             children.sort((a, b) => b.age - a.age)
-            return children[0]
+            return {model: children[0]}
           },
         }
       })

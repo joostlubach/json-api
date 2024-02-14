@@ -778,6 +778,10 @@ describe("openapi", () => {
           .mockImplementation(name => name === 'name' ? nameRequired : ageRequired)
       })
 
+      afterEach(() => {
+        jest.restoreAllMocks()
+      })
+
       it("should expose a ParentsAttributes with a property for each exposed attribute using openAPI reflection from the adapter", async () => {
         expect(await getAttributesSchema()).toEqual({
           type: 'object',

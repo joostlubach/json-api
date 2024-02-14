@@ -8,7 +8,7 @@ import RequestContext from './RequestContext'
 import Resource from './Resource'
 import ResourceRegistry from './ResourceRegistry'
 import { Middleware } from './middleware'
-import { OpenAPIGenerator, OpenAPIOptions } from './openapi'
+import { OpenAPIGenerator, OpenAPIGeneratorOptions } from './openapi'
 import {
   ActionOptions,
   CommonActions,
@@ -45,6 +45,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
   // #region Abstract interface
     
   public abstract adapter(resource: Resource<Model, Query, ID>, context: RequestContext): Adapter<Model, Query, ID>
+  public abstract nameForModel(model: Model): string
   public abstract parseID(id: string | number): ID
 
   // #endregion
@@ -173,7 +174,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   // #region OpenAPI
 
-  public async openAPISpec(context: RequestContext, options?: OpenAPIOptions) {
+  public async openAPISpec(context: RequestContext, options?: OpenAPIGeneratorOptions) {
     const generator = new OpenAPIGenerator(this, context, {...this.options?.openAPI, ...options})
     return await generator.generate()
   }
@@ -185,7 +186,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
 export interface JSONAPIOptions<M, Q, I> {
   middleware?: Middleware<M, Q, I>[]
   router?:     RouterOptions
-  openAPI?:    OpenAPIOptions
+  openAPI?:    OpenAPIGeneratorOptions
 }
 
 export interface RouterOptions {

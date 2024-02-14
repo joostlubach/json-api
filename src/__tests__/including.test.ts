@@ -1,4 +1,4 @@
-import { context, MockJSONAPI } from './mock'
+import { context, MockAdapter, MockJSONAPI } from './mock'
 
 import db, { Parent } from './db'
 
@@ -17,23 +17,16 @@ describe("including", () => {
   describe.each([
     {action: 'list', call: (include: string[]) => jsonAPI.list('parents', {filters: {id: 'alice'}}, context('list'), {include})},
     {action: 'show', call: (include: string[]) => jsonAPI.show('parents', {id: 'alice'}, context('show'), {include})},
-  ])("$action", ({call}) => {
-
-    let out: any
-
-    beforeEach(async () => {
-    })
+  ])("$action", ({action, call}) => {
 
     it("should by default not include related models", async () => {
       const pack = await call([])
-      out = pack.serialize()
-      expect(out.included).toEqual([])
+      expect(pack.serialize().included).toEqual([])
     })
 
     it("should include related models if requested", async () => {
       const pack = await call(['spouse'])
-      out = pack.serialize()
-      expect(out.included).toEqual([
+      expect(pack.serialize().included).toEqual([
         {
           type: 'parents',
           id:   'bob',
@@ -59,14 +52,12 @@ describe("including", () => {
 
     it("should silently ignore invalid paths (because they might be valid for models not retrieved)", async () => {
       const pack = await call(['grandparent'])
-      out = pack.serialize()
-      expect(out.included).toEqual([])
+      expect(pack.serialize().included).toEqual([])
     })
 
     it("should allow specifying multiple paths to include", async () => {
       const pack = await call(['spouse', 'children'])
-      out = pack.serialize()
-      expect(out.included).toEqual([
+      expect(pack.serialize().included).toEqual([
         expect.objectContaining({type: 'parents', id: 'bob'}),
         expect.objectContaining({type: 'children', id: 'charlie'}),
         expect.objectContaining({type: 'children', id: 'dolores'}),
@@ -92,6 +83,47 @@ describe("including", () => {
         expect.objectContaining({type: 'children', id: 'dolores'}),
       ])
     })
+
+    it("should allow the adapter to load the includded models for performance reasons", async () => {
+      const handler = action === 'list'
+        ? jest.spyOn(MockAdapter.prototype, 'list')
+        : jest.spyOn(MockAdapter.prototype, 'get')
+
+      handler.mockImplementation(async (): Promise<any> => {
+        const alice = db('parents').get('alice')
+        const charlie = db('children').get('charlie')
+        const dolores = db('children').get('dolores')
+
+        return action === 'list'
+          ? {models: [alice], total: 1, included: [charlie, dolores]}
+          : {model: alice, included: [charlie, dolores]}
+      })
+
+      const out = await call(['one', 'two', 'three+four'])
+      expect(handler).toHaveBeenCalled()
+      expect(out.serialize().included).toEqual([
+        expect.objectContaining({
+          type: 'children',
+          id:   'charlie',
+
+          attributes: {
+            name: "Charlie",
+            age:  10,
+          },
+        }),
+        expect.objectContaining({
+          type: 'children',
+          id:   'dolores',
+
+          attributes: {
+            name: "Dolores",
+            age:  20,
+          },
+        }),
+      ])
+
+      jest.restoreAllMocks()
+    })
   
   })
 
@@ -110,7 +142,7 @@ describe("including", () => {
         ],
       })
       const out = pack.serialize()
-      expect(out.included.map((it: any) => it.id).sort()).toEqual([
+      expect(pack.serialize().included.map((it: any) => it.id).sort()).toEqual([
         'bob',
         'charlie',
         'dolores',
@@ -131,7 +163,7 @@ describe("including", () => {
         ],
       })
       const out = pack.serialize()
-      expect(out.included.map((it: any) => it.id).sort()).toEqual([
+      expect(pack.serialize().included.map((it: any) => it.id).sort()).toEqual([
         'charlie',
         'dolores',
         'henry',

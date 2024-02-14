@@ -1,6 +1,6 @@
 import { Request } from 'express'
 
-import Adapter from './Adapter'
+import Adapter, { GetResponse } from './Adapter'
 import Pack from './Pack'
 import RequestContext from './RequestContext'
 import Resource from './Resource'
@@ -209,10 +209,10 @@ export type PluralRelationshipConfig<M, Q, I> = RelationshipConfigCommon<M, Q, I
 
 export interface ScopeConfig<M, Q, I> {
   query:  ScopeFunction<M, Q, I>
-  ensure: DefaultsFunction<M, Q, I>
+  ensure: EnsureFunction<M, Q, I>
 }
 export type ScopeFunction<M, Q, I> = (this: Resource<M, Q, I>, query: Q, context: RequestContext) => Q | Promise<Q>
-export type DefaultsFunction<M, Q, I> = (this: Resource<M, Q, I>, model: M, context: RequestContext) => void | Promise<void>
+export type EnsureFunction<M, Q, I> = (this: Resource<M, Q, I>, model: M, context: RequestContext) => void | Promise<void>
 
 export type ScopeOption<M, Q, I> = (this: Resource<M, Q, I>, request: Request) => any
 export type SearchModifier<M, Q, I> = (this: Resource<M, Q, I>, query: Q, term: string, context: RequestContext) => Q | Promise<Q>
@@ -222,7 +222,7 @@ export type LabelModifier<M, Q, I> = (this: Resource<M, Q, I>, query: Q, context
 export type WildcardLabelModifier<M, Q, I> = (this: Resource<M, Q, I>, label: string, query: Q, context: RequestContext) => Q
 
 export type SingletonMap<Q, M> = Record<string, Singleton<Q, M>>
-export type Singleton<Q, M> = (query: Q, context: RequestContext) => Promise<M | null>
+export type Singleton<Q, M> = (query: Q, context: RequestContext) => Promise<GetResponse<M>>
 
 export type SortMap<Q> = Record<string, SortModifier<Q>>
 export type SortModifier<Q> = (query: Q, direction: 1 | -1, context: RequestContext) => Q

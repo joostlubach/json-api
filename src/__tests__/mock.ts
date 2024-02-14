@@ -2,8 +2,7 @@ import { isArray, isPlainObject } from 'lodash'
 import { OpenAPIV3_1 } from 'openapi-types'
 import { dynamicProxy } from 'yest'
 
-import Adapter from '../Adapter'
-import Document from '../Document'
+import Adapter, { GetResponse, ListResponse, ReplaceResponse } from '../Adapter'
 import JSONAPI, { JSONAPIOptions } from '../JSONAPI'
 import Pack from '../Pack'
 import RequestContext from '../RequestContext'
@@ -12,7 +11,6 @@ import {
   ActionOptions,
   ListActionOptions,
   ListParams,
-  Meta,
   RetrievalActionOptions,
   Sort,
 } from '../types'
@@ -34,6 +32,55 @@ export class MockJSONAPI extends JSONAPI<Model, Query, string> {
     this.reset()
   }
 
+  public adapter(resource: Resource<Model, Query, string>, context: RequestContext<Record<string, any>>): MockAdapter {
+    return new MockAdapter(resource, context)
+  }
+
+  public nameForModel(model: Model): string {
+    if (db('parents').ids().includes(model.id)) {
+      return 'Parent'
+    } else {
+      return 'Child'
+    }
+  }
+
+  public parseID(id: string) {
+    return id
+  }
+
+  public nullPack() {
+    return Pack.deserialize<Model, Query, string>(this.registry, {data: null})
+  }
+
+  public documentPack(type: string, id: string | null, attributes: Record<string, any>) {
+    return Pack.deserialize<Model, Query, string>(this.registry, {
+      data: {
+        type,
+        id,
+        attributes,
+      },
+    }) 
+  }
+  
+  public bulkSelectorPack(type: string, ids: string[]): Pack<string>
+  public bulkSelectorPack(type: string, filters: Record<string, any>): Pack<string>
+  public bulkSelectorPack(type: string, search: string): Pack<string>
+  public bulkSelectorPack(type: string, arg: any): Pack<string> {
+    if (isArray(arg)) {
+      return Pack.deserialize<Model, Query, string>(this.registry, {
+        data: arg.map(id => ({type, id})),
+      })
+    } else if (isPlainObject(arg)) {
+      return Pack.deserialize<Model, Query, string>(this.registry, {
+        meta: {filters: arg},
+      })
+    } else {
+      return Pack.deserialize<Model, Query, string>(this.registry, {
+        meta: {search: arg},
+      })
+    }
+  }
+  
   public reset() {
     this.registry.register('parents', {
       modelName: 'Parent',
@@ -76,47 +123,6 @@ export class MockJSONAPI extends JSONAPI<Model, Query, string> {
     })
   }
 
-  public adapter(resource: Resource<Model, Query, string>, context: RequestContext<Record<string, any>>): MockAdapter {
-    return new MockAdapter(resource, context)
-  }
-
-  public parseID(id: string) {
-    return id
-  }
-
-  public nullPack() {
-    return Pack.deserialize<Model, Query, string>(this.registry, {data: null})
-  }
-
-  public documentPack(type: string, id: string | null, attributes: Record<string, any>) {
-    return Pack.deserialize<Model, Query, string>(this.registry, {
-      data: {
-        type,
-        id,
-        attributes,
-      },
-    }) 
-  }
-  
-  public bulkSelectorPack(type: string, ids: string[]): Pack<string>
-  public bulkSelectorPack(type: string, filters: Record<string, any>): Pack<string>
-  public bulkSelectorPack(type: string, search: string): Pack<string>
-  public bulkSelectorPack(type: string, arg: any): Pack<string> {
-    if (isArray(arg)) {
-      return Pack.deserialize<Model, Query, string>(this.registry, {
-        data: arg.map(id => ({type, id})),
-      })
-    } else if (isPlainObject(arg)) {
-      return Pack.deserialize<Model, Query, string>(this.registry, {
-        meta: {filters: arg},
-      })
-    } else {
-      return Pack.deserialize<Model, Query, string>(this.registry, {
-        meta: {search: arg},
-      })
-    }
-  }
-  
 }
 
 export class MockAdapter implements Adapter<Model, Query, string> {
@@ -126,29 +132,23 @@ export class MockAdapter implements Adapter<Model, Query, string> {
     private readonly context: RequestContext,
   ) {}
 
-  public async list(query: Query, params: ListParams, options: ListActionOptions & {totals: false}): Promise<Model[]>
-  public async list(query: Query, params: ListParams, options: ListActionOptions): Promise<Model[] | [Model[], number]> {
+  public async list(query: Query, params: ListParams, options: ListActionOptions): Promise<ListResponse<Model>> {
     const models = db(this.resource.type).list(query)
-    if (options.totals === false) { return models }
+    if (options.totals === false) { return {models} }
 
     const total = db(this.resource.type).count({...query, offset: 0, limit: null})
-    return [models, total]
+    return {models, total}
   }
   
-  public async get(query: Query, id: string, options: RetrievalActionOptions): Promise<Model | null> {
-    return db(this.resource.type).get(id, query)
+  public async get(query: Query, id: string, options: RetrievalActionOptions): Promise<GetResponse<Model>> {
+    return {
+      model: db(this.resource.type).get(id, query),
+    }
   }
   
-  public async create(document: Document<string>, meta: Meta, options: ActionOptions): Promise<Model> {
-    return db(this.resource.type).insert({...document.attributes})[0]
-  }
-  
-  public async replace(model: Model, document: Document<string>, meta: Meta, options: ActionOptions): Promise<Model> {
-    return db(this.resource.type).insert({...document.attributes, id: model.id})[0]
-  }
-  
-  public async update(model: Model, document: Document<string>, meta: Meta, options: ActionOptions): Promise<Model> {
-    return db(this.resource.type).insert({...model, ...document.attributes})[0]
+  public async save(model: Model, _: Pack<string>, options: ActionOptions): Promise<ReplaceResponse<Model>> {
+    const inserted = db(this.resource.type).insert(model)[0]
+    return {model: inserted}
   }
   
   public async delete(query: Query): Promise<Model[]> {
@@ -211,6 +211,10 @@ export class MockAdapter implements Adapter<Model, Query, string> {
       ...query,
       limit,
     }
+  }
+
+  public emptyModel(): Model | Promise<Model> {
+    return {} as Model
   }
 
   public openAPISchemaForAttribute(attribute: string): OpenAPIV3_1.SchemaObject | Promise<OpenAPIV3_1.SchemaObject> {
