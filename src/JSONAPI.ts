@@ -173,8 +173,8 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   // #region OpenAPI
 
-  public async openAPISpec() {
-    const generator = new OpenAPIGenerator(this, this.options?.openAPI)
+  public async openAPISpec(context: RequestContext, options?: OpenAPIOptions) {
+    const generator = new OpenAPIGenerator(this, context, {...this.options?.openAPI, ...options})
     return await generator.generate()
   }
 

@@ -1,4 +1,4 @@
-import { mockJSONAPI } from './mock'
+import { context, mockJSONAPI } from './mock'
 
 import { OpenAPIV3_1 } from 'openapi-types'
 
@@ -20,20 +20,20 @@ describe("openapi", () => {
   })
 
   it("should allow generating a basic openapi spec with the given info", async () => {
-    const spec = await jsonAPI.openAPISpec()
+    const spec = await jsonAPI.openAPISpec(context('__openapi__'))
     expect(spec).toEqual({
       openapi: '3.1.0',
       info:    openapi.info,
 
       paths:      expect.any(Object),
-      components: expect.any(Array),
+      components: expect.any(Object),
     })
   })
 
   describe("paths", () => {
 
     it("should create all paths for basic HTTP REST access", async () => {
-      const spec = await jsonAPI.openAPISpec()
+      const spec = await jsonAPI.openAPISpec(context('__openapi__'))
       expect(spec.paths).toEqual({
         '/parents': {
           get:    expect.any(Object),
@@ -53,7 +53,7 @@ describe("openapi", () => {
 
     it("should create paths for all resources", async () => {
       jsonAPI.reset()
-      const spec = await jsonAPI.openAPISpec()
+      const spec = await jsonAPI.openAPISpec(context('__openapi__'))
       expect(spec.paths).toEqual({
         '/parents': {
           get:    expect.any(Object),
@@ -89,7 +89,7 @@ describe("openapi", () => {
         cfg.list = false
       })
 
-      const spec = await jsonAPI.openAPISpec()
+      const spec = await jsonAPI.openAPISpec(context('__openapi__'))
       expect(spec.paths).toEqual({
         '/parents': {
           post:   expect.any(Object),
@@ -108,7 +108,7 @@ describe("openapi", () => {
         cfg.show = false
       })
 
-      expect((await jsonAPI.openAPISpec()).paths).toEqual({
+      expect((await jsonAPI.openAPISpec(context('__openapi__'))).paths).toEqual({
         '/parents': {
           get:    expect.any(Object),
           post:   expect.any(Object),
@@ -129,7 +129,7 @@ describe("openapi", () => {
         cfg.create = false
       })
 
-      expect((await jsonAPI.openAPISpec()).paths).toEqual({
+      expect((await jsonAPI.openAPISpec(context('__openapi__'))).paths).toEqual({
         '/parents': {
           get:    expect.any(Object),
           delete: expect.any(Object),
@@ -150,7 +150,7 @@ describe("openapi", () => {
         cfg.replace = false
       })
 
-      expect((await jsonAPI.openAPISpec()).paths).toEqual({
+      expect((await jsonAPI.openAPISpec(context('__openapi__'))).paths).toEqual({
         '/parents': {
           get:    expect.any(Object),
           post:   expect.any(Object),
@@ -171,7 +171,7 @@ describe("openapi", () => {
         cfg.update = false
       })
 
-      expect((await jsonAPI.openAPISpec()).paths).toEqual({
+      expect((await jsonAPI.openAPISpec(context('__openapi__'))).paths).toEqual({
         '/parents': {
           get:    expect.any(Object),
           post:   expect.any(Object),
@@ -192,7 +192,7 @@ describe("openapi", () => {
         cfg.delete = false
       })
 
-      expect((await jsonAPI.openAPISpec()).paths).toEqual({
+      expect((await jsonAPI.openAPISpec(context('__openapi__'))).paths).toEqual({
         '/parents': {
           get:  expect.any(Object),
           post: expect.any(Object),
@@ -215,13 +215,13 @@ describe("openapi", () => {
     describe("list (GET /parents, GET /parents/:{label})", () => {
 
       it("should not require any input", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.paths?.['/parents']?.get?.requestBody).toBeUndefined()
         expect(spec.paths?.['/parents/:{label}']?.get?.requestBody).toBeUndefined()
       })
   
       it("should accept list parameters", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
 
         const expected = (label: boolean) => ([
           ...(label ? [
@@ -239,7 +239,7 @@ describe("openapi", () => {
       })
   
       it("should in the case of 200 respond with a list pack of the resource", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
   
         const expected = () => ({
           description: expect.any(String),
@@ -279,12 +279,12 @@ describe("openapi", () => {
     describe("show (GET /parents/{id})", () => {
   
       it("should not require any input", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.paths?.['/parents/{id}']?.get?.requestBody).toBeUndefined()
       })
     
       it("should accept an ID parameter", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
 
         expect(spec.paths?.['/parents/{id}']?.get?.parameters).toEqual([
           expect.objectContaining({name: 'id', in: 'path', required: true}),
@@ -292,7 +292,7 @@ describe("openapi", () => {
       })
 
       it("should in the case of 200 respond with a document pack of the resource", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
   
         expect(spec.paths?.['/parents/{id}']?.get?.responses['200']).toEqual({
           description: expect.any(String),
@@ -326,7 +326,7 @@ describe("openapi", () => {
     describe("create (POST /parents)", () => {
   
       it("should require a document pack of the resource as input", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.paths?.['/parents']?.post?.requestBody).toEqual({
           content: {
             'application/vnd.api+json': {
@@ -348,12 +348,12 @@ describe("openapi", () => {
       })
     
       it("should accept no parameters", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.paths?.['/parents']?.post?.parameters).toEqual([])
       })
 
       it("should in the case of 201 respond with a document pack of the resource", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
   
         expect(spec.paths?.['/parents']?.post?.responses['200']).toBeUndefined()
         expect(spec.paths?.['/parents']?.post?.responses['201']).toEqual({
@@ -388,7 +388,7 @@ describe("openapi", () => {
     describe("replace (PUT /parents/id)", () => {
   
       it("should require a document pack of the resource as input", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.paths?.['/parents/{id}']?.put?.requestBody).toEqual({
           content: {
             'application/vnd.api+json': {
@@ -410,7 +410,7 @@ describe("openapi", () => {
       })
     
       it("should accept an ID parameter", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
 
         expect(spec.paths?.['/parents/{id}']?.put?.parameters).toEqual([
           expect.objectContaining({name: 'id', in: 'path', required: true}),
@@ -418,7 +418,7 @@ describe("openapi", () => {
       })
 
       it("should in the case of 200 respond with a document pack of the resource", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
   
         expect(spec.paths?.['/parents/{id}']?.put?.responses['200']).toEqual({
           description: expect.any(String),
@@ -452,7 +452,7 @@ describe("openapi", () => {
     describe("update (PATCH /parents/id)", () => {
   
       it("should require a document pack of the resource as input", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.paths?.['/parents/{id}']?.patch?.requestBody).toEqual({
           content: {
             'application/vnd.api+json': {
@@ -474,7 +474,7 @@ describe("openapi", () => {
       })
     
       it("should accept an ID parameter", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
 
         expect(spec.paths?.['/parents/{id}']?.patch?.parameters).toEqual([
           expect.objectContaining({name: 'id', in: 'path', required: true}),
@@ -482,7 +482,7 @@ describe("openapi", () => {
       })
 
       it("should in the case of 200 respond with a document pack of the resource", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
   
         expect(spec.paths?.['/parents/{id}']?.patch?.responses['200']).toEqual({
           description: expect.any(String),
@@ -516,7 +516,7 @@ describe("openapi", () => {
     describe("delete (DELETE /parents)", () => {
   
       it("should require a bulk selector pack of the resource as input", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.paths?.['/parents']?.delete?.requestBody).toEqual({
           content: {
             'application/vnd.api+json': {
@@ -529,12 +529,12 @@ describe("openapi", () => {
       })
     
       it("should accept no parameters", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.paths?.['/parents']?.delete?.parameters).toEqual([])
       })
 
       it("should in the case of 200 respond with a list pack of linkages", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
   
         expect(spec.paths?.['/parents']?.delete?.responses['200']).toEqual({
           description: expect.any(String),
@@ -581,7 +581,7 @@ describe("openapi", () => {
       `("$action", ({action, get}) => {
   
         it("should define all possible response codes", async () => {
-          const spec = await jsonAPI.openAPISpec()
+          const spec = await jsonAPI.openAPISpec(context('__openapi__'))
           const okCode = action === 'create' ? '201' : '200'
   
           expect(get(spec).responses).toEqual({
@@ -607,7 +607,7 @@ describe("openapi", () => {
     it("should create a set of components for each resource, as well as some common components", async () => {
       jsonAPI.reset()
       
-      const spec = await jsonAPI.openAPISpec()
+      const spec = await jsonAPI.openAPISpec(context('__openapi__'))
       expect(spec.components).toEqual({
         schemas: {
           ParentsCreateDocument:   expect.any(Object),
@@ -624,9 +624,11 @@ describe("openapi", () => {
           
           AnyResponseDocument: expect.any(Object),
 
-          BulkSelector: expect.any(Object),
-          Relationship: expect.any(Object),
-          Linkage:      expect.any(Object),
+          BulkSelector:         expect.any(Object),
+          Relationship:         expect.any(Object),
+          SingularRelationship: expect.any(Object),
+          PluralRelationship:   expect.any(Object),
+          Linkage:              expect.any(Object),
 
           Error:                 expect.any(Object),
           ValidationError:       expect.any(Object),
@@ -638,7 +640,7 @@ describe("openapi", () => {
     describe("documents", () => {
 
       it("should expose a ParentsResponseDocument with proper references and an ID", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.components?.schemas?.['ParentsResponseDocument']).toEqual({
           type: 'object',
 
@@ -665,7 +667,7 @@ describe("openapi", () => {
       })
 
       it("should expose a ParentsCreateDocument with proper references but with an optional ID and without relationships", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.components?.schemas?.['ParentsCreateDocument']).toEqual({
           type: 'object',
 
@@ -693,7 +695,7 @@ describe("openapi", () => {
       })
 
       it("should expose a ParentsUpdateDocument with proper references but without relationships", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.components?.schemas?.['ParentsUpdateDocument']).toEqual({
           type: 'object',
 
@@ -717,7 +719,7 @@ describe("openapi", () => {
       })
 
       it("should expose a generic AnyResponseDocument", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.components?.schemas?.['AnyResponseDocument']).toEqual({
           type: 'object',
 
@@ -751,7 +753,7 @@ describe("openapi", () => {
     describe("attributes", () => {
 
       it("should expose a ParentsAttributes with a property for each exposed attribute", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.components?.schemas?.['ParentsAttributes']).toEqual({
           type: 'object',
 
@@ -765,10 +767,69 @@ describe("openapi", () => {
 
     })
 
+    describe("relationships", () => {
+
+      it("should expose a ParentsRelationships with a property for each exposed relationship", async () => {
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
+        expect(spec.components?.schemas?.['ParentsRelationships']).toEqual({
+          type: 'object',
+
+          properties: {
+            spouse:   {$ref: '#/components/schemas/SingularRelationship'},
+            children: {$ref: '#/components/schemas/PluralRelationship'},
+          },
+          required: ['spouse', 'children'],
+        })
+      })
+
+      it("should not require (aka guarantee presence of as it's only a response schema) conditional relationships", async () => {
+        jsonAPI.registry.modify('parents', cfg => {
+          cfg.relationships!.spouse = {
+            type:   'parents',
+            plural: false,
+            if:     () => true,
+          }
+        })
+
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
+        expect(spec.components?.schemas?.['ParentsRelationships']).toEqual({
+          type: 'object',
+
+          properties: {
+            spouse:   {$ref: '#/components/schemas/SingularRelationship'},
+            children: {$ref: '#/components/schemas/PluralRelationship'},
+          },
+          required: ['children'],
+        })
+      })
+
+      it("should not require (aka guarantee presence of as it's only a response schema) detail relationships", async () => {
+        jsonAPI.registry.modify('parents', cfg => {
+          cfg.relationships!.children = {
+            type:   'parents',
+            plural: true,
+            detail: true,
+          }
+        })
+
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
+        expect(spec.components?.schemas?.['ParentsRelationships']).toEqual({
+          type: 'object',
+
+          properties: {
+            spouse:   {$ref: '#/components/schemas/SingularRelationship'},
+            children: {$ref: '#/components/schemas/PluralRelationship'},
+          },
+          required: ['spouse'],
+        })
+      })
+
+    })
+
     describe("misc", () => {
 
       it("should expose a BulkSelector", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.components?.schemas?.['BulkSelector']).toEqual({
           anyOf: [{
             type: 'object',
@@ -819,8 +880,19 @@ describe("openapi", () => {
       })
 
       it("should expose a Relationship", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.components?.schemas?.['Relationship']).toEqual({
+          anyOf: [{
+            $ref: '#/components/schemas/SingularRelationship',
+          }, {
+            $ref: '#/components/schemas/PluralRelationship',
+          }],
+        })
+      })
+
+      it("should expose a SingularRelationship", async () => {
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
+        expect(spec.components?.schemas?.['SingularRelationship']).toEqual({
           type: 'object',
 
           properties: {
@@ -832,12 +904,6 @@ describe("openapi", () => {
                 {
                   $ref: '#/components/schemas/Linkage',
                 },
-                {
-                  type:  'array',
-                  items: {
-                    $ref: '#/components/schemas/Linkage',
-                  },
-                },
               ],
             },
             meta: {
@@ -848,8 +914,28 @@ describe("openapi", () => {
         })
       })
 
+      it("should expose a PluralRelationship", async () => {
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
+        expect(spec.components?.schemas?.['PluralRelationship']).toEqual({
+          type: 'object',
+
+          properties: {
+            data: {
+              type:  'array',
+              items: {
+                $ref: '#/components/schemas/Linkage',
+              },
+            },
+            meta: {
+              type: 'object',
+            },
+          },
+          required: ['data'],
+        })
+      })
+
       it("should expose a Linkage", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.components?.schemas?.['Linkage']).toEqual({
           type: 'object',
 
@@ -873,7 +959,7 @@ describe("openapi", () => {
         jsonAPI.options.openAPI.metaDefaults ??= {}
         jsonAPI.options.openAPI.metaDefaults.idType = 'integer'
 
-        const spec = await jsonAPI.openAPISpec()        
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))        
         expect(spec.components?.schemas?.['Linkage']).toEqual({
           type: 'object',
 
@@ -893,7 +979,7 @@ describe("openapi", () => {
       })
 
       it("should expose an Error", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.components?.schemas?.['Error']).toEqual({
           type: 'object',
 
@@ -906,7 +992,7 @@ describe("openapi", () => {
       })
 
       it("should expose a ValidationError", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.components?.schemas?.['ValidationError']).toEqual({
           type: 'object',
 
@@ -925,7 +1011,7 @@ describe("openapi", () => {
       })
 
       it("should expose a ValidationErrorDetail", async () => {
-        const spec = await jsonAPI.openAPISpec()
+        const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.components?.schemas?.['ValidationErrorDetail']).toEqual({
           type: 'object',
 

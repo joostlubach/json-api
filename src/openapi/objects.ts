@@ -80,6 +80,14 @@ export const pathParam = (name: string, type: Exclude<OpenAPIV3_1.NonArraySchema
 })
 
 export const relationship = (): OpenAPIV3_1.SchemaObject => ({
+  anyOf: [{
+    $ref: '#/components/schemas/SingularRelationship',
+  }, {
+    $ref: '#/components/schemas/PluralRelationship',
+  }],
+})
+
+export const singularRelationship = (): OpenAPIV3_1.SchemaObject => ({
   type: 'object',
 
   properties: {
@@ -88,12 +96,24 @@ export const relationship = (): OpenAPIV3_1.SchemaObject => ({
         type: 'null',
       }, {
         $ref: '#/components/schemas/Linkage',
-      }, {
-        type:  'array',
-        items: {
-          $ref: '#/components/schemas/Linkage',
-        },
       }],
+    },
+    meta: {
+      type: 'object',
+    },
+  },
+  required: ['data'],
+})
+
+export const pluralRelationship = (): OpenAPIV3_1.SchemaObject => ({
+  type: 'object',
+
+  properties: {
+    data: {
+      type:  'array',
+      items: {
+        $ref: '#/components/schemas/Linkage',
+      },
     },
     meta: {
       type: 'object',

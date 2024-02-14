@@ -1,12 +1,15 @@
 import * as FS from 'fs-extra'
 import * as YAML from 'js-yaml'
-import { camelCase, cloneDeep, upperFirst } from 'lodash'
+import { camelCase, cloneDeep, isPlainObject, mapValues, upperFirst } from 'lodash'
 import { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types'
 import * as Path from 'path'
-import { sparse } from 'ytil'
+import { objectKeys, sparse } from 'ytil'
 
+import Adapter from '../Adapter'
 import JSONAPI from '../JSONAPI'
+import RequestContext from '../RequestContext'
 import Resource from '../Resource'
+import { AttributeConfig, RelationshipConfig } from '../ResourceConfig'
 import { CommonActions, Method, OpenAPIMeta } from '../types'
 import { actionParameters, errorResponseBody, requestBodies, responseBodies } from './actions'
 import {
@@ -14,7 +17,9 @@ import {
   error,
   linkage,
   pathParam,
+  pluralRelationship,
   relationship,
+  singularRelationship,
   validationErrorDetail,
 } from './objects'
 
@@ -22,6 +27,7 @@ export default class OpenAPIGenerator {
 
   constructor(
     private readonly jsonAPI: JSONAPI<any, any, any>,
+    private readonly context: RequestContext,
     private readonly options: OpenAPIOptions = {},
   ) {
     this.reset()
@@ -47,9 +53,21 @@ export default class OpenAPIGenerator {
 
   public async generate() {
     this.reset()
+
     for (const resource of this.jsonAPI.registry.all()) {
       await this.appendResource(resource)
     }
+
+    this.addSchema('AnyResponseDocument', this.buildDocumentSchema(null, true, true))
+    this.addSchema('BulkSelector', bulkSelector())
+    this.addSchema('Relationship', relationship())
+    this.addSchema('SingularRelationship', singularRelationship())
+    this.addSchema('PluralRelationship', pluralRelationship())
+    this.addSchema('Linkage', linkage(this.idType))
+    this.addSchema('Error', error())
+    this.addSchema('ValidationError', error({$ref: '#/components/schemas/ValidationErrorDetail'}))
+    this.addSchema('ValidationErrorDetail', validationErrorDetail())
+
     return this.document
   }
 
@@ -67,34 +85,31 @@ export default class OpenAPIGenerator {
   // #region Resources
 
   private async appendResource(resource: Resource<any, any, any>) {
-    await this.appendSchemas(resource)
-
-    this.addSchema('AnyResponseDocument', this.buildDocumentSchema(null, true, true))
-    this.addSchema('BulkSelector', bulkSelector())
-    this.addSchema('Relationship', relationship())
-    this.addSchema('Linkage', linkage(this.idType))
-    this.addSchema('Error', error())
-    this.addSchema('ValidationError', error({$ref: '#/components/schemas/ValidationErrorDetail'}))
-    this.addSchema('ValidationErrorDetail', validationErrorDetail())
-
+    // Append the list action separately (it has an optional parameter).
     if (this.actionEnabled(resource, 'list')) {
       await this.appendListAction(resource)
     }
 
+    // Append all other actions.
     for (const action of ['show', 'create', 'replace', 'update', 'delete'] as CommonActions[]) {
       if (this.actionEnabled(resource, action)) {
         this.appendAction(resource, action)
       }
     }
+
+    // Now append all schemas for this resource.
+    await this.appendResourceSchemas(resource)
   }
 
-  private async appendSchemas(resource: Resource<any, any, any>) {
+  private async appendResourceSchemas(resource: Resource<any, any, any>) {
     const prefix = this.schemaPrefix(resource)
+    const adapter = this.jsonAPI.adapter(resource, this.context)
+
     this.addSchema(`${prefix}CreateDocument`, this.buildDocumentSchema(resource, false, false))
     this.addSchema(`${prefix}UpdateDocument`, this.buildDocumentSchema(resource, true, false))
     this.addSchema(`${prefix}ResponseDocument`, this.buildDocumentSchema(resource, true, true))
-    this.addSchema(`${prefix}Attributes`, await this.buildAttributesSchema(resource))
-    this.addSchema(`${prefix}Relationships`, await this.buildRelationshipsSchema(resource))
+    this.addSchema(`${prefix}Attributes`, await this.buildAttributesSchema(resource, adapter))
+    this.addSchema(`${prefix}Relationships`, this.buildRelationshipsSchema(resource, adapter))
   }
 
   private buildDocumentSchema(resource: Resource<any, any, any> | null, requireID: boolean, relationships: boolean): OpenAPIV3_1.SchemaObject {
@@ -145,15 +160,46 @@ export default class OpenAPIGenerator {
     }
   }  
 
-  private async buildAttributesSchema(resource: Resource<any, any, any>): Promise<OpenAPIV3_1.SchemaObject> {
+  private async buildAttributesSchema(resource: Resource<any, any, any>, adapter: Adapter<any, any, any>): Promise<OpenAPIV3_1.SchemaObject> {
     return {
       type: 'object',
+
+      properties: mapValues(resource.config.attributes, (_, attr) => adapter.openAPI?.schemaForAttribute(attr) ?? {}),
+      required:   objectKeys(resource.config.attributes).filter(key => {
+        const attribute = resource.config.attributes[key]
+        if (isPlainObject(attribute) && ((attribute as AttributeConfig<any, any, any>).detail || (attribute as AttributeConfig<any, any, any>).if)) {
+          // We cannot determine if the attribute is required as it is conditional upon the situation.
+          return false
+        }
+        
+        return adapter.openAPI?.isAttributeRequired(key)
+      }),
     }
   }
 
-  private async buildRelationshipsSchema(resource: Resource<any, any, any>): Promise<OpenAPIV3_1.SchemaObject> {
+  private buildRelationshipsSchema(resource: Resource<any, any, any>, adapter: Adapter<any, any, any>): OpenAPIV3_1.SchemaObject {
+    const relationships = resource.config.relationships ?? {}
+
     return {
       type: 'object',
+
+      properties: mapValues(relationships, key => this.buildRelationshipSchema(key)),
+      required:   objectKeys(relationships).filter(key => {
+        const relationship = relationships[key]
+        return !relationship.detail && !relationship.if
+      }),
+    }
+  }
+
+  private buildRelationshipSchema(relationship: RelationshipConfig<any, any, any>): OpenAPIV3_1.ReferenceObject {
+    if (relationship.plural) {
+      return {
+        $ref: '#/components/schemas/PluralRelationship',
+      }
+    } else {
+      return {
+        $ref: '#/components/schemas/SingularRelationship',
+      }
     }
   }
 

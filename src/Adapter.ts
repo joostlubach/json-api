@@ -1,4 +1,6 @@
 
+import { OpenAPIV3_1 } from 'openapi-types'
+
 import Document from './Document'
 import Pack from './Pack'
 import {
@@ -47,4 +49,15 @@ export default interface Adapter<Model, Query, ID> {
 
   // #endregion
 
+  // #region OpenAPI reflection
+  
+  openAPI?: OpenAPIReflection
+
+  // #endregion
+
+}
+
+export interface OpenAPIReflection {
+  schemaForAttribute(name: string): OpenAPIV3_1.SchemaObject
+  isAttributeRequired(name: string): boolean
 }
