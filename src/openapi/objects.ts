@@ -1,4 +1,5 @@
 import { OpenAPIV3_1 } from 'openapi-types'
+import { sparse } from 'ytil'
 
 export const bulkSelector = (): OpenAPIV3_1.SchemaObject => ({
   anyOf: [{
@@ -78,6 +79,29 @@ export const pathParam = (name: string, type: Exclude<OpenAPIV3_1.NonArraySchema
   },
 })
 
+export const relationship = (): OpenAPIV3_1.SchemaObject => ({
+  type: 'object',
+
+  properties: {
+    data: {
+      anyOf: [{
+        type: 'null',
+      }, {
+        $ref: '#/components/schemas/Linkage',
+      }, {
+        type:  'array',
+        items: {
+          $ref: '#/components/schemas/Linkage',
+        },
+      }],
+    },
+    meta: {
+      type: 'object',
+    },
+  },
+  required: ['data'],
+})
+
 export const linkage = (idType: OpenAPIV3_1.NonArraySchemaObjectType): OpenAPIV3_1.SchemaObject => ({
   type: 'object',
 
@@ -88,6 +112,57 @@ export const linkage = (idType: OpenAPIV3_1.NonArraySchemaObjectType): OpenAPIV3
     id: {
       type: idType,
     },
+    meta: {
+      type: 'object',
+    },
   },
   required: ['type', 'id'],
+})
+
+export const error = (detailErrorType?: OpenAPIV3_1.ReferenceObject | OpenAPIV3_1.SchemaObject): OpenAPIV3_1.SchemaObject => ({
+  type: 'object',
+
+  properties: {
+    status:  {type: 'integer'},
+    message: {type: 'string'},
+
+    ...detailErrorType ? {
+      errors: {
+        type:  'array',
+        items: detailErrorType,
+      },
+    } : {},
+  },
+  required: sparse([
+    'status', 
+    'message', 
+    detailErrorType && 'errors',
+  ]),
+})
+
+export const validationErrorDetail = (): OpenAPIV3_1.SchemaObject => ({
+  type: 'object',
+
+  properties: {
+    code:   {type: 'string'},
+    title:  {type: 'string'},
+    detail: {type: 'string'},
+
+    source: {
+      anyOf: [{
+        type: 'object',
+
+        properties: {pointer: {type: 'string'}},
+        required:   ['pointer'],
+      }, {
+        type: 'object',
+
+        properties: {parameter: {type: 'string'}},
+        required:   ['parameter'],
+      }],
+    },
+
+  },
+
+  required: ['title'],
 })

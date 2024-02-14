@@ -1,5 +1,5 @@
 import ErrorPack from './ErrorPack'
-import { JSONAPIError, Meta } from './types'
+import { Meta, ValidationError } from './types'
 
 const DEV = process.env.NODE_ENV !== 'production'
 
@@ -8,7 +8,7 @@ export default class APIError extends Error {
   constructor(
     public readonly status:  number = 500,
     message = "An error occurred",
-    public readonly errors?: JSONAPIError[],
+    public readonly errors?: ValidationError[],
     public readonly meta: Meta = {},
   ) {
     super(message)

@@ -604,6 +604,353 @@ describe("openapi", () => {
 
   describe("components", () => {
 
+    it("should create a set of components for each resource, as well as some common components", async () => {
+      jsonAPI.reset()
+      
+      const spec = await jsonAPI.openAPISpec()
+      expect(spec.components).toEqual({
+        schemas: {
+          ParentsCreateDocument:   expect.any(Object),
+          ParentsUpdateDocument:   expect.any(Object),
+          ParentsResponseDocument: expect.any(Object),
+          ParentsAttributes:       expect.any(Object),
+          ParentsRelationships:    expect.any(Object),
+
+          ChildrenCreateDocument:   expect.any(Object),
+          ChildrenUpdateDocument:   expect.any(Object),
+          ChildrenResponseDocument: expect.any(Object),
+          ChildrenAttributes:       expect.any(Object),
+          ChildrenRelationships:    expect.any(Object),
+          
+          AnyResponseDocument: expect.any(Object),
+
+          BulkSelector: expect.any(Object),
+          Relationship: expect.any(Object),
+          Linkage:      expect.any(Object),
+
+          Error:                 expect.any(Object),
+          ValidationError:       expect.any(Object),
+          ValidationErrorDetail: expect.any(Object),
+        },
+      })
+    })
+
+    describe("documents", () => {
+
+      it("should expose a ParentsResponseDocument with proper references and an ID", async () => {
+        const spec = await jsonAPI.openAPISpec()
+        expect(spec.components?.schemas?.['ParentsResponseDocument']).toEqual({
+          type: 'object',
+
+          properties: {
+            type: {
+              type: 'string',
+              enum: ['parents'],
+            },
+            id: {
+              type: 'string',
+            },
+            attributes: {
+              $ref: '#/components/schemas/ParentsAttributes',
+            },
+            relationships: {
+              $ref: '#/components/schemas/ParentsRelationships',
+            },
+            meta: {
+              type: 'object',
+            },
+          },
+          required: ['type', 'id', 'attributes', 'relationships'],
+        })
+      })
+
+      it("should expose a ParentsCreateDocument with proper references but with an optional ID and without relationships", async () => {
+        const spec = await jsonAPI.openAPISpec()
+        expect(spec.components?.schemas?.['ParentsCreateDocument']).toEqual({
+          type: 'object',
+
+          properties: {
+            type: {
+              type: 'string',
+              enum: ['parents'],
+            },
+            id: {
+              anyOf: [{
+                type: 'string',
+              }, {
+                type: 'null',
+              }],
+            },
+            attributes: {
+              $ref: '#/components/schemas/ParentsAttributes',
+            },
+            meta: {
+              type: 'object',
+            },
+          },
+          required: ['type', 'attributes'],
+        })
+      })
+
+      it("should expose a ParentsUpdateDocument with proper references but without relationships", async () => {
+        const spec = await jsonAPI.openAPISpec()
+        expect(spec.components?.schemas?.['ParentsUpdateDocument']).toEqual({
+          type: 'object',
+
+          properties: {
+            type: {
+              type: 'string',
+              enum: ['parents'],
+            },
+            id: {
+              type: 'string',
+            },
+            attributes: {
+              $ref: '#/components/schemas/ParentsAttributes',
+            },
+            meta: {
+              type: 'object',
+            },
+          },
+          required: ['type', 'id', 'attributes'],
+        })
+      })
+
+      it("should expose a generic AnyResponseDocument", async () => {
+        const spec = await jsonAPI.openAPISpec()
+        expect(spec.components?.schemas?.['AnyResponseDocument']).toEqual({
+          type: 'object',
+
+          properties: {
+            type: {
+              type: 'string',
+            },
+            id: {
+              type: 'string',
+            },
+            attributes: {
+              type: 'object',
+            },
+            relationships: {
+              type: 'object',
+
+              additionalProperties: {
+                $ref: '#/components/schemas/Relationship',
+              },
+            },
+            meta: {
+              type: 'object',
+            },
+          },
+          required: ['type', 'id', 'attributes', 'relationships'],
+        })
+      })
+
+    })
+
+    describe("attributes", () => {
+
+      it("should expose a ParentsAttributes with a property for each exposed attribute", async () => {
+        const spec = await jsonAPI.openAPISpec()
+        expect(spec.components?.schemas?.['ParentsAttributes']).toEqual({
+          type: 'object',
+
+          properties: {
+            name: expect.any(Object),
+            age:  expect.any(Object),
+          },
+          required: expect.any(Array),
+        })
+      })
+
+    })
+
+    describe("misc", () => {
+
+      it("should expose a BulkSelector", async () => {
+        const spec = await jsonAPI.openAPISpec()
+        expect(spec.components?.schemas?.['BulkSelector']).toEqual({
+          anyOf: [{
+            type: 'object',
+
+            properties: {
+              data: {
+                type:  'array',
+                items: {
+                  $ref: '#/components/schemas/Linkage',
+                },
+              },
+            },
+            required: ['data'],
+          }, {
+            type: 'object',
+
+            properties: {
+              meta: {
+                type: 'object',
+                
+                properties: {
+                  filters: {
+                    type: 'object',
+                  },
+                },
+                required: ['filters'],
+              },
+            },
+            required: ['meta'],
+          }, {
+            type: 'object',
+
+            properties: {
+              meta: {
+                type: 'object',
+                
+                properties: {
+                  search: {
+                    type: 'string',
+                  },
+                },
+                required: ['search'],
+              },
+            },
+            required: ['meta'],
+          }],
+        })
+      })
+
+      it("should expose a Relationship", async () => {
+        const spec = await jsonAPI.openAPISpec()
+        expect(spec.components?.schemas?.['Relationship']).toEqual({
+          type: 'object',
+
+          properties: {
+            data: {
+              anyOf: [
+                {
+                  type: 'null',
+                },
+                {
+                  $ref: '#/components/schemas/Linkage',
+                },
+                {
+                  type:  'array',
+                  items: {
+                    $ref: '#/components/schemas/Linkage',
+                  },
+                },
+              ],
+            },
+            meta: {
+              type: 'object',
+            },
+          },
+          required: ['data'],
+        })
+      })
+
+      it("should expose a Linkage", async () => {
+        const spec = await jsonAPI.openAPISpec()
+        expect(spec.components?.schemas?.['Linkage']).toEqual({
+          type: 'object',
+
+          properties: {
+            type: {
+              type: 'string',
+            },
+            id: {
+              type: 'string',
+            },
+            meta: {
+              type: 'object',
+            },
+          },
+          required: ['type', 'id'],
+        })
+      })
+
+      it("should use the proper ID type in Linkage", async () => {
+        jsonAPI.options.openAPI ??= {}
+        jsonAPI.options.openAPI.metaDefaults ??= {}
+        jsonAPI.options.openAPI.metaDefaults.idType = 'integer'
+
+        const spec = await jsonAPI.openAPISpec()        
+        expect(spec.components?.schemas?.['Linkage']).toEqual({
+          type: 'object',
+
+          properties: {
+            type: {
+              type: 'string',
+            },
+            id: {
+              type: 'integer',
+            },
+            meta: {
+              type: 'object',
+            },
+          },
+          required: ['type', 'id'],
+        })
+      })
+
+      it("should expose an Error", async () => {
+        const spec = await jsonAPI.openAPISpec()
+        expect(spec.components?.schemas?.['Error']).toEqual({
+          type: 'object',
+
+          properties: {
+            status:  {type: 'integer'},
+            message: {type: 'string'},
+          },
+          required: ['status', 'message'],
+        })
+      })
+
+      it("should expose a ValidationError", async () => {
+        const spec = await jsonAPI.openAPISpec()
+        expect(spec.components?.schemas?.['ValidationError']).toEqual({
+          type: 'object',
+
+          properties: {
+            status:  {type: 'integer'},
+            message: {type: 'string'},
+            errors:  {
+              type:  'array',
+              items: {
+                $ref: '#/components/schemas/ValidationErrorDetail',
+              },
+            },
+          },
+          required: ['status', 'message', 'errors'],
+        })
+      })
+
+      it("should expose a ValidationErrorDetail", async () => {
+        const spec = await jsonAPI.openAPISpec()
+        expect(spec.components?.schemas?.['ValidationErrorDetail']).toEqual({
+          type: 'object',
+
+          properties: {
+            code:   {type: 'string'},
+            title:  {type: 'string'},
+            detail: {type: 'string'},
+            source: {
+              anyOf: [{
+                type:       'object',
+                properties: {pointer: {type: 'string'}},
+                required:   ['pointer'],
+              }, {
+                type:       'object',
+                properties: {parameter: {type: 'string'}},
+                required:   ['parameter'],
+              }],
+            },
+          },
+          required: ['title'],
+        })
+      })
+
+    })
+
   })
 
 })

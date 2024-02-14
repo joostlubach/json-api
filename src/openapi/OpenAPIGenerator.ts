@@ -1,14 +1,22 @@
 import * as FS from 'fs-extra'
 import * as YAML from 'js-yaml'
-import { cloneDeep } from 'lodash'
+import { camelCase, cloneDeep, upperFirst } from 'lodash'
 import { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types'
 import * as Path from 'path'
+import { sparse } from 'ytil'
 
 import JSONAPI from '../JSONAPI'
 import Resource from '../Resource'
-import { CommonActions, Method, OpenAPIResourceMeta } from '../types'
+import { CommonActions, Method, OpenAPIMeta } from '../types'
 import { actionParameters, errorResponseBody, requestBodies, responseBodies } from './actions'
-import { pathParam } from './objects'
+import {
+  bulkSelector,
+  error,
+  linkage,
+  pathParam,
+  relationship,
+  validationErrorDetail,
+} from './objects'
 
 export default class OpenAPIGenerator {
 
@@ -25,10 +33,14 @@ export default class OpenAPIGenerator {
   }
 
   private document!: OpenAPIV3_1.Document
-  private meta:      OpenAPIResourceMeta = {}
+  private meta:      OpenAPIMeta = {}
 
   private get contentType() {
     return this.options.contentType ?? defaultContentType
+  }
+
+  private get idType() {
+    return this.meta.idType ?? 'string'
   }
 
   // #region Generation
@@ -55,15 +67,98 @@ export default class OpenAPIGenerator {
   // #region Resources
 
   private async appendResource(resource: Resource<any, any, any>) {
+    await this.appendSchemas(resource)
+
+    this.addSchema('AnyResponseDocument', this.buildDocumentSchema(null, true, true))
+    this.addSchema('BulkSelector', bulkSelector())
+    this.addSchema('Relationship', relationship())
+    this.addSchema('Linkage', linkage(this.idType))
+    this.addSchema('Error', error())
+    this.addSchema('ValidationError', error({$ref: '#/components/schemas/ValidationErrorDetail'}))
+    this.addSchema('ValidationErrorDetail', validationErrorDetail())
+
     if (this.actionEnabled(resource, 'list')) {
       await this.appendListAction(resource)
     }
 
     for (const action of ['show', 'create', 'replace', 'update', 'delete'] as CommonActions[]) {
       if (this.actionEnabled(resource, action)) {
-        await this.appendAction(resource, action)
+        this.appendAction(resource, action)
       }
     }
+  }
+
+  private async appendSchemas(resource: Resource<any, any, any>) {
+    const prefix = this.schemaPrefix(resource)
+    this.addSchema(`${prefix}CreateDocument`, this.buildDocumentSchema(resource, false, false))
+    this.addSchema(`${prefix}UpdateDocument`, this.buildDocumentSchema(resource, true, false))
+    this.addSchema(`${prefix}ResponseDocument`, this.buildDocumentSchema(resource, true, true))
+    this.addSchema(`${prefix}Attributes`, await this.buildAttributesSchema(resource))
+    this.addSchema(`${prefix}Relationships`, await this.buildRelationshipsSchema(resource))
+  }
+
+  private buildDocumentSchema(resource: Resource<any, any, any> | null, requireID: boolean, relationships: boolean): OpenAPIV3_1.SchemaObject {
+    return {
+      type: 'object',
+
+      properties: {
+        type: {
+          type: 'string',
+          enum: resource == null ? undefined : [resource.type],
+        },
+        
+        id: requireID ? {
+          type: this.idType,
+        } : {
+          anyOf: [
+            {type: this.idType},
+            {type: 'null'},
+          ],
+        },
+
+        attributes: resource == null ? {
+          type: 'object',
+        } : {
+          $ref: `#/components/schemas/${this.schemaPrefix(resource)}Attributes`,
+        },
+        ...relationships ? {
+          relationships: resource == null ? {
+            type: 'object',
+
+            additionalProperties: {
+              $ref: `#/components/schemas/Relationship`,
+            },
+          } : {
+            $ref: `#/components/schemas/${this.schemaPrefix(resource)}Relationships`,
+          },
+        } : {},
+        meta: {
+          type: 'object',
+        },
+      },
+      required: sparse([
+        'type',
+        requireID && 'id',
+        'attributes',
+        relationships && 'relationships',
+      ]),
+    }
+  }  
+
+  private async buildAttributesSchema(resource: Resource<any, any, any>): Promise<OpenAPIV3_1.SchemaObject> {
+    return {
+      type: 'object',
+    }
+  }
+
+  private async buildRelationshipsSchema(resource: Resource<any, any, any>): Promise<OpenAPIV3_1.SchemaObject> {
+    return {
+      type: 'object',
+    }
+  }
+
+  private schemaPrefix(resource: Resource<any, any, any>) {
+    return upperFirst(camelCase(resource.type))
   }
 
   // #endregion
@@ -102,7 +197,7 @@ export default class OpenAPIGenerator {
     }
   }
 
-  private async appendAction(resource: Resource<any, any, any>, action: CommonActions) {
+  private appendAction(resource: Resource<any, any, any>, action: CommonActions) {
     const route = this.jsonAPI.route(action)
     if (route === false) { return }
 
@@ -207,12 +302,12 @@ export default class OpenAPIGenerator {
 
 export interface OpenAPIOptions extends Partial<Omit<OpenAPIV3_1.Document, 'openapi'>> {
   version?:      OpenAPIV3_1.Document['openapi']
-  metaDefaults?: OpenAPIResourceMeta
+  metaDefaults?: OpenAPIMeta
   contentType?:  string
 }
 
 const defaultContentType = 'application/vnd.api+json'
-const metaDefaults = YAML.load(FS.readFileSync(Path.join(__dirname, 'defaults.yml'), 'utf-8')) as OpenAPIResourceMeta
+const metaDefaults = YAML.load(FS.readFileSync(Path.join(__dirname, 'defaults.yml'), 'utf-8')) as OpenAPIMeta
 const builtInErrorCodes = ['400', '401', '403', '404', '405', '409', '500']
 
 const baseDocument: OpenAPIV3_1.Document = {
@@ -223,5 +318,5 @@ const baseDocument: OpenAPIV3_1.Document = {
     description: 'JSON API specification',
   },
   paths:      {},
-  components: [],
+  components: {},
 }

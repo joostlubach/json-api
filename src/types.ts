@@ -140,11 +140,9 @@ export interface BulkSelector<I> {
 
 // #region Errors
 
-export interface JSONAPIError {
-  id?:     string
-  status?: number
+export interface ValidationError {
   code?:   string | null
-  title?:  string | null
+  title:   string | null
   detail?: string | null
 
   source?: {
@@ -188,10 +186,14 @@ export type Method =
 
 // #region OpenAPI meta
 
-export interface OpenAPIResourceMeta {
+export interface OpenAPIResourceMeta extends OpenAPIMeta {
   singular?: string
   plural?:   string
-  actions?:   Record<CommonActions, Omit<OpenAPIV3_1.OperationObject, 'requestBody' | 'responses'> & {
+}
+
+export interface OpenAPIMeta {
+  idType?:  'string' | 'integer'
+  actions?:  Record<CommonActions, Omit<OpenAPIV3_1.OperationObject, 'requestBody' | 'responses'> & {
     parameters?: Record<string, Partial<OpenAPIV3_1.ParameterObject>>
   }>
   responses?: Record<string, Omit<OpenAPIV3_1.ResponseObject, 'content'>>

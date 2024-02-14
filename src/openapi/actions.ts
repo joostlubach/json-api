@@ -53,9 +53,24 @@ export const responseBodies = {
 }
 
 export const errorResponseBody = (code: string): OpenAPIV3_1.MediaTypeObject => {
+  const schemaName = code === '442'
+    ? 'ValidationError'
+    : 'Error'
+
   return {
     schema: {
-      $ref: `#/components/schemas/Error${code}`,
+      type: 'object',
+
+      properties: {
+        error: {
+          $ref: `#/components/schemas/${schemaName}`,
+        },
+        meta: {
+          type: 'object',
+        },
+      },
+
+      required: ['error', 'meta'],
     },
   }
 }
