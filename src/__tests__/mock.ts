@@ -30,18 +30,35 @@ export class MockJSONAPI extends JSONAPI<Model, Query, string> {
 
   constructor(options: JSONAPIOptions<Model, Query, string> = {}) {
     super(options)
+    this.reset()
+  }
 
+  public reset() {
     this.registry.register('parents', {
       modelName: 'Parent',
       openapi:   openapi.parents,
 
+      summary: "A parent in a family.",
+
       attributes: {
-        name: true,
-        age:  true,
+        name: {
+          summary: "The first name of the parent.",
+        },
+        age: {
+          summary: "The age of the parent in years.",
+        },
       },
       relationships: {
-        spouse:   {type: 'parents', plural: false},
-        children: {type: 'children', plural: true},
+        spouse: {
+          type:    'parents',
+          plural:  false,
+          summary: "The spouse of this parent.",
+        },
+        children: {
+          type:    'children',
+          plural:  true,
+          summary: "This parent's children.",
+        },
       },
     })
     this.registry.register('children', {

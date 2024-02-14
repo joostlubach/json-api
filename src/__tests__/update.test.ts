@@ -27,8 +27,8 @@ describe("update", () => {
           age:  40,
         },
         relationships: {
-          spouse:   expect.objectContaining({}),
-          children: expect.objectContaining({}),
+          spouse:   expect.any(Object),
+          children: expect.any(Object),
         },
       },
       included: [],

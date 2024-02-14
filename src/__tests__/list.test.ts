@@ -34,7 +34,7 @@ describe("list", () => {
         type:          'parents',
         id:            'alice',
         attributes:    {name: "Alice", age: 30},
-        relationships: expect.objectContaining({}), // See below.
+        relationships: expect.any(Object), // See below.
       })
     })
   
@@ -85,7 +85,7 @@ describe("list", () => {
       const pack = await jsonAPI.list('parents', {}, context('list'))
       const out = pack.serialize()
       expect(out.data[0].relationships).toEqual({
-        spouse:   expect.objectContaining({}),
+        spouse:   expect.any(Object),
         children: undefined,
       })
     })
@@ -115,11 +115,11 @@ describe("list", () => {
       const pack = await jsonAPI.list('parents', {}, context('list'))
       const out = pack.serialize()
       expect(out.data[0].relationships).toEqual({
-        spouse: expect.objectContaining({}),
+        spouse: expect.any(Object),
       })
       expect(out.data[1].relationships).toEqual({
-        spouse:   expect.objectContaining({}),
-        children: expect.objectContaining({}),
+        spouse:   expect.any(Object),
+        children: expect.any(Object),
       })
     })
 
@@ -148,9 +148,9 @@ describe("list", () => {
       const pack = await jsonAPI.list('parents', {}, context('list'))
       const out = pack.serialize()
       expect(out.data[0].relationships).toEqual({
-        children: expect.objectContaining({}),
+        children: expect.any(Object),
         parent:   expect.objectContaining({data: {type: 'parents', id: 'alice-parent'}}),
-        spouse:   expect.objectContaining({}),
+        spouse:   expect.any(Object),
       })
     })
 

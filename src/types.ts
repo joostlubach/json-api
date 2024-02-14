@@ -186,10 +186,15 @@ export type Method =
 
 // #endregion
 
-// #region OpenAPI texts
+// #region OpenAPI meta
 
-export interface OpenAPIMeta {
+export interface OpenAPIResourceMeta {
   singular?: string
   plural?:   string
-  actions?:  Record<CommonActions, Omit<OpenAPIV3_1.OperationObject, 'parameters' | 'requestBody' | 'responses'>>
+  actions?:   Record<CommonActions, Omit<OpenAPIV3_1.OperationObject, 'requestBody' | 'responses'> & {
+    parameters?: Record<string, Partial<OpenAPIV3_1.ParameterObject>>
+  }>
+  responses?: Record<string, Omit<OpenAPIV3_1.ResponseObject, 'content'>>
 }
+
+// #endregion

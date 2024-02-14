@@ -10,7 +10,7 @@ import {
   Linkage,
   ListParams,
   Meta,
-  OpenAPIMeta,
+  OpenAPIResourceMeta,
   Relationship,
 } from './types'
 
@@ -34,16 +34,19 @@ export interface ResourceConfig<Model, Query, ID> {
   modelName?: string
 
   /** Any literal meta / texts used in OpenAPI generation. */
-  openapi?: OpenAPIMeta
+  openapi?: OpenAPIResourceMeta
+
+  /** Alias for `openapi.summary`. */
+  summary?: string
+
+  /** Alias for `openapi.description`. */
+  description?: string
 
   /** If true, this resource won't be resolved as the default resource for the given model class. */
   auxiliary?: boolean
 
   /** Whether to include totals. */
   totals?: boolean
-
-  /** Whether the resource is read-only. */
-  readonly?: boolean
 
   // #endregion
 
@@ -141,6 +144,12 @@ export interface AttributeConfig<M, Q, I> {
   if?:       AttributeIf<M, Q, I>
   get?:      AttributeGetter<M, Q, I>
   set?:      AttributeSetter<M, Q, I>
+
+  /** An OpenAPI summary for this attribute. */
+  summary?: string
+
+  /** An OpenAPI description for this attribute. */
+  description?: string
 }
 
 export type AttributeIf<M, Q, I> = (this: Resource<M, Q, I>, item: M, context: RequestContext) => boolean | Promise<boolean>
@@ -167,6 +176,12 @@ interface RelationshipConfigCommon<M, Q, I> {
   detail?:   boolean
   if?:       (this: Resource<M, Q, I>, model: M, context: RequestContext) => boolean | Promise<boolean>
   include?:  RelationshipIncludeConfig
+
+  /** An OpenAPI summary for this relationship. */
+  summary?: string
+
+  /** An OpenAPI description for this relationship. */
+  description?: string
 }
 
 export interface RelationshipIncludeConfig {

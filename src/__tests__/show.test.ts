@@ -30,7 +30,7 @@ describe("show", () => {
       type:          'parents',
       id:            id,
       attributes:    {name, age},
-      relationships: expect.objectContaining({}), // See below.
+      relationships: expect.any(Object), // See below.
     })
   })
 
@@ -68,8 +68,8 @@ describe("show", () => {
     const pack = await jsonAPI.show('parents', {id: 'alice'}, context('show'))
     const out = pack.serialize()
     expect(out.data.relationships).toEqual({
-      spouse:   expect.objectContaining({}),
-      children: expect.objectContaining({}),
+      spouse:   expect.any(Object),
+      children: expect.any(Object),
     })
   })
 
@@ -101,14 +101,14 @@ describe("show", () => {
     const pack1 = await jsonAPI.show('parents', {id: 'alice'}, context('show'))
     const out1 = pack1.serialize()
     expect(out1.data.relationships).toEqual({
-      spouse: expect.objectContaining({}),
+      spouse: expect.any(Object),
     })
 
     const pack2 = await jsonAPI.show('parents', {id: 'bob'}, context('show'))
     const out2 = pack2.serialize()
     expect(out2.data.relationships).toEqual({
-      spouse:   expect.objectContaining({}),
-      children: expect.objectContaining({}),
+      spouse:   expect.any(Object),
+      children: expect.any(Object),
     })
   })
 
@@ -136,9 +136,9 @@ describe("show", () => {
     const pack = await jsonAPI.show('parents', {id: 'bob'}, context('show'))
     const out = pack.serialize()
     expect(out.data.relationships).toEqual({
-      children: expect.objectContaining({}),
+      children: expect.any(Object),
       parent:   expect.objectContaining({data: {type: 'parents', id: 'bob-parent'}}),
-      spouse:   expect.objectContaining({}),
+      spouse:   expect.any(Object),
     })
   })
 
@@ -216,8 +216,8 @@ describe("show", () => {
       expect(pack.serialize().data).toEqual({
         type:          'children',
         id:            'henry',
-        attributes:    expect.objectContaining({}),
-        relationships: expect.objectContaining({}),
+        attributes:    expect.any(Object),
+        relationships: expect.any(Object),
       })
     })
 

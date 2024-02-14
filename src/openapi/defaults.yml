@@ -3,3 +3,68 @@ actions:
     tags: ['{{plural}}']
     summary: "List all {{plural}}"
     description: "List all {{plural}}"
+    parameters:
+      filters:
+        description: "Filters to apply to the list of {{plural}}. See the [Filters](#filters) section below for available filters."
+      search:
+        description: "Search through the list of {{plural}}."
+      sorts:
+        description: "Sorts to apply to the list of {{plural}}. See the [Sorts](#sorts) section below for available sort fields."
+      limit:
+        description: "The maximum number of {{plural}} to return."
+      offset:
+        description: "The number of {{plural}} to skip before starting to return results."
+  
+  show:
+    tags: ['{{plural}}']
+    summary: "Show a {{singular}}"
+    description: "Show a {{singular}}"
+    parameters:
+      id: &id_param
+        description: "The ID of the {{singular}} to show."
+
+  create:
+    tags: ['{{plural}}']
+    summary: "Create a {{singular}}"
+    description: "Create a {{singular}}"
+
+  replace:
+    tags: ['{{plural}}']
+    summary: "Replace a {{singular}}"
+    description: "Replace a {{singular}}"
+    parameters:
+      id: *id_param
+
+  update:
+    tags: ['{{plural}}']
+    summary: "Update a {{singular}}"
+    description: "Update a {{singular}}"
+    parameters:
+      id: *id_param
+
+  delete:
+    tags: ['{{plural}}']
+    summary: "Delete {{plural}}"
+    description: "Delete {{plural}}"
+
+responses:
+  '200':
+    description: "The operation was successful"
+  '201':
+    description: "The operation was successful and a new resource was created"
+  '204':
+    description: "The operation was successful and there is no content to return"
+  '400':
+    description: "The operation failed due to an invalid request"
+  '401':
+    description: "You are not authenticated"
+  '403':
+    description: "You are not authorized to perform this operation."
+  '404':
+    description: "The resource was not found"
+  '405':
+    description: "The operation is not allowed"
+  '409':
+    description: "The operation failed due to a conflict"
+  '500':
+    description: "The operation failed due to an internal server error"
