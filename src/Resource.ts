@@ -153,6 +153,7 @@ export default class Resource<Model, Query, ID> {
     const attributes: Record<string, any> = {}
     for (const [name, attribute] of objectEntries(this.attributes)) {
       if (!await this.attributeAvailable(attribute, model, true, context)) { continue }
+      if (!detail && attribute.detail) { continue }
       attributes[name] = await this.getAttributeValue(model, name, attribute, adapter, context)
     }
     return attributes
@@ -172,7 +173,9 @@ export default class Resource<Model, Query, ID> {
     for (const [name, value] of Object.entries(document.attributes)) {
       const attribute = this.attributes[name]
 
-      if (!await this.attributeAvailable(attribute, model, true, context)) { continue }
+      if (!await this.attributeAvailable(attribute, model, true, context)) {
+        throw new APIError(403, `Attribute "${name}" is not available`)
+      }
       if (!await this.attributeWritable(attribute, model, create, context)) {
         throw new APIError(403, `Attribute "${name}" is not writable`)
       }
@@ -183,11 +186,11 @@ export default class Resource<Model, Query, ID> {
 
   private async setAttribute(model: Model, name: string, value: any, attribute: AttributeConfig<Model, Query, ID>, adapter: Adapter<Model, Query, ID>, context: RequestContext) {
     if (attribute.set != null) {
-      return await attribute.set.call(this, model, value, context)
-    } else if (adapter.getAttribute != null) {
-      return await adapter.getAttribute(model, name)
+      await attribute.set.call(this, model, value, context)
+    } else if (adapter.setAttribute != null) {
+      await adapter.setAttribute(model, name, value)
     } else {
-      return (model as any)[name]
+      (model as any)[name] = value
     }
   }
 
@@ -400,7 +403,7 @@ export default class Resource<Model, Query, ID> {
     const document = this.extractRequestDocument(requestPack, null)
     const adapter = getAdapter()
 
-    const model = await adapter.emptyModel()
+    const model = await adapter.emptyModel(document.id)
     await this.setAttributes(model, document, true, adapter, context)
     await this.config.scope?.ensure.call(this, model, context)
 
@@ -418,8 +421,13 @@ export default class Resource<Model, Query, ID> {
 
     const adapter = getAdapter()
     const document = this.extractRequestDocument(requestPack, id)
-    const {model} = await this.getModel({id}, adapter, context)
-    await this.setAttributes(model, document, true, adapter, context)
+    
+    // Run a getModel just to make sure the model exists.
+    await this.getModel({id}, adapter, context)
+
+    // Continue with a fresh model.
+    const model = await adapter.emptyModel(id)
+    await this.setAttributes(model, document, false, adapter, context)
     await this.config.scope?.ensure.call(this, model, context)
 
     const response = await adapter.save(model, requestPack, options)
@@ -438,6 +446,7 @@ export default class Resource<Model, Query, ID> {
     const document = this.extractRequestDocument(requestPack, id)
     const {model} = await this.getModel({id}, adapter, context)
     await this.setAttributes(model, document, false, adapter, context)
+    await this.config.scope?.ensure.call(this, model, context)
 
     const response = await adapter.save(model, requestPack, options)
     return await this.documentPack(response.model, undefined, adapter, context, options)
@@ -500,7 +509,7 @@ export default class Resource<Model, Query, ID> {
     return new Collection(documents)
   }
 
-  private async getModel(locator: DocumentLocator<ID>, adapter: Adapter<Model, Query, ID>, context: RequestContext): Promise<GetResponse<Model> & {model: Model}> {
+  private async getModel(locator: DocumentLocator<ID>, adapter: Adapter<Model, Query, ID>, context: RequestContext): Promise<LoadResponse<Model>> {
     const query = await this.listQuery(adapter, {}, context)
     if ('singleton' in locator) {
       const singleton = this.config.singletons?.[locator.singleton]
@@ -629,7 +638,7 @@ export default class Resource<Model, Query, ID> {
   }
 
   public extractListParams(context: RequestContext): ListParams {
-    const label = context.param('label', string({required: false}))
+    const label = context.param('label', labelParam)
     const filters = this.extractFilters(context)
     const search = this.extractSearch(context)
     const sorts = this.extractSorts(context)
@@ -639,18 +648,15 @@ export default class Resource<Model, Query, ID> {
   }
 
   public extractFilters(context: RequestContext) {
-    return context.param('filter', dictionary({
-      valueType: any(),
-      default:   () => ({}),
-    }))
+    return context.param('filter', filterParam)
   }
 
   public extractSearch(context: RequestContext) {
-    return context.param('search', string({required: false}))
+    return context.param('search', searchParam)
   }
 
   public extractSorts(context: RequestContext) {
-    const sort = context.param('sort', string({required: false}))
+    const sort = context.param('sort', sortParam)
     if (sort == null) { return [] }
 
     const parts = sort.split(',')
@@ -668,15 +674,15 @@ export default class Resource<Model, Query, ID> {
   }
 
   public extractPagination(context: RequestContext): {offset: number, limit: number | null} {
-    const offset = context.param('limit', number({integer: true, defaultValue: 0}))
-    const limit = context.param('limit', number({integer: true, required: false}))
+    const offset = context.param('offset', offsetParam)
+    const limit = context.param('limit', limitParam)
 
     return {offset, limit}
   }
 
   public extractDocumentLocator(context: RequestContext, singleton: false): {id: ID}
   public extractDocumentLocator(context: RequestContext, singleton?: boolean): DocumentLocator<ID>
-  public extractDocumentLocator(context: RequestContext, singleton: boolean = false): DocumentLocator<ID> {
+  public extractDocumentLocator(context: RequestContext, singleton: boolean = true): DocumentLocator<ID> {
     const id = context.param('id', string())
     if (singleton && this.config.singletons != null && id in this.config.singletons) {
       return {singleton: id}
@@ -734,4 +740,16 @@ export default class Resource<Model, Query, ID> {
 
   // #endregion
 
+}
+
+const labelParam = string({required: false})
+const filterParam = dictionary({valueType: any(), default: () => ({})})
+const searchParam = string({required: false})
+const sortParam = string({required: false})
+const offsetParam = number({integer: true, default: 0})
+const limitParam = number({integer: true, required: false})
+
+interface LoadResponse<M> {
+  model:     M
+  included?: M[]
 }

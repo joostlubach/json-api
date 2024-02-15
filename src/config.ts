@@ -1,7 +1,8 @@
 /* eslint-disable no-console */
 
 export interface Config {
-  defaultPageSize: number
+  defaultPageSize:     number
+  allowedContentTypes: string[]
 
   logger: Logger
 }
@@ -14,7 +15,8 @@ export interface Logger {
 }
 
 const config: Config = {
-  defaultPageSize: 50,
+  defaultPageSize:     50,
+  allowedContentTypes: ['application/vnd.api+json', 'application/json'],
 
   logger: {
     debug: (...args) => process.env.DEBUG ? console.debug(...args) : undefined,

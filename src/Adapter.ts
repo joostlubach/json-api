@@ -38,7 +38,7 @@ export default interface Adapter<Model, Query, ID> {
   
   // #region (De)serialization
 
-  emptyModel(): Model | Promise<Model>
+  emptyModel(id: ID | null): Model | Promise<Model>
   
   getAttribute?(model: Model, name: string): any | Promise<any>
   getRelationship?(model: Model, name: string): Relationship<ID> | ID | Linkage<ID> | Promise<ID | Linkage<ID>>

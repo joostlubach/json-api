@@ -1,46 +1,49 @@
 import { camelCase, upperFirst } from 'lodash'
 import { OpenAPIV3_1 } from 'openapi-types'
+import { sparse } from 'ytil'
 
 import Resource from '../Resource'
+import { JSONAPIRoute } from '../types'
 import { pathParam, queryArrayParam, queryParam } from './objects'
 
 export const actionParameters = {
-  list: (resource: Resource<any, any, any>) => [
+  list: (resource: Resource<any, any, any>, route: JSONAPIRoute) => sparse([
+    route.path(resource).includes(':label') && pathParam('label', 'string'),
     queryParam('filters', {type: 'object'}, false),
     queryParam('search', {type: 'string'}, false),
     queryArrayParam('sorts', {$ref: '#/components/schemas/Sort'}, false),
     queryParam('limit', {type: 'integer'}, false),
     queryParam('offset', {type: 'integer'}, false),
-  ],
-  show: (resource: Resource<any, any, any>) => [
+  ]),
+  show: (resource: Resource<any, any, any>, route: JSONAPIRoute) => [
     pathParam('id', 'string'),
   ],
-  create:  (resource: Resource<any, any, any>) => [],
-  replace: (resource: Resource<any, any, any>) => [
+  create:  (resource: Resource<any, any, any>, route: JSONAPIRoute) => [],
+  replace: (resource: Resource<any, any, any>, route: JSONAPIRoute) => [
     pathParam('id', 'string'),
   ],
-  update: (resource: Resource<any, any, any>) => [
+  update: (resource: Resource<any, any, any>, route: JSONAPIRoute) => [
     pathParam('id', 'string'),
   ],
-  delete: (resource: Resource<any, any, any>) => [],
+  delete: (resource: Resource<any, any, any>, route: JSONAPIRoute) => [],
 }
 
 export const requestBodies = {
-  list:    (resource: Resource<any, any, any>) => undefined,
-  show:    (resource: Resource<any, any, any>) => undefined,
-  create:  (resource: Resource<any, any, any>) => documentPackRequest(resource, false),
-  replace: (resource: Resource<any, any, any>) => documentPackRequest(resource, true),
-  update:  (resource: Resource<any, any, any>) => documentPackRequest(resource, true),
-  delete:  (resource: Resource<any, any, any>) => bulkSelectorPackRequest(),
+  list:    (resource: Resource<any, any, any>, route: JSONAPIRoute) => undefined,
+  show:    (resource: Resource<any, any, any>, route: JSONAPIRoute) => undefined,
+  create:  (resource: Resource<any, any, any>, route: JSONAPIRoute) => documentPackRequest(resource, false),
+  replace: (resource: Resource<any, any, any>, route: JSONAPIRoute) => documentPackRequest(resource, true),
+  update:  (resource: Resource<any, any, any>, route: JSONAPIRoute) => documentPackRequest(resource, true),
+  delete:  (resource: Resource<any, any, any>, route: JSONAPIRoute) => bulkSelectorPackRequest(),
 }
 
 export const responseBodies = {
-  list:    (resource: Resource<any, any, any>) => listPackResponse(resource),
-  show:    (resource: Resource<any, any, any>) => documentPackResponse(resource),
-  create:  (resource: Resource<any, any, any>) => documentPackResponse(resource),
-  replace: (resource: Resource<any, any, any>) => documentPackResponse(resource),
-  update:  (resource: Resource<any, any, any>) => documentPackResponse(resource),
-  delete:  (resource: Resource<any, any, any>) => {
+  list:    (resource: Resource<any, any, any>, route: JSONAPIRoute) => listPackResponse(resource),
+  show:    (resource: Resource<any, any, any>, route: JSONAPIRoute) => documentPackResponse(resource),
+  create:  (resource: Resource<any, any, any>, route: JSONAPIRoute) => documentPackResponse(resource),
+  replace: (resource: Resource<any, any, any>, route: JSONAPIRoute) => documentPackResponse(resource),
+  update:  (resource: Resource<any, any, any>, route: JSONAPIRoute) => documentPackResponse(resource),
+  delete:  (resource: Resource<any, any, any>, route: JSONAPIRoute) => {
     const response = linkagesListPackResponse(resource)
     const schema = response.schema as OpenAPIV3_1.SchemaObject
     const metaSchema = schema.properties!.meta as OpenAPIV3_1.SchemaObject

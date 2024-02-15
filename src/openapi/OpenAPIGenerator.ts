@@ -10,13 +10,12 @@ import JSONAPI from '../JSONAPI'
 import RequestContext from '../RequestContext'
 import Resource from '../Resource'
 import { RelationshipConfig } from '../ResourceConfig'
-import { CommonActions, Method, OpenAPIMeta } from '../types'
+import { CommonActions, JSONAPIRoute, Method, OpenAPIMeta } from '../types'
 import { actionParameters, errorResponseBody, requestBodies, responseBodies } from './actions'
 import {
   bulkSelector,
   error,
   linkage,
-  pathParam,
   pluralRelationship,
   relationship,
   singularRelationship,
@@ -41,10 +40,6 @@ export default class OpenAPIGenerator {
 
   private document!: OpenAPIV3_1.Document
   private meta:      OpenAPIMeta = {}
-
-  private get contentType() {
-    return this.options.contentType ?? defaultContentType
-  }
 
   private get idType() {
     return this.meta.idType ?? 'string'
@@ -86,13 +81,7 @@ export default class OpenAPIGenerator {
   // #region Resources
 
   private async appendResource(resource: Resource<any, any, any>) {
-    // Append the list action separately (it has an optional parameter).
-    if (this.actionEnabled(resource, 'list')) {
-      await this.appendListAction(resource)
-    }
-
-    // Append all other actions.
-    for (const action of ['show', 'create', 'replace', 'update', 'delete'] as CommonActions[]) {
+    for (const action of CommonActions.all) {
       if (this.actionEnabled(resource, action)) {
         this.appendAction(resource, action)
       }
@@ -218,47 +207,19 @@ export default class OpenAPIGenerator {
     return true
   }
 
-  private async appendListAction(resource: Resource<any, any, any>) {
-    const route = this.jsonAPI.route('list')
-    if (route === false) { return }
-
-    // The list action offers an optional parameter `:label`. OpenAPI doesn't support optional parameters so
-    // we have to add a separate path for the optional case.
-
-    const path = route.path(resource)
-    const method = this.httpMethod(route.method)
-    const basePath = this.openAPIPath(path)
-    const pathWithoutLabel = this.openAPIPath(path.replace(/\/[^/]*:label\?/, ''))
-    const hasLabel = basePath !== pathWithoutLabel
-
-    const operation = this.operationForAction(resource, 'list')
-
-    this.appendOperation(basePath, method, {
-      ...operation,
-      parameters: [
-        ...hasLabel ? [pathParam('label', 'string')] : [],
-        ...operation.parameters ?? [],
-      ],
-    })
-    if (hasLabel) {
-      this.appendOperation(pathWithoutLabel, method, operation)
+  private appendAction(resource: Resource<any, any, any>, action: CommonActions) {
+    for (const route of this.jsonAPI.routes(action)) {
+      const path = this.openAPIPath(route.path(resource))
+      const method = this.httpMethod(route.method)
+      this.appendOperation(path, method, this.operationForAction(resource, action, route))
     }
   }
 
-  private appendAction(resource: Resource<any, any, any>, action: CommonActions) {
-    const route = this.jsonAPI.route(action)
-    if (route === false) { return }
-
-    const path = this.openAPIPath(route.path(resource))
-    const method = this.httpMethod(route.method)
-    this.appendOperation(path, method, this.operationForAction(resource, action))
-  }
-
-  private operationForAction(resource: Resource<any, any, any>, action: CommonActions): OpenAPIV3_1.OperationObject {
+  private operationForAction(resource: Resource<any, any, any>, action: CommonActions, route: JSONAPIRoute): OpenAPIV3_1.OperationObject {
     const okCode = action === 'create' ? '201' : '200'
-    const parameters = actionParameters[action].call(this, resource)
-    const requestBody = requestBodies[action].call(this, resource)
-    const responseBody = responseBodies[action].call(this, resource)
+    const parameters = actionParameters[action].call(this, resource, route)
+    const requestBody = requestBodies[action].call(this, resource, route)
+    const responseBody = responseBodies[action].call(this, resource, route)
 
     return {
       ...this.meta.actions?.[action],
@@ -268,16 +229,14 @@ export default class OpenAPIGenerator {
         ...parameter,
       })),
       requestBody: requestBody == null ? undefined : {
-        content: {[this.contentType]: requestBody},
+        content: this.media(requestBody),
       },
       responses: {
         [okCode]: {
           description: "Success",
 
           ...this.meta.responses?.[okCode],
-          content: {
-            [this.contentType]: responseBody,
-          },
+          content: this.media(responseBody),
         },
 
         ...builtInErrorCodes.reduce(
@@ -293,10 +252,15 @@ export default class OpenAPIGenerator {
       description: `Error ${status}`,
       ...this.meta.responses?.[status],
 
-      content: {
-        [this.contentType]: errorResponseBody(status),
-      },
+      content: this.media(errorResponseBody(status)),
     }
+  }
+
+  private media(content: OpenAPIV3_1.MediaTypeObject): Record<string, OpenAPIV3_1.MediaTypeObject> {
+    return this.jsonAPI.allowedContentTypes.reduce(
+      (acc, it) => ({...acc, [it]: content}), 
+      {}
+    )
   }
 
   // #endregion
@@ -348,9 +312,8 @@ export default class OpenAPIGenerator {
 
 }
 
-const defaultContentType = 'application/vnd.api+json'
 const metaDefaults = YAML.load(FS.readFileSync(Path.join(__dirname, 'defaults.yml'), 'utf-8')) as OpenAPIMeta
-const builtInErrorCodes = ['400', '401', '403', '404', '405', '409', '500']
+const builtInErrorCodes = ['400', '401', '403', '404', '405', '406', '409', '415', '500']
 
 const baseDocument: OpenAPIV3_1.Document = {
   openapi: '3.1.0',

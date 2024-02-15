@@ -7,8 +7,10 @@ import Pack from './Pack'
 import RequestContext from './RequestContext'
 import Resource from './Resource'
 import ResourceRegistry from './ResourceRegistry'
+import config from './config'
 import { Middleware } from './middleware'
 import { OpenAPIGenerator, OpenAPIGeneratorOptions } from './openapi'
+import { createExpressRouter } from './router'
 import {
   ActionOptions,
   CommonActions,
@@ -35,7 +37,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
       this,
       options.middleware == null ? [] : wrapArray(options.middleware)
     )
-    this.routes = {...defaultRoutes, ...this.options.router?.routes}
+    this._routes = {...defaultRoutes, ...this.options.router?.routes}
   }
 
   public readonly registry: ResourceRegistry<Model, Query, ID>
@@ -152,12 +154,27 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   // #endregion
 
-  // #region Routes
+  // #region Router & HTTP
 
-  private readonly routes: RouteMap
+  private readonly _routes: RouteMap
 
-  public route<M extends Model, Q extends Query, I extends ID>(action: CommonActions) {    
-    return this.routes[action]
+  public get allowedContentTypes() {
+    return this.options.router?.allowedContentTypes ?? config.allowedContentTypes
+  }
+
+  public get preferredContentType() {
+    return this.allowedContentTypes[0] ?? 'application/vnd+json'
+  }
+
+  /**
+   * Builds a router, optionally configuring JSON API for the router.
+   */
+  public router() {
+    return createExpressRouter(this)
+  }
+
+  public routes(action: CommonActions) {    
+    return this._routes[action]
   }
 
   public customCollectionRoute(resource: Resource<any, any, any>, name: string) {
@@ -174,8 +191,17 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   // #region OpenAPI
 
+  public get openAPIEnabled() {
+    return this.options.openAPI != null
+  }
+
   public async openAPISpec(context: RequestContext, options?: OpenAPIGeneratorOptions) {
-    const generator = new OpenAPIGenerator(this, context, {...this.options?.openAPI, ...options})
+    const mergedOptions: OpenAPIGeneratorOptions = {
+      ...(this.options?.openAPI === true ? {} : (this.options?.openAPI ?? {})),
+      ...options,
+    }
+
+    const generator = new OpenAPIGenerator(this, context, mergedOptions)
     return await generator.generate()
   }
 
@@ -186,43 +212,47 @@ export default abstract class JSONAPI<Model, Query, ID> {
 export interface JSONAPIOptions<M, Q, I> {
   middleware?: Middleware<M, Q, I>[]
   router?:     RouterOptions
-  openAPI?:    OpenAPIGeneratorOptions
+  openAPI?:    OpenAPIGeneratorOptions | true
 }
 
 export interface RouterOptions {
-  routes?:             Partial<RouteMap>
-  requestContext?:     (action: string, request: Request) => RequestContext | Promise<RequestContext>
-  openAPI?:            OpenAPIGenerator
-  enforceContentType?: boolean
+  routes?:         Partial<RouteMap>
+  requestContext?: (action: string, request: Request) => RequestContext | Promise<RequestContext>
+
+  allowedContentTypes?: string[]
+  validateContentType?: boolean
 }
 
 // #region Defaults
   
 const defaultRoutes: RouteMap = {
-  list: {
+  list: [{
     method: 'get',
-    path:   resource => `/${resource.plural}/::label?`,
-  },
-  show: {
+    path:   resource => `/${resource.plural}`,
+  }, {
+    method: 'get',
+    path:   resource => `/${resource.plural}/::label`,
+  }],
+  show: [{
     method: 'get',
     path:   resource => `/${resource.plural}/:id`,
-  },
-  create: {
+  }],
+  create: [{
     method: 'post',
     path:   resource => `/${resource.plural}`,
-  },
-  update: {
+  }],
+  update: [{
     method: 'patch',
     path:   resource => `/${resource.plural}/:id`,
-  },
-  replace: {
+  }],
+  replace: [{
     method: 'put',
     path:   resource => `/${resource.plural}/:id`,
-  },
-  delete: {
+  }],
+  delete: [{
     method: 'delete',
     path:   resource => `/${resource.plural}`,
-  },
+  }],
 
   customCollection: name => `/{{plural}}/${name}`,
   customDocument:   name => `/{{plural}}/:id/${name}`,

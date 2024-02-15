@@ -1,6 +1,7 @@
+import { parse as parseContentType } from 'content-type'
 import { NextFunction, Request, Response, Router } from 'express'
-import { kebabCase } from 'lodash'
-import { objectEntries } from 'ytil'
+import { isPlainObject, kebabCase } from 'lodash'
+import { objectEntries, objectKeys } from 'ytil'
 
 import APIError from './APIError'
 import JSONAPI from './JSONAPI'
@@ -8,13 +9,18 @@ import Pack from './Pack'
 import RequestContext from './RequestContext'
 import Resource from './Resource'
 import { CustomCollectionAction, CustomDocumentAction } from './ResourceConfig'
-import { negotiateContentType, validateContentType, validateRequest } from './pre'
 import { AnyResource } from './types'
 
-export function router<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
+export function createExpressRouter<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
   const router = Router()
 
   // #region Set up
+
+  const {
+    customCollectionAction,
+    customDocumentAction,
+    ...rest
+  } = buildActions(jsonAPI)
 
   const requestContext = jsonAPI.options.router?.requestContext ?? defaultRequestContext
 
@@ -26,12 +32,6 @@ export function router<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
   // #endregion
 
   // #region Resource mounting
-
-  const {
-    customCollectionAction,
-    customDocumentAction,
-    ...rest
-  } = buildActions(jsonAPI)
 
   function mountResource(resource: Resource<M, Q, I>) {
     // Mount custom actions. Do this first, as they are more specific than the regular actions. If an author
@@ -53,11 +53,10 @@ export function router<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
 
     // Mount regular actions.
     for (const [name, action] of objectEntries(rest)) {
-      const route = jsonAPI.route(name)
-      if (route === false) { continue }
-
-      const path = route.path(resource)
-      router[route.method](path, regularAction(resource, kebabCase(name), action))
+      for (const route of jsonAPI.routes(name)) {
+        const path = route.path(resource)
+        router[route.method](path, regularAction(resource, kebabCase(name), action))
+      }
     }
   }
 
@@ -66,12 +65,11 @@ export function router<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
   // #region Open API
 
   function mountOpenAPI() {
-    const {openAPI} = jsonAPI.options
-    if (openAPI == null) { return }
+    if (!jsonAPI.openAPIEnabled) { return }
 
     router.get('/openapi.json', async (req, res, next) => {
       try {
-        const context = await requestContext('openapi', req)
+        const context = await requestContext('__openapi__', req)
         res.json(await jsonAPI.openAPISpec(context))
       } catch (error: any) {
         next(error)
@@ -108,12 +106,86 @@ export function router<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
 
   async function preAction(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
     validateRequest(request)
+    validateAndNegotiateContentTypes(request, response)
 
-    if (jsonAPI.options.router?.enforceContentType !== false) {
-      negotiateContentType(request, response)
-      validateContentType(request)
-    }
     await resource.runBeforeHandlers(context)
+  }
+
+  // #endregion
+
+  // #region Request validation
+
+  function validateRequest(request: Request) {
+    validateRequestMethod(request)
+    validateRequestBody(request)
+  }
+  
+  function validateRequestMethod(request: Request) {
+    if (!['get', 'post', 'put', 'patch', 'delete'].includes(request.method.toLowerCase())) {
+      throw new APIError(405, "Invalid request method")
+    }
+  }
+  
+  function validateRequestBody(request: Request) {
+    if (bodyPresent(request) && !needsBody(request)) {
+      throw new APIError(400, 'Request body not allowed')
+    }
+  }
+  
+  function bodyPresent(request: Request): boolean {
+    if (!isPlainObject(request.body)) { return false }
+    if (objectKeys(request.body).length === 0) { return false }
+
+    return true
+  }
+  
+  function needsBody(request: Request) {
+    const method = request.method.toLowerCase()
+    return ['post', 'put', 'patch', 'delete'].includes(method)
+  }
+  
+  // #endregion
+
+  // #region Content type
+
+  function validateAndNegotiateContentTypes(request: Request, response: Response) {
+    // Get the content type of the request and validate it if necessary.
+    const requestContentType = getRequestContentType(request)
+    if (requestContentType != null && jsonAPI.options.router?.validateContentType !== false) {
+      if (!jsonAPI.allowedContentTypes.includes(requestContentType)) {
+        throw new APIError(415, "Unsupported content type")
+      }
+    }
+
+    const responseContentType = negotiateResponseContentType(request, requestContentType)
+    if (responseContentType == null) {
+      throw new APIError(406, "Requested content type not available.")
+    }
+  
+    response.contentType(responseContentType)
+  }
+  
+  function negotiateResponseContentType(request: Request, requestContentType: string | null): string | null {
+    const accept = request.get('Accept')
+
+    // If the accept header is set, make sure it's one of our allowed content types.
+    if (accept != null && accept !== '*/*') {
+      if (!jsonAPI.allowedContentTypes.includes(accept)) {
+        throw new APIError(406, "Requested content type not available.")
+      }
+    }
+    
+    // 1. Try to use the requested content type. Set it to null if nothing specific is accepted.
+    let contentType = accept === '*/*' ? null : accept
+
+    // 2. If it's not set, use the content type of the request. We've already validated it.
+    //    Finally, fall back to the preferred content type.
+    return contentType ?? requestContentType ?? jsonAPI.preferredContentType
+  }
+  
+  function getRequestContentType(request: Request) {
+    const contentType = request.get('Content-Type')
+    return contentType == null ? null : parseContentType(contentType).type
   }
 
   // #endregion
@@ -150,7 +222,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
 
       const responsePack = await resource.create(requestPack, adapter, context, options)
 
-      response.statusCode = 201
+      response.status(201)
       response.json(responsePack.serialize())
     },
 
@@ -161,6 +233,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
       const options = resource.extractActionOptions(context)
 
       const responsePack = await resource.replace(locator.id, requestPack, adapter, context, options)
+    
       response.json(responsePack.serialize())
     },
 
@@ -171,6 +244,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
       const options = resource.extractActionOptions(context)
 
       const responsePack = await resource.update(locator.id, requestPack, adapter, context, options)
+
       response.json(responsePack.serialize())
     },
 
@@ -179,6 +253,8 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
       const requestPack = request.body?.data != null ? Pack.deserialize(jsonAPI.registry, request.body) : new Pack<I>(null)
 
       const responsePack = await resource.delete(requestPack, adapter, context)
+
+      response.contentType(jsonAPI.allowedContentTypes[0])
       response.json(responsePack.serialize())
     },
 
@@ -191,6 +267,8 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
         const adapter = () => jsonAPI.adapter(resource, context)
         const options = resource.extractActionOptions(context)
         const pack = await spec.action.call(resource, requestPack, adapter, context, options)
+
+        response.contentType(jsonAPI.allowedContentTypes[0])
         response.json(pack.serialize())
       }
     },
@@ -206,6 +284,8 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
         const options = resource.extractActionOptions(context)
 
         const pack = await spec.action.call(resource, locator, requestPack, adapter, context, options)
+
+        response.contentType(jsonAPI.allowedContentTypes[0])
         response.json(pack.serialize())
       }
     },
@@ -218,8 +298,11 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
 // #region Types & defaults
 
 function defaultRequestContext(action: string, request: Request) {
-  const uri = new URL(request.originalUrl)
-  return new RequestContext(action, {...request.params, uri})
+  return new RequestContext(action, {
+    ...request.query,
+    ...request.params,
+    $request: request,
+  })
 }
 
 type ResourceActionHandler = (

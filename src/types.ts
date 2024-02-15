@@ -162,8 +162,15 @@ export type CommonActions =
   | 'replace' 
   | 'delete'
 
+export const CommonActions: {
+  all: CommonActions[] 
+} = {
+  all: ['list', 'show', 'create', 'update', 'replace', 'delete'],
+}
+
+  
 export type JSONAPIRoutesMap = {
-  [action in CommonActions]: false | JSONAPIRoute
+  [action in CommonActions]: JSONAPIRoute[]
 } & {
   customCollection: false | ((resource: Resource<any, any, any>, name: string) => string)
   customDocument:   false | ((resource: Resource<any, any, any>, name: string) => string)

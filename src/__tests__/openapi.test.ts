@@ -11,6 +11,9 @@ describe("openapi", () => {
       version: '3.1.0',
       info:    openapi.info,
     },
+    router: {
+      allowedContentTypes: ['application/vnd.api+json'],
+    },
   })
 
   beforeEach(() => {
@@ -591,7 +594,9 @@ describe("openapi", () => {
             '403':    expect.any(Object),
             '404':    expect.any(Object),
             '405':    expect.any(Object),
+            '406':    expect.any(Object),
             '409':    expect.any(Object),
+            '415':    expect.any(Object),
             '500':    expect.any(Object),
           })
         })

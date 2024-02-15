@@ -16,6 +16,8 @@ describe("scoping", () => {
 
   beforeEach(() => {
     jsonAPI.registry.modify<Child, Query, string>('children', cfg => {
+      cfg.attributes.parents = true
+
       cfg.scope = {
         query: (query, context) => {
           return {
@@ -90,8 +92,9 @@ describe("scoping", () => {
         id:         'greg',
         type:       'children',
         attributes: {
-          name: "Greg",
-          age:  10,
+          name:    "Greg",
+          age:     10,
+          parents: ['alice'],
         },
         relationships: {
           parents: {data: [{id: 'alice', type: 'parents'}]},
@@ -131,8 +134,9 @@ describe("scoping", () => {
         id:         'charlie',
         type:       'children',
         attributes: {
-          name: "Charlie 2",
-          age:  10,
+          name:    "Charlie 2",
+          age:     10,
+          parents: ['alice'],
         },
         relationships: {
           parents: {data: [{id: 'alice', type: 'parents'}]},
@@ -171,7 +175,11 @@ describe("scoping", () => {
       // Typically, the aggregation between a scope parent and its content is 1-N, so this shouldn't normally
       // be a problem. And if it is, any code can use the scope.ensure method to perform some custom logic.
 
-      const requestPack = jsonAPI.documentPack('children', 'charlie', {name: "Charlie 2", age: 10, parents: ['alice', 'bob']})
+      const requestPack = jsonAPI.documentPack('children', 'charlie', {
+        name:    "Charlie 2",
+        age:     10, 
+        parents: ['alice', 'bob'],
+      })
       const pack = await jsonAPI.update('children', 'charlie', requestPack, context('update', {parent: 'alice'}))
       expect(pack.serialize().data.relationships).toEqual({
         parents: {

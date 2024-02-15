@@ -1,3 +1,4 @@
+import { isFunction } from 'lodash'
 import Validator, {
   INVALID,
   ObjectSchema,
@@ -38,8 +39,17 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
   public param<T>(name: string & keyof P, type?: RequiredType<T, TypeOptions<T>>): T
   public param<T>(name: string & keyof P, type?: Type<T, any>): T | null
   public param(name: string & keyof P, type?: Type<any, any>) {
-    const value = this.params[name]
+    let value = this.params[name]
     if (type == null) { return value }
+
+    if (value == null && type.options.required === false) {
+      return null
+    }
+    if (value == null && type.options.default != null) {
+      value = isFunction(type.options.default)
+        ? type.options.default.call(null)
+        : type.options.default
+    }
 
     const coerced = this.validator.coerce(value, type, false)
     if (type.options.required !== false && coerced == null) {

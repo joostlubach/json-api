@@ -5,7 +5,6 @@ import { CommonActions } from '../types'
 export interface OpenAPIGeneratorOptions extends Partial<Omit<OpenAPIV3_1.Document, 'openapi'>> {
   version?:      OpenAPIV3_1.Document['openapi']
   metaDefaults?: OpenAPIMeta
-  contentType?:  string
 }
 
 export interface OpenAPIResourceMeta extends OpenAPIMeta {

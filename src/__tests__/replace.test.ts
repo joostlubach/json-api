@@ -94,9 +94,76 @@ describe("replace", () => {
     })
   })
 
-  it.todo("should not allow specifying an unconfigured attribute")
-  it.todo("should not allow specifying an unavailable attribute")
-  it.todo("should not allow specifying an read-only attribute")
-  it.todo("should allow specifying an read-only-except-on-write attribute")
+  it("should not allow specifying an unconfigured attribute", async () => {
+    const requestPack = jsonAPI.documentPack('parents', 'alice', {
+      name:    "Alice",
+      hobbies: ["soccer", "piano"],
+    })
+
+    await expectAsyncError(() => (
+      jsonAPI.replace('parents', 'alice', requestPack, context('replace'))
+    ), APIError, error => {
+      expect(error.status).toEqual(403)
+    })
+
+    expect((db('parents').get('alice') as any).hobbies).toBeUndefined()
+  })
+
+  it("should not allow specifying an unavailable attribute", async () => {
+    jsonAPI.registry.modify('parents', cfg => {
+      cfg.attributes.age = {if: () => false}
+    })
+
+    const requestPack = jsonAPI.documentPack('parents', 'alice', {
+      name: "Alice",
+      age:  40,
+    })
+
+    await expectAsyncError(() => (
+      jsonAPI.replace('parents', 'alice', requestPack, context('replace'))
+    ), APIError, error => {
+      expect(error.status).toEqual(403)
+    })
+
+    expect((db('parents').get('alice') as any).age).toEqual(30)
+  })
+
+  it("should not allow specifying a read-only attribute", async () => {
+    jsonAPI.registry.modify('parents', cfg => {
+      cfg.attributes.age = {writable: false}
+    })
+
+    const requestPack = jsonAPI.documentPack('parents', 'alice', {
+      name: "Alice",
+      age:  40,
+    })
+
+    await expectAsyncError(() => (
+      jsonAPI.replace('parents', 'alice', requestPack, context('replace'))
+    ), APIError, error => {
+      expect(error.status).toEqual(403)
+    })
+
+    expect((db('parents').get('alice') as any).age).toEqual(30)
+  })
+
+  it("should not allow specifying a writable-on-create attribute", async () => {
+    jsonAPI.registry.modify('parents', cfg => {
+      cfg.attributes.age = {writable: 'create'}
+    })
+
+    const requestPack = jsonAPI.documentPack('parents', 'alice', {
+      name: "Alice",
+      age:  40,
+    })
+
+    await expectAsyncError(() => (
+      jsonAPI.replace('parents', 'alice', requestPack, context('replace'))
+    ), APIError, error => {
+      expect(error.status).toEqual(403)
+    })
+
+    expect((db('parents').get('alice') as any).age).toEqual(30)
+  })
 
 })

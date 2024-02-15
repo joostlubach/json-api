@@ -10,6 +10,12 @@ describe("create", () => {
 
   const jsonAPI = mockJSONAPI()
 
+  beforeEach(() => {
+    jsonAPI.registry.modify('parents', cfg => {
+      cfg.attributes.age = {detail: true}
+    })
+  })
+
   it("should allow creating a document", async () => {
     const requestPack = jsonAPI.documentPack('parents', null, {
       name: "Alice",
@@ -68,10 +74,93 @@ describe("create", () => {
     })
   })
 
-  it.todo("should not allow specifying an unconfigured attribute")
-  it.todo("should not allow specifying an unavailable attribute")
-  it.todo("should not allow specifying an read-only attribute")
-  it.todo("should allow specifying an read-only-except-on-write attribute")
-  it.todo("should allow specifying an explicit ID")
+  it("should not allow specifying an unconfigured attribute", async () => {
+    const requestPack = jsonAPI.documentPack('parents', null, {
+      name:    "Alice",
+      hobbies: ["soccer", "piano"],
+    })
+
+    await expectAsyncError(() => (
+      jsonAPI.create('parents', requestPack, context('create'))
+    ), APIError, error => {
+      expect(error.status).toEqual(403)
+    })
+
+    expect(db('parents').get('alice')).toBeNull()
+  })
+
+  it("should not allow specifying an unavailable attribute", async () => {
+    jsonAPI.registry.modify('parents', cfg => {
+      cfg.attributes.age = {if: () => false}
+    })
+
+    const requestPack = jsonAPI.documentPack('parents', null, {
+      name: "Alice",
+      age:  40,
+    })
+
+    await expectAsyncError(() => (
+      jsonAPI.create('parents', requestPack, context('create'))
+    ), APIError, error => {
+      expect(error.status).toEqual(403)
+    })
+
+    expect(db('parents').get('alice')).toBeNull()
+  })
+
+  it("should not allow specifying a read-only attribute", async () => {
+    jsonAPI.registry.modify('parents', cfg => {
+      cfg.attributes.age = {writable: false}
+    })
+
+    const requestPack = jsonAPI.documentPack('parents', null, {
+      name: "Alice",
+      age:  40,
+    })
+
+    await expectAsyncError(() => (
+      jsonAPI.create('parents', requestPack, context('create'))
+    ), APIError, error => {
+      expect(error.status).toEqual(403)
+    })
+
+    expect(db('parents').get('alice')).toBeNull()
+  })
+
+  it("should allow specifying a writable-on-create attribute", async () => {
+    jsonAPI.registry.modify('parents', cfg => {
+      cfg.attributes.age = {writable: 'create'}
+    })
+
+    const requestPack = jsonAPI.documentPack('parents', null, {
+      name: "Alice",
+      age:  40,
+    })
+
+    await jsonAPI.create('parents', requestPack, context('create'))
+    expect(db('parents').get('alice')).toEqual({
+      id:   'alice',
+      name: "Alice",
+      age:  40,
+    })
+  })
+
+  it("should allow specifying an explicit ID", async () => {
+    jsonAPI.registry.modify('parents', cfg => {
+      cfg.attributes.age = {writable: 'create'}
+    })
+
+    const requestPack = jsonAPI.documentPack('parents', 'ALICE', {
+      name: "Alice",
+      age:  40,
+    })
+
+    await jsonAPI.create('parents', requestPack, context('create'))
+    expect(db('parents').get('ALICE')).toEqual({
+      id:   "ALICE",
+      name: "Alice",
+      age:  40,
+    })
+  })
 
 })
