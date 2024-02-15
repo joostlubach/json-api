@@ -1,3 +1,4 @@
+import bodyParser from 'body-parser'
 import { parse as parseContentType } from 'content-type'
 import { NextFunction, Request, Response, Router } from 'express'
 import { isPlainObject, kebabCase } from 'lodash'
@@ -23,6 +24,10 @@ export function createExpressRouter<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router 
   } = buildActions(jsonAPI)
 
   const requestContext = jsonAPI.options.router?.requestContext ?? defaultRequestContext
+
+  router.use(bodyParser.json({
+    type: jsonAPI.allowedContentTypes,
+  }))
 
   for (const resource of jsonAPI.registry.all()) {
     mountResource(resource)
@@ -105,8 +110,8 @@ export function createExpressRouter<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router 
   }
 
   async function preAction(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
-    validateRequest(request)
     validateAndNegotiateContentTypes(request, response)
+    validateRequest(request)
 
     await resource.runBeforeHandlers(context)
   }
@@ -127,7 +132,12 @@ export function createExpressRouter<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router 
   }
   
   function validateRequestBody(request: Request) {
-    if (bodyPresent(request) && !needsBody(request)) {
+    const present = bodyPresent(request)
+    const needs = needsBody(request)
+    if (!present && needs) {
+      throw new APIError(400, 'Request body required')
+    }
+    if (present && !needs) {
       throw new APIError(400, 'Request body not allowed')
     }
   }
@@ -204,6 +214,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
 
       const pack = await resource.list(params, adapter, context, options)
       response.json(pack.serialize())
+      response.end()
     },
 
     async show(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
@@ -213,6 +224,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
 
       const pack = await resource.show(locator, adapter, context, options)
       response.json(pack.serialize())
+      response.end()
     },
 
     async create(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
@@ -224,6 +236,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
 
       response.status(201)
       response.json(responsePack.serialize())
+      response.end()
     },
 
     async replace(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
@@ -235,6 +248,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
       const responsePack = await resource.replace(locator.id, requestPack, adapter, context, options)
     
       response.json(responsePack.serialize())
+      response.end()
     },
 
     async update(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
@@ -246,6 +260,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
       const responsePack = await resource.update(locator.id, requestPack, adapter, context, options)
 
       response.json(responsePack.serialize())
+      response.end()
     },
 
     async delete(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
@@ -256,6 +271,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
 
       response.contentType(jsonAPI.allowedContentTypes[0])
       response.json(responsePack.serialize())
+      response.end()
     },
 
     customCollectionAction<R extends Resource<M, Q, I>>(spec: CustomCollectionAction<M, Q, I>) {
@@ -270,6 +286,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
 
         response.contentType(jsonAPI.allowedContentTypes[0])
         response.json(pack.serialize())
+        response.end()
       }
     },
 
@@ -287,6 +304,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
 
         response.contentType(jsonAPI.allowedContentTypes[0])
         response.json(pack.serialize())
+        response.end()
       }
     },
 

@@ -2,6 +2,7 @@ import { context, MockAdapter, mockJSONAPI } from './mock'
 
 import { OpenAPIV3_1 } from 'openapi-types'
 
+import { OpenAPIGeneratorOptions } from '../openapi'
 import * as openapi from './openapi'
 
 describe("openapi", () => {
@@ -1027,9 +1028,9 @@ describe("openapi", () => {
       })
 
       it("should use the proper ID type in Linkage", async () => {
-        jsonAPI.options.openAPI ??= {}
-        jsonAPI.options.openAPI.metaDefaults ??= {}
-        jsonAPI.options.openAPI.metaDefaults.idType = 'integer'
+        const options: OpenAPIGeneratorOptions = (jsonAPI.options.openAPI = {}) as OpenAPIGeneratorOptions
+        options.metaDefaults ??= {}
+        options.metaDefaults.idType = 'integer'
 
         const spec = await jsonAPI.openAPISpec(context('__openapi__'))        
         expect(spec.components?.schemas?.['Linkage']).toEqual({
