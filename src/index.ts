@@ -9,7 +9,6 @@ export { default as Resource } from './Resource'
 export { default as ResourceRegistry } from './ResourceRegistry'
 export { type default as Adapter } from './Adapter'
 export * from './Adapter'
-export * from './router'
 
 export * from './ResourceConfig'
 export * from './defineUtil'

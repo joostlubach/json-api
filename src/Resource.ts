@@ -163,7 +163,7 @@ export default class Resource<Model, Query, ID> {
     if (attribute.get != null) {
       return await attribute.get.call(this, model, context)
     } else if (adapter.getAttribute != null) {
-      return await adapter.getAttribute(model, name)
+      return await adapter.getAttribute(model, name, attribute)
     } else {
       return (model as any)[name]
     }
@@ -188,7 +188,7 @@ export default class Resource<Model, Query, ID> {
     if (attribute.set != null) {
       await attribute.set.call(this, model, value, context)
     } else if (adapter.setAttribute != null) {
-      await adapter.setAttribute(model, name, value)
+      await adapter.setAttribute(model, name, value, attribute)
     } else {
       (model as any)[name] = value
     }
@@ -265,7 +265,7 @@ export default class Resource<Model, Query, ID> {
     } else if (!relationship.plural && relationship.get != null) {
       return coerce(await relationship.get.call(this, model, context))
     } else if (adapter.getRelationship != null) {
-      return coerce(await adapter.getRelationship(model, name))
+      return coerce(await adapter.getRelationship(model, name, relationship))
     } else {
       return coerce((model as any)[name])
     }
@@ -471,7 +471,7 @@ export default class Resource<Model, Query, ID> {
     return pack
   }
 
-  private async collectionPack(models: Model[], includedModels: Model[] | undefined, offset: number | undefined, total: number | undefined, adapter: Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}) {
+  public async collectionPack(models: Model[], includedModels: Model[] | undefined, offset: number | undefined, total: number | undefined, adapter: Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}) {
     const collection = await this.modelsToCollection(models, adapter, context, {
       detail: options.detail,
     })
@@ -484,7 +484,7 @@ export default class Resource<Model, Query, ID> {
     return pack
   }
 
-  private async documentPack(model: Model, includedModels: Model[] | undefined, adapter: Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}) {
+  public async documentPack(model: Model, includedModels: Model[] | undefined, adapter: Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}) {
     const document = await this.modelToDocument(model, adapter, context, {
       detail: options.detail,
     })

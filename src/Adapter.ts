@@ -2,6 +2,7 @@
 import { OpenAPIV3_1 } from 'openapi-types'
 
 import Pack from './Pack'
+import { AttributeConfig, RelationshipConfig } from './ResourceConfig'
 import {
   ActionOptions,
   Linkage,
@@ -40,11 +41,10 @@ export default interface Adapter<Model, Query, ID> {
 
   emptyModel(id: ID | null): Model | Promise<Model>
   
-  getAttribute?(model: Model, name: string): any | Promise<any>
-  getRelationship?(model: Model, name: string): Relationship<ID> | ID | Linkage<ID> | Promise<ID | Linkage<ID>>
+  getAttribute?(model: Model, name: string, attribute: AttributeConfig<Model, Query, ID>): any | Promise<any>
+  setAttribute?(model: Model, name: string, value: any, attribute: AttributeConfig<Model, Query, ID>): void | Promise<void>
 
-  setAttribute?(model: Model, name: string, value: any): void | Promise<void>
-  setRelationship?(model: Model, name: string, relationship: Relationship<ID>): void | Promise<void>
+  getRelationship?(model: Model, name: string, relationship: RelationshipConfig<Model, Query, ID>): Relationship<ID> | ID | Linkage<ID> | Promise<ID | Linkage<ID>>
 
   // #endregion
 

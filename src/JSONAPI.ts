@@ -3,6 +3,7 @@ import { isObject } from 'lodash'
 import { wrapArray } from 'ytil'
 
 import Adapter from './Adapter'
+import Collection from './Collection'
 import Pack from './Pack'
 import RequestContext from './RequestContext'
 import Resource from './Resource'
@@ -125,6 +126,20 @@ export default abstract class JSONAPI<Model, Query, ID> {
   // #endregion
 
   // #region Serialization
+
+  public async documentPack(model: Model, context: RequestContext, options: DocumentPackOptions<Model> = {}) {
+    const resource = this.registry.resourceForModel(this.nameForModel(model))
+    const adapter = this.adapter(resource, context)
+    return await resource.documentPack(model, undefined, adapter, context, options)
+  }
+
+  public async collectionPack(models: Model[], context: RequestContext, options: DocumentPackOptions<Model> = {}) {
+    if (models.length === 0) { return new Pack(new Collection()) }
+
+    const resource = this.registry.resourceForModel(this.nameForModel(models[0]))
+    const adapter = this.adapter(resource, context)
+    return await resource.collectionPack(models, undefined, undefined, undefined, adapter, context, options)
+  }
 
   public async modelsToCollection(resourceType: string, models: Model[], context: RequestContext, options: ModelsToCollectionOptions = {}) {
     const resource = this.registry.get(resourceType)
@@ -260,3 +275,8 @@ const defaultRoutes: RouteMap = {
 
 // #endregion
 
+
+export interface DocumentPackOptions<M> {
+  detail?:   boolean
+  included?: M[]
+}
