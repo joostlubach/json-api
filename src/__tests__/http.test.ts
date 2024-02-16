@@ -63,14 +63,14 @@ describe("http", () => {
 
       expect(routes).toEqual(expect.arrayContaining([
         'GET /parents',
-        'GET /parents/::label',
+        'GET /parents/::family-a',
+        'GET /parents/::family-b',
         'GET /parents/:id',
         'POST /parents',
         'PUT /parents/:id',
         'PATCH /parents/:id',
         'DELETE /parents',
         'GET /children',
-        'GET /children/::label',
         'GET /children/:id',
         'POST /children',
         'PUT /children/:id',
@@ -146,7 +146,7 @@ describe("http", () => {
 
   })
 
-  describe("GET /parents/::label", () => {
+  describe("GET /parents/:family-a", () => {
 
     beforeEach(() => {
       setUp()
@@ -154,7 +154,7 @@ describe("http", () => {
       spy.mockReturnValue(Promise.resolve(mockPack()))
     })
 
-    it("should call list() for parents and serialize its output", async () => {
+    it("should call list() for parents with the label param filled out, and serialize its output", async () => {
       const response = await request.get('/parents/:family-a')
       expect(response.status).toEqual(200)
       expect(response.text).toEqual('"🗿"')

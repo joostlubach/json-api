@@ -4,6 +4,7 @@ import { slugify } from 'ytil'
 import { Filters, Sort } from '../types'
 
 export interface Parent {
+  family:   string
   id:       string
   name:     string
   age:      number
@@ -12,6 +13,7 @@ export interface Parent {
 }
 
 export interface Child {
+  family:  string
   id:      string
   name:    string
   age:     number
@@ -131,19 +133,19 @@ function db(which: string) {
 namespace db {
   export function seed() {
     createFamily([
-      {name: "Alice", age: 30},
-      {name: "Bob", age: 40},
+      {family: 'a', name: "Alice", age: 30},
+      {family: 'a', name: "Bob", age: 40},
     ], [
-      {name: "Charlie", age: 10},
-      {name: "Dolores", age: 20},
+      {family: 'a', name: "Charlie", age: 10},
+      {family: 'a', name: "Dolores", age: 20},
     ])
     
     createFamily([
-      {name: "Eve", age: 50},
-      {name: "Frank", age: 60},
+      {family: 'b', name: "Eve", age: 50},
+      {family: 'b', name: "Frank", age: 60},
     ], [
-      {name: "Isaac", age: 15},
-      {name: "Henry", age: 25},
+      {family: 'b', name: "Isaac", age: 15},
+      {family: 'b', name: "Henry", age: 25},
     ])
   }
 

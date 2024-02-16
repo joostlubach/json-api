@@ -62,6 +62,10 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
     return coerced
   }
 
+  public setParams(params: Partial<P>) {
+    Object.assign(this.params, params)
+  }
+
   /**
    * Validates all parameters at once. It will assert a specific type, so you don't have to use the
    * `type` parameter in the {@link param} method.

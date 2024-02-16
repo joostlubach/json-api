@@ -1,4 +1,3 @@
-import { Request } from 'express'
 import { isObject } from 'lodash'
 import { wrapArray } from 'ytil'
 
@@ -11,17 +10,18 @@ import ResourceRegistry from './ResourceRegistry'
 import config from './config'
 import { Middleware } from './middleware'
 import { OpenAPIGenerator, OpenAPIGeneratorOptions } from './openapi'
-import { createExpressRouter } from './router'
+import { createExpressRouter, defaultRoutes } from './router'
 import {
   ActionOptions,
   CommonActions,
   DocumentLocator,
-  JSONAPIRoutesMap as RouteMap,
   Linkage,
   ListParams,
   ModelsToCollectionOptions,
   ModelToDocumentOptions,
   RetrievalActionOptions,
+  RouteMap,
+  RouterOptions,
 } from './types'
 
 /**
@@ -188,8 +188,8 @@ export default abstract class JSONAPI<Model, Query, ID> {
     return createExpressRouter(this)
   }
 
-  public routes(action: CommonActions) {    
-    return this._routes[action]
+  public routes(resource: Resource<Model, Query, ID>, action: CommonActions) {    
+    return this._routes[action](resource)
   }
 
   public customCollectionRoute(resource: Resource<any, any, any>, name: string) {
@@ -229,51 +229,6 @@ export interface JSONAPIOptions<M, Q, I> {
   router?:     RouterOptions
   openAPI?:    OpenAPIGeneratorOptions | true
 }
-
-export interface RouterOptions {
-  routes?:         Partial<RouteMap>
-  requestContext?: (action: string, request: Request) => RequestContext | Promise<RequestContext>
-
-  allowedContentTypes?: string[]
-  validateContentType?: boolean
-}
-
-// #region Defaults
-  
-const defaultRoutes: RouteMap = {
-  list: [{
-    method: 'get',
-    path:   resource => `/${resource.plural}`,
-  }, {
-    method: 'get',
-    path:   resource => `/${resource.plural}/::label`,
-  }],
-  show: [{
-    method: 'get',
-    path:   resource => `/${resource.plural}/:id`,
-  }],
-  create: [{
-    method: 'post',
-    path:   resource => `/${resource.plural}`,
-  }],
-  update: [{
-    method: 'patch',
-    path:   resource => `/${resource.plural}/:id`,
-  }],
-  replace: [{
-    method: 'put',
-    path:   resource => `/${resource.plural}/:id`,
-  }],
-  delete: [{
-    method: 'delete',
-    path:   resource => `/${resource.plural}`,
-  }],
-
-  customCollection: name => `/{{plural}}/${name}`,
-  customDocument:   name => `/{{plural}}/:id/${name}`,
-}
-
-// #endregion
 
 
 export interface DocumentPackOptions<M> {

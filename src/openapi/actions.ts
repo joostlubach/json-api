@@ -8,7 +8,6 @@ import { pathParam, queryArrayParam, queryParam } from './objects'
 
 export const actionParameters = {
   list: (resource: Resource<any, any, any>, route: JSONAPIRoute) => sparse([
-    route.path(resource).includes(':label') && pathParam('label', 'string'),
     queryParam('filters', {type: 'object'}, false),
     queryParam('search', {type: 'string'}, false),
     queryArrayParam('sorts', {$ref: '#/components/schemas/Sort'}, false),

@@ -1,6 +1,8 @@
+import { Request } from 'express'
 import { isArray, isPlainObject } from 'lodash'
 import { objectKeys, objectValues } from 'ytil'
 
+import RequestContext from './RequestContext'
 import Resource from './Resource'
 
 // #region General types
@@ -154,6 +156,14 @@ export interface ValidationError {
 
 // #region Router config
 
+export interface RouterOptions {
+  routes?:         Partial<RouteMap>
+  requestContext?: (action: string, request: Request) => RequestContext | Promise<RequestContext>
+
+  allowedContentTypes?: string[]
+  validateContentType?: boolean
+}
+
 export type CommonActions = 
   | 'list' 
   | 'show' 
@@ -169,16 +179,17 @@ export const CommonActions: {
 }
 
   
-export type JSONAPIRoutesMap = {
-  [action in CommonActions]: JSONAPIRoute[]
+export type RouteMap = {
+  [action in CommonActions]: (resource: Resource<any, any, any>) => JSONAPIRoute[]
 } & {
   customCollection: false | ((resource: Resource<any, any, any>, name: string) => string)
   customDocument:   false | ((resource: Resource<any, any, any>, name: string) => string)
 }
 
 export interface JSONAPIRoute {
-  method: Method
-  path:   (resource: Resource<any, any, any>) => string
+  method:  Method
+  path:    string
+  params?: Record<string, any>
 }
 
 export type Method =

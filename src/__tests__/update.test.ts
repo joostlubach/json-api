@@ -15,7 +15,7 @@ describe("update", () => {
   })
 
   it("should allow updating a document", async () => {
-    const requestPack = jsonAPI.documentPack('parents', 'alice', {age: 40})
+    const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {age: 40})
     const pack = await jsonAPI.update('parents', 'alice', requestPack, context('update'))
     expect(pack.serialize()).toEqual({
       data: {
@@ -37,6 +37,7 @@ describe("update", () => {
 
     expect(db('parents').get('alice')).toEqual({
       id:       'alice',
+      family:   'a',
       name:     "Alice",
       age:      40,
       spouse:   'bob',
@@ -45,7 +46,7 @@ describe("update", () => {
   })
 
   it("should require an ID", async () => {
-    const requestPack = jsonAPI.documentPack('parents', null, {})
+    const requestPack = jsonAPI.documentRequestPack('parents', null, {})
     await expectAsyncError(() => (
       jsonAPI.update('parents', 'alice', requestPack, context('update'))
     ), APIError, error => {
@@ -54,7 +55,7 @@ describe("update", () => {
   })
 
   it("should not accept a mismatch between pack type and document", async () => {
-    const requestPack = jsonAPI.documentPack('children', 'alice', {})
+    const requestPack = jsonAPI.documentRequestPack('children', 'alice', {})
     await expectAsyncError(() => (
       jsonAPI.update('parents', 'alice', requestPack, context('update'))
     ), APIError, error => {
@@ -63,7 +64,7 @@ describe("update", () => {
   })
 
   it("should not accept a mismatch between locator and document", async () => {
-    const requestPack = jsonAPI.documentPack('parents', 'alice', {})
+    const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {})
     await expectAsyncError(() => (
       jsonAPI.update('parents', 'bob', requestPack, context('update'))
     ), APIError, error => {
@@ -72,7 +73,7 @@ describe("update", () => {
   })
 
   it("should not allow replacing a document that does not exist", async () => {
-    const requestPack = jsonAPI.documentPack('parents', 'zachary', {})
+    const requestPack = jsonAPI.documentRequestPack('parents', 'zachary', {})
     await expectAsyncError(() => (
       jsonAPI.update('parents', 'zachary', requestPack, context('update'))
     ), APIError, error => {
@@ -91,7 +92,7 @@ describe("update", () => {
   })
 
   it("should not allow specifying an unconfigured attribute", async () => {
-    const requestPack = jsonAPI.documentPack('parents', 'alice', {
+    const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {
       name:    "Alice",
       hobbies: ["soccer", "piano"],
     })
@@ -110,7 +111,7 @@ describe("update", () => {
       cfg.attributes.age = {if: () => false}
     })
 
-    const requestPack = jsonAPI.documentPack('parents', 'alice', {
+    const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {
       name: "Alice",
       age:  40,
     })
@@ -129,7 +130,7 @@ describe("update", () => {
       cfg.attributes.age = {writable: false}
     })
 
-    const requestPack = jsonAPI.documentPack('parents', 'alice', {
+    const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {
       name: "Alice",
       age:  40,
     })
@@ -148,7 +149,7 @@ describe("update", () => {
       cfg.attributes.age = {writable: 'create'}
     })
 
-    const requestPack = jsonAPI.documentPack('parents', 'alice', {
+    const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {
       name: "Alice",
       age:  40,
     })

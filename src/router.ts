@@ -10,7 +10,7 @@ import Pack from './Pack'
 import RequestContext from './RequestContext'
 import Resource from './Resource'
 import { CustomCollectionAction, CustomDocumentAction } from './ResourceConfig'
-import { AnyResource } from './types'
+import { AnyResource, JSONAPIRoute, RouteMap } from './types'
 
 export function createExpressRouter<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
   const router = Router()
@@ -58,9 +58,12 @@ export function createExpressRouter<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router 
 
     // Mount regular actions.
     for (const [name, action] of objectEntries(rest)) {
-      for (const route of jsonAPI.routes(name)) {
-        const path = route.path(resource)
-        router[route.method](path, regularAction(resource, kebabCase(name), action))
+      for (const route of jsonAPI.routes(resource, name)) {
+        const modifyContext = (context: RequestContext) => {
+          context.setParams(route.params ?? {})
+        }
+
+        router[route.method](route.path, regularAction(resource, kebabCase(name), action, modifyContext))
       }
     }
   }
@@ -86,10 +89,11 @@ export function createExpressRouter<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router 
 
   // #region Action wrapper
 
-  function regularAction(resource: Resource<M, Q, I>, name: string, action: ResourceActionHandler) {
+  function regularAction(resource: Resource<M, Q, I>, name: string, action: ResourceActionHandler, modifyContext?: (context: RequestContext) => void) {
     return async (request: Request, response: Response, next: NextFunction) => {
       try {
         const context = await requestContext(name, request)
+        modifyContext?.(context)
         await preAction(resource, request, response, context)
         await action(resource, request, response, context)
       } catch (error: any) {
@@ -314,6 +318,44 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
 // #endregion
 
 // #region Types & defaults
+
+// #region Defaults
+  
+export const defaultRoutes: RouteMap = {
+  list: resource => [{
+    method: 'get',
+    path:   `/${resource.plural}`,
+  }, ...objectKeys(resource.config.labels ?? {}).map((label): JSONAPIRoute => ({
+    method: 'get',
+    path:   `/${resource.plural}/::${label}`,
+    params: {label},
+  }))],
+  show: resource => [{
+    method: 'get',
+    path:   `/${resource.plural}/:id`,
+  }],
+  create: resource => [{
+    method: 'post',
+    path:   `/${resource.plural}`,
+  }],
+  update: resource => [{
+    method: 'patch',
+    path:   `/${resource.plural}/:id`,
+  }],
+  replace: resource => [{
+    method: 'put',
+    path:   `/${resource.plural}/:id`,
+  }],
+  delete: resource => [{
+    method: 'delete',
+    path:   `/${resource.plural}`,
+  }],
+
+  customCollection: name => `/{{plural}}/${name}`,
+  customDocument:   name => `/{{plural}}/:id/${name}`,
+}
+
+// #endregion
 
 function defaultRequestContext(action: string, request: Request) {
   return new RequestContext(action, {

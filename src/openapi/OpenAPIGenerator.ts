@@ -208,8 +208,8 @@ export default class OpenAPIGenerator {
   }
 
   private appendAction(resource: Resource<any, any, any>, action: CommonActions) {
-    for (const route of this.jsonAPI.routes(action)) {
-      const path = this.openAPIPath(route.path(resource))
+    for (const route of this.jsonAPI.routes(resource, action)) {
+      const path = this.openAPIPath(route.path)
       const method = this.httpMethod(route.method)
       this.appendOperation(path, method, this.operationForAction(resource, action, route))
     }
@@ -268,7 +268,10 @@ export default class OpenAPIGenerator {
   // #region Path & method translation
 
   private openAPIPath(path: string) {
-    return path.replace(/:([\w]+)\??/g, '{$1}')
+    return path
+      .replace(/::/g, '__##__')
+      .replace(/:([\w]+)\??/g, '{$1}')
+      .replace(/__##__/g, ':')
   }
 
   private httpMethod(method: Method): OpenAPIV3_1.HttpMethods {

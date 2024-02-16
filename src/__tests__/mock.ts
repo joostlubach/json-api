@@ -52,7 +52,7 @@ export class MockJSONAPI extends JSONAPI<Model, Query, string> {
     return Pack.deserialize<Model, Query, string>(this.registry, {data: null})
   }
 
-  public documentPack(type: string, id: string | null, attributes: Record<string, any>) {
+  public documentRequestPack(type: string, id: string | null, attributes: Record<string, any>) {
     return Pack.deserialize<Model, Query, string>(this.registry, {
       data: {
         type,
@@ -87,6 +87,11 @@ export class MockJSONAPI extends JSONAPI<Model, Query, string> {
       openapi:   openapi.parents,
 
       summary: "A parent in a family.",
+
+      labels: {
+        'family-a': query => ({...query, filters: {...query.filters, family: 'a'}}),
+        'family-b': query => ({...query, filters: {...query.filters, family: 'b'}}),
+      },
 
       attributes: {
         name: {

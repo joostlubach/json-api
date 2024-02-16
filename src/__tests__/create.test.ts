@@ -17,7 +17,7 @@ describe("create", () => {
   })
 
   it("should allow creating a document", async () => {
-    const requestPack = jsonAPI.documentPack('parents', null, {
+    const requestPack = jsonAPI.documentRequestPack('parents', null, {
       name: "Alice",
       age:  30,
     })
@@ -49,7 +49,7 @@ describe("create", () => {
   })
 
   it("should not accept a mismatch between pack type and document", async () => {
-    const requestPack = jsonAPI.documentPack('children', null, {
+    const requestPack = jsonAPI.documentRequestPack('children', null, {
       name: "Eve",
       age:  10,
     })
@@ -75,7 +75,7 @@ describe("create", () => {
   })
 
   it("should not allow specifying an unconfigured attribute", async () => {
-    const requestPack = jsonAPI.documentPack('parents', null, {
+    const requestPack = jsonAPI.documentRequestPack('parents', null, {
       name:    "Alice",
       hobbies: ["soccer", "piano"],
     })
@@ -94,7 +94,7 @@ describe("create", () => {
       cfg.attributes.age = {if: () => false}
     })
 
-    const requestPack = jsonAPI.documentPack('parents', null, {
+    const requestPack = jsonAPI.documentRequestPack('parents', null, {
       name: "Alice",
       age:  40,
     })
@@ -113,7 +113,7 @@ describe("create", () => {
       cfg.attributes.age = {writable: false}
     })
 
-    const requestPack = jsonAPI.documentPack('parents', null, {
+    const requestPack = jsonAPI.documentRequestPack('parents', null, {
       name: "Alice",
       age:  40,
     })
@@ -132,7 +132,7 @@ describe("create", () => {
       cfg.attributes.age = {writable: 'create'}
     })
 
-    const requestPack = jsonAPI.documentPack('parents', null, {
+    const requestPack = jsonAPI.documentRequestPack('parents', null, {
       name: "Alice",
       age:  40,
     })
@@ -150,7 +150,7 @@ describe("create", () => {
       cfg.attributes.age = {writable: 'create'}
     })
 
-    const requestPack = jsonAPI.documentPack('parents', 'ALICE', {
+    const requestPack = jsonAPI.documentRequestPack('parents', 'ALICE', {
       name: "Alice",
       age:  40,
     })
