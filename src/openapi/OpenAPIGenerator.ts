@@ -1,9 +1,10 @@
 import * as FS from 'fs-extra'
+import { singularize } from 'inflected'
 import * as YAML from 'js-yaml'
-import { camelCase, cloneDeep, mapValues, upperFirst } from 'lodash'
+import { camelCase, cloneDeep, get, isPlainObject, mapValues, merge, upperFirst } from 'lodash'
 import { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types'
 import * as Path from 'path'
-import { objectKeys, sparse } from 'ytil'
+import { deepMapValues, objectKeys, sparse } from 'ytil'
 
 import Adapter from '../Adapter'
 import JSONAPI from '../JSONAPI'
@@ -32,17 +33,17 @@ export default class OpenAPIGenerator {
   ) {
     this.reset()
 
-    this.meta = {
+    this.defaults = {
       ...metaDefaults,
-      ...this.options.metaDefaults,
+      ...this.options.defaults,
     }
   }
 
   private document!: OpenAPIV3_1.Document
-  private meta:      OpenAPIMeta = {}
+  private defaults:  OpenAPIMeta = {}
 
   private get idType() {
-    return this.meta.idType ?? 'string'
+    return this.defaults.idType ?? 'string'
   }
 
   // #region Generation
@@ -51,24 +52,24 @@ export default class OpenAPIGenerator {
     this.reset()
 
     for (const resource of this.jsonAPI.registry.all()) {
-      await this.appendResource(resource)
+      await this.emitResource(resource)
     }
 
-    this.addSchema('AnyResponseDocument', this.buildDocumentSchema(null, true, true))
-    this.addSchema('BulkSelector', bulkSelector())
-    this.addSchema('Relationship', relationship())
-    this.addSchema('SingularRelationship', singularRelationship())
-    this.addSchema('PluralRelationship', pluralRelationship())
-    this.addSchema('Linkage', linkage(this.idType))
-    this.addSchema('Error', error())
-    this.addSchema('ValidationError', error({$ref: '#/components/schemas/ValidationErrorDetail'}))
-    this.addSchema('ValidationErrorDetail', validationErrorDetail())
+    this.appendSchema('AnyResponseDocument', this.buildDocumentSchema(null, true, true))
+    this.appendSchema('BulkSelector', bulkSelector())
+    this.appendSchema('Relationship', relationship())
+    this.appendSchema('SingularRelationship', singularRelationship())
+    this.appendSchema('PluralRelationship', pluralRelationship())
+    this.appendSchema('Linkage', linkage(this.idType))
+    this.appendSchema('Error', error())
+    this.appendSchema('ValidationError', error({$ref: '#/components/schemas/ValidationErrorDetail'}))
+    this.appendSchema('ValidationErrorDetail', validationErrorDetail())
 
     return this.document
   }
 
   private reset() {
-    const {version, metaDefaults: defaults, ...rest} = this.options
+    const {version, defaults: defaults, ...rest} = this.options
     this.document = cloneDeep({...baseDocument, ...rest})
 
     if (version != null) {
@@ -80,26 +81,26 @@ export default class OpenAPIGenerator {
 
   // #region Resources
 
-  private async appendResource(resource: Resource<any, any, any>) {
+  private async emitResource(resource: Resource<any, any, any>) {
     for (const action of CommonActions.all) {
       if (this.actionEnabled(resource, action)) {
-        this.appendAction(resource, action)
+        this.emitAction(resource, action)
       }
     }
 
-    // Now append all schemas for this resource.
-    await this.appendResourceSchemas(resource)
+    // Now emit all schemas for this resource.
+    await this.emitResourceSchemas(resource)
   }
 
-  private async appendResourceSchemas(resource: Resource<any, any, any>) {
+  private async emitResourceSchemas(resource: Resource<any, any, any>) {
     const prefix = this.schemaPrefix(resource)
     const adapter = this.jsonAPI.adapter(resource, this.context)
 
-    this.addSchema(`${prefix}CreateDocument`, this.buildDocumentSchema(resource, false, false))
-    this.addSchema(`${prefix}UpdateDocument`, this.buildDocumentSchema(resource, true, false))
-    this.addSchema(`${prefix}ResponseDocument`, this.buildDocumentSchema(resource, true, true))
-    this.addSchema(`${prefix}Attributes`, await this.buildAttributesSchema(resource, adapter))
-    this.addSchema(`${prefix}Relationships`, this.buildRelationshipsSchema(resource, adapter))
+    this.appendSchema(`${prefix}CreateDocument`, this.buildDocumentSchema(resource, false, false))
+    this.appendSchema(`${prefix}UpdateDocument`, this.buildDocumentSchema(resource, true, false))
+    this.appendSchema(`${prefix}ResponseDocument`, this.buildDocumentSchema(resource, true, true))
+    this.appendSchema(`${prefix}Attributes`, await this.buildAttributesSchema(resource, adapter))
+    this.appendSchema(`${prefix}Relationships`, this.buildRelationshipsSchema(resource, adapter))
   }
 
   private buildDocumentSchema(resource: Resource<any, any, any> | null, requireID: boolean, relationships: boolean): OpenAPIV3_1.SchemaObject {
@@ -207,7 +208,7 @@ export default class OpenAPIGenerator {
     return true
   }
 
-  private appendAction(resource: Resource<any, any, any>, action: CommonActions) {
+  private emitAction(resource: Resource<any, any, any>, action: CommonActions) {
     for (const route of this.jsonAPI.routes(resource, action)) {
       const path = this.openAPIPath(route.path)
       const method = this.httpMethod(route.method)
@@ -221,39 +222,45 @@ export default class OpenAPIGenerator {
     const requestBody = requestBodies[action].call(this, resource, route)
     const responseBody = responseBodies[action].call(this, resource, route)
 
-    return {
-      ...this.meta.actions?.[action],
-      ...resource.config.openapi?.actions?.[action],
-      parameters: parameters.map(parameter => ({
-        ...this.meta.actions?.[action]?.parameters?.[parameter.name],
-        ...parameter,
-      })),
-      requestBody: requestBody == null ? undefined : {
-        content: this.media(requestBody),
-      },
-      responses: {
-        [okCode]: {
-          description: "Success",
+    // Special case if there is a label parameter: use its meta-info.
+    const metaKey = route.params?.label != null ? `label.${route.params.label}` : `actions.${action}`
 
-          ...this.meta.responses?.[okCode],
-          content: this.media(responseBody),
+    return merge(
+      {},
+      this.meta(metaKey, resource),
+      
+      {
+        parameters: parameters.map(parameter => merge(
+          {},
+          this.meta(`actions.${action}.parameters.${parameter.name}`, resource),
+          parameter,
+        )),
+        requestBody: requestBody == null ? undefined : {
+          content: this.media(requestBody),
         },
+        responses: {
+          [okCode]: merge(
+            {description: "Success"},
 
-        ...builtInErrorCodes.reduce(
-          (acc, code) => ({...acc, [code]: this.errorResponse(code)}),
-          {}
-        ),
+            this.meta(`responses.${okCode}`, resource),
+            {content: this.media(responseBody)},
+          ),
+
+          ...builtInErrorCodes.reduce(
+            (acc, code) => ({...acc, [code]: this.errorResponse(resource, code)}),
+            {}
+          ),
+        },
       },
-    }    
+    ) 
   }
 
-  private errorResponse(status: string): OpenAPIV3_1.ResponseObject {
-    return {
-      description: `Error ${status}`,
-      ...this.meta.responses?.[status],
-
-      content: this.media(errorResponseBody(status)),
-    }
+  private errorResponse(resource: Resource<any, any, any>, status: string): OpenAPIV3_1.ResponseObject {
+    return merge(
+      {description: `Error ${status}`},
+      this.meta<any>(`responses.${status}`, resource),
+      {content: this.media(errorResponseBody(status))},
+    )
   }
 
   private media(content: OpenAPIV3_1.MediaTypeObject): Record<string, OpenAPIV3_1.MediaTypeObject> {
@@ -291,10 +298,6 @@ export default class OpenAPIGenerator {
 
   // #endregion
 
-  // #region Requests and responses
-
-  // #endregion
-
   // #region Spec operations
 
   public appendOperation(path: string, method: OpenAPIV3_1.HttpMethods, config: OpenAPIV3_1.OperationObject) {
@@ -305,11 +308,48 @@ export default class OpenAPIGenerator {
     ;(pathObject as any)[method] = config
   }
 
-  public addSchema(name: string, schema: OpenAPIV3_1.SchemaObject) {
+  public appendSchema(name: string, schema: OpenAPIV3_1.SchemaObject) {
     this.document.components ??= {}
     this.document.components.schemas ??= {}
     this.document.components.schemas[name] = schema
   } 
+
+  // #endregion
+
+  // #region Meta
+
+  private meta<T>(key: string, resource: Resource<any, any, any> | null, interpolate: boolean = true): T {
+    let meta: T | undefined
+    if (resource != null) {
+      meta = get(resource.config.openapi ?? {}, key)
+    }
+    if (meta == null) {
+      meta = get(this.defaults, key)
+    } else if (isPlainObject(meta)) {
+      meta = merge({}, get(this.defaults, key), meta)
+    }
+
+    if (interpolate && resource != null) {
+      return deepMapValues(meta, (value: any) => {
+        if (typeof value !== 'string') { return value }
+        if (!value.includes('{{')) { return value }
+
+        return value
+          .replace(/\{\{singular\}\}/g, () => this.singular(resource))
+          .replace(/\{\{plural\}\}/g, () => this.plural(resource)) as T
+      }) as T
+    } else {
+      return meta as T
+    }
+  }
+
+  private singular(resource: Resource<any, any, any>) {
+    return this.meta<string>('singular', resource) ?? singularize(resource.type)
+  }
+
+  private plural(resource: Resource<any, any, any>) {
+    return this.meta<string>('plural', resource) ?? resource.type
+  }
 
   // #endregion
 

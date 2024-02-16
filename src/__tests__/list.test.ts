@@ -61,6 +61,21 @@ describe("list", () => {
     
     })
 
+    it("should use query defaults", async () => {
+      jsonAPI.registry.modify('parents', cfg => {
+        cfg.query = query => ({
+          ...query,
+          filters: {
+            ...query.filters,
+            age: (age: number) => age >= 50,
+          },
+        })
+      })
+
+      const pack = await jsonAPI.list('parents', {}, context('list'))
+      expect(pack.serialize().data.map((it: any) => it.id)).toEqual(['eve', 'frank'])
+    })
+
     it("should not include detail attributes", async () => {
       jsonAPI.registry.modify('parents', cfg => {
         cfg.attributes.age = {

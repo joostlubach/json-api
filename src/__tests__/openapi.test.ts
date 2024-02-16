@@ -3,14 +3,36 @@ import { context, MockAdapter, mockJSONAPI } from './mock'
 import { OpenAPIV3_1 } from 'openapi-types'
 
 import { OpenAPIGeneratorOptions } from '../openapi'
-import * as openapi from './openapi'
 
 describe("openapi", () => {
+
+  const info = {
+    "title":       "Mock API",
+    "version":     "1.0.0",
+    "description": "This is a mock API for testing purposes. It is not a real API and should not be used in production.",
+    "contact":     {"email": "joostlubach@gmail.com"},
+
+    "license": {
+      "name": "Apache 2.0",
+      "url":  "https://www.apache.org/licenses/LICENSE-2.0.html",
+    },
+  }
 
   const jsonAPI = mockJSONAPI({
     openAPI: {
       version: '3.1.0',
-      info:    openapi.info,
+      info,
+      
+      defaults: {
+        actions: {
+          list: {
+            summary: "Lists all {{plural}} in the system.",
+          },
+          create: {
+            summary: "Create a new {{singular}} in the system.",
+          },
+        },
+      },
     },
     router: {
       allowedContentTypes: ['application/vnd.api+json'],
@@ -27,7 +49,7 @@ describe("openapi", () => {
     const spec = await jsonAPI.openAPISpec(context('__openapi__'))
     expect(spec).toEqual({
       openapi: '3.1.0',
-      info:    openapi.info,
+      info:    info,
 
       paths:      expect.any(Object),
       components: expect.any(Object),
@@ -588,7 +610,7 @@ describe("openapi", () => {
       })
   
     })
-  
+
     describe("all actions", () => {
   
       describe.each`
@@ -624,6 +646,16 @@ describe("openapi", () => {
   
     })
   
+  })
+
+  describe("texts", () => {
+
+    it("should interpolate {{singular}} and {{plural}} in literal texts", async () => {
+      const spec = await jsonAPI.openAPISpec(context('__openapi__'))
+      expect(spec.paths?.['/parents']?.get?.summary).toEqual("Lists all parents in the system.")
+      expect(spec.paths?.['/parents']?.post?.summary).toEqual("Create a new parent in the system.")
+    })
+
   })
 
   describe("components", () => {
@@ -922,51 +954,28 @@ describe("openapi", () => {
       it("should expose a BulkSelector", async () => {
         const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.components?.schemas?.['BulkSelector']).toEqual({
-          anyOf: [{
-            type: 'object',
-
-            properties: {
-              data: {
-                type:  'array',
-                items: {
-                  $ref: '#/components/schemas/Linkage',
+          type: 'object',
+  
+          properties: {
+            data: {
+              type:  'array',
+              items: {
+                $ref: '#/components/schemas/Linkage',
+              },
+            },
+            meta: {
+              type: 'object',
+        
+              properties: {
+                filters: {
+                  type: 'object',
+                },
+                search: {
+                  type: 'string',
                 },
               },
             },
-            required: ['data'],
-          }, {
-            type: 'object',
-
-            properties: {
-              meta: {
-                type: 'object',
-                
-                properties: {
-                  filters: {
-                    type: 'object',
-                  },
-                },
-                required: ['filters'],
-              },
-            },
-            required: ['meta'],
-          }, {
-            type: 'object',
-
-            properties: {
-              meta: {
-                type: 'object',
-                
-                properties: {
-                  search: {
-                    type: 'string',
-                  },
-                },
-                required: ['search'],
-              },
-            },
-            required: ['meta'],
-          }],
+          },
         })
       })
 
@@ -1047,8 +1056,8 @@ describe("openapi", () => {
 
       it("should use the proper ID type in Linkage", async () => {
         const options: OpenAPIGeneratorOptions = (jsonAPI.options.openAPI = {}) as OpenAPIGeneratorOptions
-        options.metaDefaults ??= {}
-        options.metaDefaults.idType = 'integer'
+        options.defaults ??= {}
+        options.defaults.idType = 'integer'
 
         const spec = await jsonAPI.openAPISpec(context('__openapi__'))        
         expect(spec.components?.schemas?.['Linkage']).toEqual({

@@ -12,6 +12,7 @@ import {
   Meta,
   OpenAPIResourceMeta,
   Relationship,
+  RetrievalActionOptions,
 } from './types'
 
 export type ResourceConfigMap = Record<string, ResourceConfig<any, any, any>>
@@ -35,12 +36,6 @@ export interface ResourceConfig<Model, Query, ID> {
 
   /** Any literal meta / texts used in OpenAPI generation. */
   openapi?: OpenAPIResourceMeta
-
-  /** Alias for `openapi.summary`. */
-  summary?: string
-
-  /** Alias for `openapi.description`. */
-  description?: string
 
   /** If true, this resource won't be resolved as the default resource for the given model class. */
   auxiliary?: boolean
@@ -67,6 +62,9 @@ export interface ResourceConfig<Model, Query, ID> {
 
   /** A scope configuration. */
   scope?: ScopeConfig<Model, Query, ID>
+
+  /** Query defaults. */
+  query?: QueryModifier<Model, Query, ID>
 
   /** A search configuration. */
   search?: SearchModifier<Model, Query, ID>
@@ -144,12 +142,6 @@ export interface AttributeConfig<M, Q, I> {
   if?:       AttributeIf<M, Q, I>
   get?:      AttributeGetter<M, Q, I>
   set?:      AttributeSetter<M, Q, I>
-
-  /** An OpenAPI summary for this attribute. */
-  summary?: string
-
-  /** An OpenAPI description for this attribute. */
-  description?: string
 }
 
 export type AttributeIf<M, Q, I> = (this: Resource<M, Q, I>, item: M, context: RequestContext) => boolean | Promise<boolean>
@@ -176,12 +168,6 @@ interface RelationshipConfigCommon<M, Q, I> {
   detail?:   boolean
   if?:       (this: Resource<M, Q, I>, model: M, context: RequestContext) => boolean | Promise<boolean>
   include?:  RelationshipIncludeConfig
-
-  /** An OpenAPI summary for this relationship. */
-  summary?: string
-
-  /** An OpenAPI description for this relationship. */
-  description?: string
 }
 
 export interface RelationshipIncludeConfig {
@@ -208,10 +194,11 @@ export type PluralRelationshipConfig<M, Q, I> = RelationshipConfigCommon<M, Q, I
 // #region Scope & search
 
 export interface ScopeConfig<M, Q, I> {
-  query:  ScopeFunction<M, Q, I>
+  query:  QueryModifier<M, Q, I>
   ensure: EnsureFunction<M, Q, I>
 }
-export type ScopeFunction<M, Q, I> = (this: Resource<M, Q, I>, query: Q, context: RequestContext) => Q | Promise<Q>
+
+export type QueryModifier<M, Q, I> = (this: Resource<M, Q, I>, query: Q, context: RequestContext) => Q | Promise<Q>
 export type EnsureFunction<M, Q, I> = (this: Resource<M, Q, I>, model: M, context: RequestContext) => void | Promise<void>
 
 export type ScopeOption<M, Q, I> = (this: Resource<M, Q, I>, request: Request) => any
@@ -222,7 +209,7 @@ export type LabelModifier<M, Q, I> = (this: Resource<M, Q, I>, query: Q, context
 export type WildcardLabelModifier<M, Q, I> = (this: Resource<M, Q, I>, label: string, query: Q, context: RequestContext) => Q
 
 export type SingletonMap<Q, M> = Record<string, Singleton<Q, M>>
-export type Singleton<Q, M> = (query: Q, context: RequestContext) => Promise<GetResponse<M>>
+export type Singleton<Q, M> = (query: Q, context: RequestContext, options: RetrievalActionOptions) => Promise<GetResponse<M>>
 
 export type SortMap<Q> = Record<string, SortModifier<Q>>
 export type SortModifier<Q> = (query: Q, direction: 1 | -1, context: RequestContext) => Q

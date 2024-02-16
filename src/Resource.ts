@@ -51,6 +51,7 @@ export default class Resource<Model, Query, ID> {
 
   public async listQuery(adapter: Adapter<Model, Query, ID>, params: Partial<ListParams> = {}, context: RequestContext) {
     let query = adapter.query()
+    query = await this.applyQueryDefaults(query, context)
     query = await this.applyScope(query, context)
 
     if (params.filters != null) {
@@ -92,6 +93,11 @@ export default class Resource<Model, Query, ID> {
     return query
   }
 
+
+  public async applyQueryDefaults(query: Query, context: RequestContext): Promise<Query> {
+    if (this.config.query == null) { return query }
+    return await this.config.query.call(this, query, context)
+  }
 
   public async applyScope(query: Query, context: RequestContext): Promise<Query> {
     if (this.config.scope == null) { return query }
@@ -509,7 +515,7 @@ export default class Resource<Model, Query, ID> {
     return new Collection(documents)
   }
 
-  private async getModel(locator: DocumentLocator<ID>, adapter: Adapter<Model, Query, ID>, context: RequestContext): Promise<LoadResponse<Model>> {
+  private async getModel(locator: DocumentLocator<ID>, adapter: Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}): Promise<LoadResponse<Model>> {
     const query = await this.listQuery(adapter, {}, context)
     if ('singleton' in locator) {
       const singleton = this.config.singletons?.[locator.singleton]
@@ -517,14 +523,14 @@ export default class Resource<Model, Query, ID> {
         throw new APIError(404, `Singleton \`${locator.singleton}\` (of ${this.type}) not found`)
       }
   
-      const response = await singleton(query, context)
+      const response = await singleton(query, context, options)
       if (response.model == null) {
         throw new APIError(404, `Singleton \`${locator.singleton}\` (of ${this.type}) not found`)
       }
   
       return response as GetResponse<Model> & {model: Model}
     } else {
-      const response = await adapter.get(query, locator.id, {})
+      const response = await adapter.get(query, locator.id, options)
       if (response.model == null) {
         throw new APIError(404, `Resource \`${this.type}\` with ID \`${locator.id}\` not found`)
       }
@@ -698,21 +704,23 @@ export default class Resource<Model, Query, ID> {
       throw new APIError(400, "Mix of explicit linkages and filters/search specified")
     }
 
+    const selector: BulkSelector<ID> = {}
     if (data != null) {
-      return {ids: this.extractBulkSelectorIDs(data)}
+      selector.ids = this.extractBulkSelectorIDs(data)
     } else {
       if (filters != null && !isPlainObject(filters)) {
         throw new APIError(400, "Node `meta.filters`: must be a plain object")
       }
+
       if (search != null && typeof search !== 'string') {
         throw new APIError(400, "Node `meta.search`: must be a string")
       }
 
-      return {
-        filters,
-        search,
-      }
+      selector.filters = filters
+      selector.search = search
     }
+
+    return selector
   }
 
   private extractBulkSelectorIDs(data: any): ID[] {

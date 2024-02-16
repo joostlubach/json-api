@@ -15,7 +15,6 @@ import {
   Sort,
 } from '../types'
 import db, { Model, Query } from './db'
-import * as openapi from './openapi'
 
 export function mockJSONAPI(options?: JSONAPIOptions<Model, Query, string>) {
   return dynamicProxy(() => new MockJSONAPI(options))
@@ -83,40 +82,43 @@ export class MockJSONAPI extends JSONAPI<Model, Query, string> {
   
   public reset() {
     this.registry.register('parents', {
-      modelName: 'Parent',
-      openapi:   openapi.parents,
+      // """
+      // Parents in the family. There are two nuclear families, A & B. Each have two parents and two
+      // children. 
+      // """
 
-      summary: "A parent in a family.",
+      modelName: 'Parent',
 
       labels: {
+        // """Lists only members from family A."""
         'family-a': query => ({...query, filters: {...query.filters, family: 'a'}}),
+        // """Lists only members from family B."""
         'family-b': query => ({...query, filters: {...query.filters, family: 'b'}}),
       },
 
       attributes: {
-        name: {
-          summary: "The first name of the parent.",
-        },
-        age: {
-          summary: "The age of the parent in years.",
-        },
+        // """The name of the parent."""
+        name: true,
+
+        // """The age of the parent in years."""
+        age: true,
       },
       relationships: {
+        // """The spouse of this parent."""
         spouse: {
-          type:    'parents',
-          plural:  false,
-          summary: "The spouse of this parent.",
+          type:   'parents',
+          plural: false,
         },
+
+        // """The children of this parent."""
         children: {
-          type:    'children',
-          plural:  true,
-          summary: "This parent's children.",
+          type:   'children',
+          plural: true,
         },
       },
     })
     this.registry.register('children', {
       modelName: 'Child',
-      openapi:   openapi.children,
 
       attributes: {
         name: true,

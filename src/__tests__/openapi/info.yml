@@ -1,9 +1,0 @@
-title: Mock API
-version: 1.0.0
-description: |-
-  This is a mock API for testing purposes. It is not a real API and should not be used in production.
-contact:
-  email: joostlubach@gmail.com
-license:
-  name: Apache 2.0
-  url: https://www.apache.org/licenses/LICENSE-2.0.html

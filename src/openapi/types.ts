@@ -1,10 +1,11 @@
 import { OpenAPIV3_1 } from 'openapi-types'
+import { DeepPartial } from 'ytil'
 
 import { CommonActions } from '../types'
 
 export interface OpenAPIGeneratorOptions extends Partial<Omit<OpenAPIV3_1.Document, 'openapi'>> {
-  version?:      OpenAPIV3_1.Document['openapi']
-  metaDefaults?: OpenAPIMeta
+  version?:  OpenAPIV3_1.Document['openapi']
+  defaults?: OpenAPIMeta
 }
 
 export interface OpenAPIResourceMeta extends OpenAPIMeta {
@@ -14,8 +15,8 @@ export interface OpenAPIResourceMeta extends OpenAPIMeta {
 
 export interface OpenAPIMeta {
   idType?:  'string' | 'integer'
-  actions?:  Record<CommonActions, Omit<OpenAPIV3_1.OperationObject, 'requestBody' | 'responses'> & {
-    parameters?: Record<string, Partial<OpenAPIV3_1.ParameterObject>>
+  actions?:  Partial<Record<CommonActions, DeepPartial<Omit<OpenAPIV3_1.OperationObject, 'requestBody' | 'responses'>>> & {
+    parameters?: Record<string, DeepPartial<OpenAPIV3_1.ParameterObject>>
   }>
-  responses?: Record<string, Omit<OpenAPIV3_1.ResponseObject, 'content'>>
+  responses?: Record<string, DeepPartial<Omit<OpenAPIV3_1.ResponseObject, 'content'>>>
 }

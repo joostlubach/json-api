@@ -2,51 +2,28 @@ import { OpenAPIV3_1 } from 'openapi-types'
 import { sparse } from 'ytil'
 
 export const bulkSelector = (): OpenAPIV3_1.SchemaObject => ({
-  anyOf: [{
-    type: 'object',
+  type: 'object',
   
-    properties: {
-      data: {
-        type:  'array',
-        items: {
-          $ref: '#/components/schemas/Linkage',
-        },
+  properties: {
+    data: {
+      type:  'array',
+      items: {
+        $ref: '#/components/schemas/Linkage',
       },
     },
-    required: ['data'],
-  }, {
-    type: 'object',
-  
-    properties: {
-      meta: {
-        type: 'object',
+    meta: {
+      type: 'object',
 
-        properties: {
-          filters: {
-            type: 'object',
-          },
+      properties: {
+        filters: {
+          type: 'object',
         },
-        required: ['filters'],
+        search: {
+          type: 'string',
+        },
       },
     },
-    required: ['meta'],
-  }, {
-    type: 'object',
-  
-    properties: {
-      meta: {
-        type: 'object',
-
-        properties: {
-          search: {
-            type: 'string',
-          },
-        },
-        required: ['search'],
-      },
-    },
-    required: ['meta'],
-  }],
+  },
 })
 
 export const queryParam = (name: string, schema: OpenAPIV3_1.ParameterObject['schema'], required: boolean = true): OpenAPIV3_1.ParameterObject => ({
