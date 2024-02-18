@@ -40,6 +40,9 @@
     "test": "NODE_ENV=test jest"
   },
   "dependencies": {
+    "acorn": "^8.11.3",
+    "acorn-typescript": "^1.4.13",
+    "acorn-walk": "^8.3.2",
     "body-parser": "^1.20.2",
     "chalk": "^3.0.0",
     "content-type": "^1.0.2",

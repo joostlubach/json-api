@@ -82,35 +82,23 @@ export class MockJSONAPI extends JSONAPI<Model, Query, string> {
   
   public reset() {
     this.registry.register('parents', {
-      // """
-      // Parents in the family. There are two nuclear families, A & B. Each have two parents and two
-      // children. 
-      // """
-
       modelName: 'Parent',
 
       labels: {
-        // """Lists only members from family A."""
         'family-a': query => ({...query, filters: {...query.filters, family: 'a'}}),
-        // """Lists only members from family B."""
         'family-b': query => ({...query, filters: {...query.filters, family: 'b'}}),
       },
 
       attributes: {
-        // """The name of the parent."""
         name: true,
-
-        // """The age of the parent in years."""
-        age: true,
+        age:  true,
       },
       relationships: {
-        // """The spouse of this parent."""
         spouse: {
           type:   'parents',
           plural: false,
         },
 
-        // """The children of this parent."""
         children: {
           type:   'children',
           plural: true,

@@ -1,8 +1,8 @@
-import { context, MockAdapter, mockJSONAPI } from './mock'
+import { context, MockAdapter, mockJSONAPI } from '../../__tests__/mock'
 
 import { OpenAPIV3_1 } from 'openapi-types'
 
-import { OpenAPIGeneratorOptions } from '../openapi'
+import { OpenAPIGeneratorOptions } from '../types'
 
 describe("openapi", () => {
 

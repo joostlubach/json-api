@@ -24,22 +24,13 @@ export default class ResourceRegistry<Model, Query, ID> {
   // #region Registering
 
   public register<M extends Model, Q extends Query, I extends ID>(type: string, resourceConfig: ResourceConfig<M, Q, I>) {
-    this.openAPIEnrich(resourceConfig)
     runMiddleware(this.middleware, resourceConfig)
 
     const resource = new Resource<M, Q, I>(this.jsonAPI, type, resourceConfig)
     this.resources.set(type, resource)
 
     config.logger.debug(chalk`-> Registered resource {yellow ${resource.plural}}\n`)
-  }
-
-  private openAPIEnrich(config: ResourceConfig<any, any, any>) {
-    const tmp = {} as {stack: string}
-    Error.captureStackTrace(tmp, this.openAPIEnrich)
-
-    const caller = tmp.stack.split('\n')[2].trim()
-    const [file, line, col] = caller.match(/\(([^:]+):(\d+):(\d+)\)/)!.slice(1)
-    console.log(file, line, col)
+    return resource
   }
 
   public modify<M extends Model, Q extends Query, I extends ID>(type: string, fn: (config: ResourceConfig<M, Q, I>) => void) {
@@ -49,6 +40,10 @@ export default class ResourceRegistry<Model, Query, ID> {
 
   public drop(name: string) {
     this.resources.delete(name)
+  }
+
+  public clear() {
+    this.resources.clear()
   }
 
   // #endregion

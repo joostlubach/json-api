@@ -1,8 +1,14 @@
 /* eslint-disable no-console */
+import { DocTextReaderOptions } from './openapi'
 
 export interface Config {
   defaultPageSize:     number
   allowedContentTypes: string[]
+
+  openapi: {
+    enabled: boolean,
+    doctext: Required<DocTextReaderOptions>
+  }
 
   logger: Logger
 }
@@ -17,6 +23,13 @@ export interface Logger {
 const config: Config = {
   defaultPageSize:     50,
   allowedContentTypes: ['application/vnd.api+json', 'application/json'],
+
+  openapi: {
+    enabled: true,
+    doctext: {
+      marker: '"""',
+    },
+  },
 
   logger: {
     debug: (...args) => process.env.DEBUG ? console.debug(...args) : undefined,
