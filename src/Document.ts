@@ -1,4 +1,4 @@
-import { isPlainObject } from 'lodash'
+import { isPlainObject, mapValues } from 'lodash'
 import { objectEntries, objectKeys } from 'ytil'
 
 import APIError from './APIError'
@@ -15,11 +15,18 @@ export default class Document<ID> {
     public meta: Meta = {},
   ) {}
 
+  public toLinkage(): Linkage<ID> {
+    if (this.id == null) {
+      throw new APIError(500, "Cannot create linkage: document has no ID")
+    }
+    return {type: this.resource.type, id: this.id}
+  }
+
   public serialize(): any {
     const serialized: Record<string, any> = {
       id:            this.id,
       type:          this.resource.type,
-      attributes:    this.attributes,
+      attributes:    mapValues(this.attributes, (val, name) => this.serializeAttribute(name, val)),
       relationships: this.relationships,
     }
 
@@ -30,11 +37,11 @@ export default class Document<ID> {
     return serialized
   }
 
-  public toLinkage(): Linkage<ID> {
-    if (this.id == null) {
-      throw new APIError(500, "Cannot create linkage: document has no ID")
-    }
-    return {type: this.resource.type, id: this.id}
+  private serializeAttribute(name: string, value: any) {
+    const attribute = this.resource.attributes[name]
+    if (attribute?.serialize == null) { return value }
+
+    return attribute.serialize(value)
   }
 
   public static canDeserialize(serialized: Record<string, any>) {

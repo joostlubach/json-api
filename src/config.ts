@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { DocTextReaderOptions } from './openapi'
+import { DoctextOptions } from './openapi'
 
 export interface Config {
   defaultPageSize:     number
@@ -7,7 +7,7 @@ export interface Config {
 
   openapi: {
     enabled: boolean,
-    doctext: Required<DocTextReaderOptions>
+    doctext: Required<DoctextOptions>
   }
 
   logger: Logger

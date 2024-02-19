@@ -515,7 +515,7 @@ export default class Resource<Model, Query, ID> {
     return new Collection(documents)
   }
 
-  private async getModel(locator: DocumentLocator<ID>, adapter: Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}): Promise<LoadResponse<Model>> {
+  public async getModel(locator: DocumentLocator<ID>, adapter: Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}): Promise<LoadResponse<Model>> {
     const query = await this.listQuery(adapter, {}, context)
     if ('singleton' in locator) {
       const singleton = this.config.singletons?.[locator.singleton]

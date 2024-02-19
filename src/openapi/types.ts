@@ -11,6 +11,9 @@ export interface OpenAPIGeneratorOptions extends Partial<Omit<OpenAPIV3_1.Docume
 export interface OpenAPIResourceMeta extends OpenAPIMeta {
   singular?: string
   plural?:   string
+
+  attributes?:    Record<string, DeepPartial<OpenAPIV3_1.SchemaObject>>
+  relationships?: Record<string, DeepPartial<OpenAPIV3_1.SchemaObject>>
 }
 
 export interface OpenAPIMeta {

@@ -137,11 +137,12 @@ export interface ResourceConfig<Model, Query, ID> {
 
 export type AttributeMap<M, Q, I> = Record<string, AttributeConfig<M, Q, I> | true>
 export interface AttributeConfig<M, Q, I> {
-  writable?: boolean | AttributeIf<M, Q, I> | 'create'
-  detail?:   boolean
-  if?:       AttributeIf<M, Q, I>
-  get?:      AttributeGetter<M, Q, I>
-  set?:      AttributeSetter<M, Q, I>
+  writable?:  boolean | AttributeIf<M, Q, I> | 'create'
+  detail?:    boolean
+  if?:        AttributeIf<M, Q, I>
+  get?:       AttributeGetter<M, Q, I>
+  set?:       AttributeSetter<M, Q, I>
+  serialize?: (value: any) => any
 }
 
 export type AttributeIf<M, Q, I> = (this: Resource<M, Q, I>, item: M, context: RequestContext) => boolean | Promise<boolean>
