@@ -178,9 +178,9 @@ export default class OpenAPIGenerator {
     return {
       type: 'object',
 
-      properties: mapValues(relationships, key => ({
+      properties: mapValues(relationships, (relationship, key) => ({
         ...this.meta<any>(`relationships.${key}`, resource, true),
-        ...this.buildRelationshipSchema(key),
+        ...this.buildRelationshipSchema(relationship),
       })),
       required: objectKeys(relationships).filter(key => {
         const relationship = relationships[key]

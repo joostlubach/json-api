@@ -10,7 +10,7 @@ export default function doctext<M, Q, I>(config: ResourceConfig<M, Q, I>, option
   Error.captureStackTrace(tmp, doctext)
 
   const caller = tmp.stack.split('\n')[1].trim()
-  const match = caller.match(/([^<>:"\\|?*()]+?):(\d+):(\d+)/)
+  const match = caller.match(/(\/[^<>:"\\|?*()]+?):(\d+):(\d+)/)
   if (match == null) {
     jsonapi_config.logger.warn("Could not determine the caller of doctext()", {
       caller,
