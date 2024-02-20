@@ -2,6 +2,7 @@ import chalk from 'chalk'
 
 import APIError from './APIError'
 import JSONAPI from './JSONAPI'
+import RequestContext from './RequestContext'
 import Resource from './Resource'
 import { ResourceConfig } from './ResourceConfig'
 import config from './config'
@@ -11,7 +12,8 @@ export default class ResourceRegistry<Model, Query, ID> {
 
   constructor(
     jsonAPI: JSONAPI<Model, Query, ID>,
-    middleware: Middleware<Model, Query, ID>[] = []
+    middleware: Middleware<Model, Query, ID>[] = [],
+    private readonly options: ResourceRegistryOptions = {}
   ) {
     this.jsonAPI = jsonAPI
     this.middleware = middleware
@@ -27,6 +29,10 @@ export default class ResourceRegistry<Model, Query, ID> {
     runMiddleware(this.middleware, resourceConfig)
     
     const resource = new Resource<M, Q, I>(this.jsonAPI, type, resourceConfig)
+    if (this.options.validate !== false) {
+      const adapter = this.jsonAPI.adapter(resource, new RequestContext('validate', {}))
+      resource.validate(adapter)
+    }
     this.resources.set(type, resource)
 
     config.logger.debug(chalk`-> Registered resource {yellow ${resource.plural}}\n`)
@@ -78,4 +84,11 @@ export default class ResourceRegistry<Model, Query, ID> {
 
   // #endregion
 
+}
+
+export interface ResourceRegistryOptions {
+  /**
+   * Whether to validate resources when they are registered (default=`true`).
+   */
+  validate?: boolean
 }

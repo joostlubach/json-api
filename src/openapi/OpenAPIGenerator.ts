@@ -6,6 +6,7 @@ import { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types'
 import * as Path from 'path'
 import { deepMapValues, objectKeys, sparse } from 'ytil'
 
+import APIError from '../APIError'
 import Adapter from '../Adapter'
 import JSONAPI from '../JSONAPI'
 import RequestContext from '../RequestContext'
@@ -155,12 +156,14 @@ export default class OpenAPIGenerator {
     const properties: Record<string, OpenAPIV3_1.SchemaObject> = {}
     const required: string[] = []
     await Promise.all(objectKeys(resource.config.attributes).map(async name => {
-      const schema = {
-        ...await this.meta<any>(`attributes.${name}`, resource, true),
-        ...await adapter.openAPISchemaForAttribute(name),
+      const schema = await adapter.openAPISchemaForAttribute?.(name, this.document)
+      if (schema == null) {
+        throw new APIError(509, `No schema found for attribute \`${resource.type}:${name}`)
       }
-      properties[name] = schema
-      if (await adapter.isAttributeRequired(name)) {
+
+      const defaults = await this.meta<any>(`attributes.${name}`, resource, true)
+      properties[name] = {...defaults, ...schema}
+      if (await adapter.isAttributeRequired?.(name)) {
         required.push(name)
       }
     }))

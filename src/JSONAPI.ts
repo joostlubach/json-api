@@ -6,7 +6,7 @@ import Collection from './Collection'
 import Pack from './Pack'
 import RequestContext from './RequestContext'
 import Resource from './Resource'
-import ResourceRegistry from './ResourceRegistry'
+import ResourceRegistry, { ResourceRegistryOptions } from './ResourceRegistry'
 import config from './config'
 import { Middleware } from './middleware'
 import { OpenAPIGenerator, OpenAPIGeneratorOptions } from './openapi'
@@ -42,6 +42,13 @@ export default abstract class JSONAPI<Model, Query, ID> {
   }
 
   public readonly registry: ResourceRegistry<Model, Query, ID>
+
+  public validateResources(context: RequestContext) {
+    for (const resource of this.registry.all()) {
+      const adapter = this.adapter(resource, context)
+      resource.validate(adapter)
+    }
+  }
 
   // #endregion
   
@@ -228,6 +235,7 @@ export interface JSONAPIOptions<M, Q, I> {
   middleware?: Middleware<M, Q, I>[]
   router?:     RouterOptions
   openAPI?:    OpenAPIGeneratorOptions | true
+  registry?:   ResourceRegistryOptions
 }
 
 

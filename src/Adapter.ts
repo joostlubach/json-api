@@ -48,10 +48,11 @@ export default interface Adapter<Model, Query, ID> {
 
   // #endregion
 
-  // #region OpenAPI reflection
-  
-  openAPISchemaForAttribute(name: string): OpenAPIV3_1.SchemaObject | Promise<OpenAPIV3_1.SchemaObject>
-  isAttributeRequired(name: string): boolean | Promise<boolean>
+  // #region (OpenAPI) reflection
+
+  attributeExists?(name: string): boolean | Promise<boolean>
+  openAPISchemaForAttribute?(name: string, document: OpenAPIV3_1.Document): OpenAPIV3_1.SchemaObject | Promise<OpenAPIV3_1.SchemaObject>
+  isAttributeRequired?(name: string): boolean | Promise<boolean>
 
   // #endregion
 

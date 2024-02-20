@@ -47,6 +47,20 @@ export default class Resource<Model, Query, ID> {
 
   // #endregion
 
+  // #region Validation
+
+  public async validate(adapter: Adapter<Model, Query, ID>) {
+    for (const [name, attribute] of objectEntries(this.attributes)) {
+      if (attribute.get != null) { continue }
+
+      if (!adapter.attributeExists?.(name)) {
+        throw new APIError(509, `Attribute \`${this.type}:${name}\` not found`)
+      }
+    }
+  }
+
+  // #endregion
+
   // #region Queries
 
   public async listQuery(adapter: Adapter<Model, Query, ID>, params: Partial<ListParams> = {}, context: RequestContext) {
