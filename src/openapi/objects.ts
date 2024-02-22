@@ -32,7 +32,7 @@ export const queryParam = (name: string, schema: OpenAPIV3_1.ParameterObject['sc
   in: 'query',
 
   schema,
-  style:   schema != null && 'type' in schema && schema.type === 'object' ? 'deepObject' : 'simple',
+  style:   schema != null && 'type' in schema && schema.type === 'object' ? 'deepObject' : 'form',
   explode: true,
 })
 

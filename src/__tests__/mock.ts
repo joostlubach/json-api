@@ -211,7 +211,7 @@ export class MockAdapter implements Adapter<Model, Query, string> {
   public emptyModel(id: string | null): Model | Promise<Model> {
     return {id} as Model
   }
-
+  
   public openAPISchemaForAttribute(attribute: string): OpenAPIV3_1.SchemaObject | Promise<OpenAPIV3_1.SchemaObject> {
     return {}
   }

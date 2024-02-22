@@ -1,5 +1,6 @@
 import { context, MockAdapter, mockJSONAPI } from '../../__tests__/mock'
 
+import SwaggerParser from '@apidevtools/swagger-parser'
 import { OpenAPIV3_1 } from 'openapi-types'
 
 import { OpenAPIGeneratorOptions } from '../types'
@@ -45,7 +46,7 @@ describe("openapi", () => {
     jsonAPI.registry.drop('children')
   })
 
-  it("should allow generating a basic openapi spec with the given info", async () => {
+  it("should allow generating a basic OpenAPI spec with the given info", async () => {
     const spec = await jsonAPI.openAPISpec(context('__openapi__'))
     expect(spec).toEqual({
       openapi: '3.1.0',
@@ -54,6 +55,11 @@ describe("openapi", () => {
       paths:      expect.any(Object),
       components: expect.any(Object),
     })
+  })
+
+  it("should be a valid OpenAPI spec", async () => {
+    const spec = await jsonAPI.openAPISpec(context('__openapi__'))
+    await SwaggerParser.validate(spec)
   })
 
   describe("paths", () => {
@@ -271,7 +277,7 @@ describe("openapi", () => {
         const expected = () => ([
           expect.objectContaining({name: 'filters', in: 'query', required: false}),
           expect.objectContaining({name: 'search', in: 'query', required: false}),
-          expect.objectContaining({name: 'sorts', in: 'query', required: false}),
+          expect.objectContaining({name: 'sort', in: 'query', required: false}),
           expect.objectContaining({name: 'limit', in: 'query', required: false}),
           expect.objectContaining({name: 'offset', in: 'query', required: false}),
         ])
@@ -294,13 +300,13 @@ describe("openapi", () => {
                   data: {
                     type:  'array',
                     items: {
-                      $ref: '#/components/schemas/ParentsDocument',
+                      $ref: '#/components/schemas/ParentsResponseDocument',
                     },
                   },
                   included: {
                     type:  'array',
                     items: {
-                      $ref: '#/components/schemas/AnyDocument',
+                      $ref: '#/components/schemas/AnyResponseDocument',
                     },
                   },
                   meta: {
@@ -346,12 +352,12 @@ describe("openapi", () => {
                 type:       'object',
                 properties: {
                   data: {
-                    $ref: '#/components/schemas/ParentsDocument',
+                    $ref: '#/components/schemas/ParentsResponseDocument',
                   },
                   included: {
                     type:  'array',
                     items: {
-                      $ref: '#/components/schemas/AnyDocument',
+                      $ref: '#/components/schemas/AnyResponseDocument',
                     },
                   },
                   meta: {
@@ -378,7 +384,7 @@ describe("openapi", () => {
                 type:       'object',
                 properties: {
                   data: {
-                    $ref: '#/components/schemas/ParentsDocumentWithoutID',
+                    $ref: '#/components/schemas/ParentsCreateDocument',
                   },
                   meta: {
                     type: 'object',
@@ -408,12 +414,12 @@ describe("openapi", () => {
                 type:       'object',
                 properties: {
                   data: {
-                    $ref: '#/components/schemas/ParentsDocument',
+                    $ref: '#/components/schemas/ParentsResponseDocument',
                   },
                   included: {
                     type:  'array',
                     items: {
-                      $ref: '#/components/schemas/AnyDocument',
+                      $ref: '#/components/schemas/AnyResponseDocument',
                     },
                   },
                   meta: {
@@ -440,7 +446,7 @@ describe("openapi", () => {
                 type:       'object',
                 properties: {
                   data: {
-                    $ref: '#/components/schemas/ParentsDocument',
+                    $ref: '#/components/schemas/ParentsCreateDocument',
                   },
                   meta: {
                     type: 'object',
@@ -472,12 +478,12 @@ describe("openapi", () => {
                 type:       'object',
                 properties: {
                   data: {
-                    $ref: '#/components/schemas/ParentsDocument',
+                    $ref: '#/components/schemas/ParentsResponseDocument',
                   },
                   included: {
                     type:  'array',
                     items: {
-                      $ref: '#/components/schemas/AnyDocument',
+                      $ref: '#/components/schemas/AnyResponseDocument',
                     },
                   },
                   meta: {
@@ -504,7 +510,7 @@ describe("openapi", () => {
                 type:       'object',
                 properties: {
                   data: {
-                    $ref: '#/components/schemas/ParentsDocument',
+                    $ref: '#/components/schemas/ParentsUpdateDocument',
                   },
                   meta: {
                     type: 'object',
@@ -536,12 +542,12 @@ describe("openapi", () => {
                 type:       'object',
                 properties: {
                   data: {
-                    $ref: '#/components/schemas/ParentsDocument',
+                    $ref: '#/components/schemas/ParentsResponseDocument',
                   },
                   included: {
                     type:  'array',
                     items: {
-                      $ref: '#/components/schemas/AnyDocument',
+                      $ref: '#/components/schemas/AnyResponseDocument',
                     },
                   },
                   meta: {

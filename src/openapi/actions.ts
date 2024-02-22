@@ -4,13 +4,13 @@ import { sparse } from 'ytil'
 
 import Resource from '../Resource'
 import { JSONAPIRoute } from '../types'
-import { pathParam, queryArrayParam, queryParam } from './objects'
+import { pathParam, queryParam } from './objects'
 
 export const actionParameters = {
   list: (resource: Resource<any, any, any>, route: JSONAPIRoute) => sparse([
     queryParam('filters', {type: 'object'}, false),
     queryParam('search', {type: 'string'}, false),
-    queryArrayParam('sorts', {$ref: '#/components/schemas/Sort'}, false),
+    queryParam('sort', {type: 'string', format: 'x-jsonapi-sort'}, false),
     queryParam('limit', {type: 'integer'}, false),
     queryParam('offset', {type: 'integer'}, false),
   ]),
@@ -30,9 +30,9 @@ export const actionParameters = {
 export const requestBodies = {
   list:    (resource: Resource<any, any, any>, route: JSONAPIRoute) => undefined,
   show:    (resource: Resource<any, any, any>, route: JSONAPIRoute) => undefined,
-  create:  (resource: Resource<any, any, any>, route: JSONAPIRoute) => documentPackRequest(resource, false),
-  replace: (resource: Resource<any, any, any>, route: JSONAPIRoute) => documentPackRequest(resource, true),
-  update:  (resource: Resource<any, any, any>, route: JSONAPIRoute) => documentPackRequest(resource, true),
+  create:  (resource: Resource<any, any, any>, route: JSONAPIRoute) => documentPackRequest(resource, 'Create'),
+  replace: (resource: Resource<any, any, any>, route: JSONAPIRoute) => documentPackRequest(resource, 'Create'),
+  update:  (resource: Resource<any, any, any>, route: JSONAPIRoute) => documentPackRequest(resource, 'Update'),
   delete:  (resource: Resource<any, any, any>, route: JSONAPIRoute) => bulkSelectorPackRequest(),
 }
 
@@ -79,7 +79,7 @@ export const errorResponseBody = (code: string): OpenAPIV3_1.MediaTypeObject => 
 
 // #region Request bodies
 
-export function documentPackRequest(resource: Resource<any, any, any>, requireID: boolean): OpenAPIV3_1.MediaTypeObject {
+export function documentPackRequest(resource: Resource<any, any, any>, type: 'Create' | 'Update'): OpenAPIV3_1.MediaTypeObject {
   const schemaPrefix = upperFirst(camelCase(resource.type))
 
   return {
@@ -88,7 +88,7 @@ export function documentPackRequest(resource: Resource<any, any, any>, requireID
       
       properties: {
         data: {
-          $ref: `#/components/schemas/${schemaPrefix}Document${requireID ? '' : 'WithoutID'}`,
+          $ref: `#/components/schemas/${schemaPrefix}${type}Document`,
         },
         meta: {
           type: 'object',
@@ -123,13 +123,13 @@ export function listPackResponse(resource: Resource<any, any, any>): OpenAPIV3_1
         data: {
           type:  'array',
           items: {
-            $ref: `#/components/schemas/${schemaPrefix}Document`,
+            $ref: `#/components/schemas/${schemaPrefix}ResponseDocument`,
           },
         },
         included: {
           type:  'array',
           items: {
-            $ref: `#/components/schemas/AnyDocument`,
+            $ref: `#/components/schemas/AnyResponseDocument`,
           },
         },
         meta: {
@@ -151,12 +151,12 @@ export function documentPackResponse(resource: Resource<any, any, any>): OpenAPI
       
       properties: {
         data: {
-          $ref: `#/components/schemas/${schemaPrefix}Document`,
+          $ref: `#/components/schemas/${schemaPrefix}ResponseDocument`,
         },
         included: {
           type:  'array',
           items: {
-            $ref: `#/components/schemas/AnyDocument`,
+            $ref: `#/components/schemas/AnyResponseDocument`,
           },
         },
         meta: {

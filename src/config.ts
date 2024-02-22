@@ -7,7 +7,7 @@ export interface Config {
 
   openapi: {
     enabled: boolean,
-    doctext: Required<DoctextOptions>
+    doctext: Omit<DoctextOptions, 'whitelist' | 'blacklist'>
   }
 
   logger: Logger
@@ -26,9 +26,7 @@ const config: Config = {
 
   openapi: {
     enabled: true,
-    doctext: {
-      marker: '"""',
-    },
+    doctext: {},
   },
 
   logger: {

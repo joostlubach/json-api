@@ -52,6 +52,7 @@ export default class Resource<Model, Query, ID> {
   public async validate(adapter: Adapter<Model, Query, ID>) {
     for (const [name, attribute] of objectEntries(this.attributes)) {
       if (attribute.get != null) { continue }
+      if (adapter.attributeExists == null) { continue }
 
       if (!adapter.attributeExists?.(name)) {
         throw new APIError(509, `Attribute \`${this.type}:${name}\` not found`)

@@ -317,10 +317,17 @@ export default class OpenAPIGenerator {
     ;(pathObject as any)[method] = config
   }
 
-  public appendSchema(name: string, schema: OpenAPIV3_1.SchemaObject) {
+  public appendSchema(path: string, schema: OpenAPIV3_1.SchemaObject) {
+    const head = path.split('/')
+    const tail = head.pop()!
+
     this.document.components ??= {}
-    this.document.components.schemas ??= {}
-    this.document.components.schemas[name] = schema
+
+    let current: Record<string, any> = this.document.components.schemas ??= {}
+    for (const part of head) {
+      current = current[part] ??= {}
+    }
+    current[tail] = schema
   } 
 
   // #endregion
