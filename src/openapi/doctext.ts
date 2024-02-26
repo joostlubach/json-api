@@ -10,6 +10,7 @@ const reader = DoctextReader.create(doctext, {
   whitelist: [
     /^labels\.[^.]+$/,
     /^filters\.[^.]+$/,
+    /^singletons.[^.]+$/,
     /^attributes\.[^.]+$/,
     /^relationships\.[^.]+$/,
     /^list$/,
