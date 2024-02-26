@@ -12,6 +12,9 @@ export interface OpenAPIResourceMeta extends OpenAPIMeta {
   singular?: string
   plural?:   string
 
+  summary?:     string
+  description?: string
+
   attributes?:    Record<string, DeepPartial<OpenAPIV3_1.SchemaObject>>
   relationships?: Record<string, DeepPartial<OpenAPIV3_1.SchemaObject>>
 }

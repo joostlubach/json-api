@@ -28,11 +28,10 @@ describe("doctext", () => {
     beforeEach(() => {
       jsonAPI.registry.clear()
       parents = jsonAPI.registry.register('parents', doctext<Parent, Query, string>({
-        // """
-        // Parents in the family.
-        //
-        // There are two nuclear families, A & B. Each have two parents and two children.
-        // Relationships show spouses and children, and children's parents reciprocally.
+        /// Parents in the family.
+        ///
+        /// There are two nuclear families, A & B. Each have two parents and two children.
+        /// Relationships show spouses and children, and children's parents reciprocally.
   
         modelName: 'Parent',
   
@@ -41,30 +40,29 @@ describe("doctext", () => {
         },
   
         labels: {
-          // """Lists only members from family A."""
+          /// Lists only members from family A.
           'family-a': query => ({...query, filters: {...query.filters, family: 'a'}}),
-          // """Lists only members from family B."""
+          /// Lists only members from family B.
           'family-b': query => ({...query, filters: {...query.filters, family: 'b'}}),
         },
   
         attributes: {
-          // """The name of the parent."""
+          /// The name of the parent.
           name: true,
           age:  true,
         },
         relationships: {
-          /** """
+          /**
            * The spouse of this parent.
            * 
            * The spouse will by convention have the same children as this parent.
-           * """
            */
           spouse: {
             type:   'parents',
             plural: false,
           },
   
-          // """The children of this parent."""
+          /// The children of this parent.
           children: {
             type:   'children',
             plural: true,
