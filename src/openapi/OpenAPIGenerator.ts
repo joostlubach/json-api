@@ -163,7 +163,7 @@ export default class OpenAPIGenerator {
 
       const defaults = await this.meta<any>(`attributes.${name}`, resource, true)
       properties[name] = {...defaults, ...schema}
-      if (await adapter.isAttributeRequired?.(name)) {
+      if (await adapter.attributeRequired?.(name)) {
         required.push(name)
       }
     }))
@@ -183,6 +183,7 @@ export default class OpenAPIGenerator {
 
       properties: mapValues(relationships, (relationship, key) => ({
         ...this.meta<any>(`relationships.${key}`, resource, true),
+        ...adapter.openAPIDocumentationForRelationship?.(key, this.document),
         ...this.buildRelationshipSchema(relationship),
       })),
       required: objectKeys(relationships).filter(key => {
