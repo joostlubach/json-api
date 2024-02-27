@@ -80,28 +80,28 @@ describe("doctext", () => {
   
         labels: {
           'family-a': {
-            summary:     "Lists only members from family A.",
+            title:       "Lists only members from family A.",
             description: "Lists only members from family A.",
           },
           'family-b': {
-            summary:     "Lists only members from family B.",
+            title:       "Lists only members from family B.",
             description: "Lists only members from family B.",
           },
         },
         attributes: {
           'name': {
-            summary:     "The name of the parent.",
+            title:       "The name of the parent.",
             description: "The name of the parent.",
           },
           'age': undefined,
         },
         relationships: {
           'spouse': {
-            summary:     "The spouse of this parent.",
+            title:       "The spouse of this parent.",
             description: "The spouse of this parent. The spouse will by convention have the same children as this parent.",
           },
           'children': {
-            summary:     "The children of this parent.",
+            title:       "The children of this parent.",
             description: "The children of this parent.",
           },
         },

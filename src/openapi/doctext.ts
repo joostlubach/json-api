@@ -1,7 +1,8 @@
 import { DoctextReader } from 'doctext'
-import { get, pick, set } from 'lodash'
+import { get, set } from 'lodash'
 import { objectEntries } from 'ytil'
 
+import { OpenAPIDocumentation } from '../Adapter'
 import { ResourceConfig } from '../ResourceConfig'
 import jsonapi_config from '../config'
 
@@ -30,13 +31,15 @@ export default function doctext<M, Q, I>(config: ResourceConfig<M, Q, I>) {
 
   const meta = config.openapi ??= {}
   for (const [key, doctext] of objectEntries(result.matched)) {
-    const attrMeta = get(meta, key) ?? {}
-    Object.assign(attrMeta, pick(doctext, 'summary', 'description'))
+    const attrMeta: OpenAPIDocumentation = get(meta, key) ?? {}
+    attrMeta.title = doctext.summary
+    attrMeta.description = doctext.body
     set(meta, key, attrMeta)
   }
 
   if (result.unmatched.length > 0) {
-    Object.assign(meta, pick(result.unmatched[0], 'summary', 'description'))
+    meta.summary = result.unmatched[0].summary
+    meta.description = result.unmatched[0].body
   }
 
   for (const key of result.undocumentedKeys) {

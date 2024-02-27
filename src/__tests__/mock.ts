@@ -216,7 +216,7 @@ export class MockAdapter implements Adapter<Model, Query, string> {
     return {}
   }
 
-  public isAttributeRequired(attribute: string): boolean | Promise<boolean> {
+  public attributeRequired(attribute: string): boolean | Promise<boolean> {
     return true
   }
 

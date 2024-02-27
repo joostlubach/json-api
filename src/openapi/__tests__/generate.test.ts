@@ -836,7 +836,7 @@ describe("openapi", () => {
         jest.spyOn(MockAdapter.prototype, 'openAPISchemaForAttribute')
           .mockImplementation(name => name === 'name' ? nameSchema : ageSchema)
 
-        jest.spyOn(MockAdapter.prototype, 'isAttributeRequired')
+        jest.spyOn(MockAdapter.prototype, 'attributeRequired')
           .mockImplementation(name => name === 'name' ? nameRequired : ageRequired)
       })
 
@@ -875,7 +875,7 @@ describe("openapi", () => {
         jest.spyOn(MockAdapter.prototype, 'openAPISchemaForAttribute')
           .mockImplementation(async name => name === 'name' ? nameSchema : ageSchema)
 
-        jest.spyOn(MockAdapter.prototype, 'isAttributeRequired')
+        jest.spyOn(MockAdapter.prototype, 'attributeRequired')
           .mockImplementation(async name => name === 'name' ? nameRequired : ageRequired)
 
         expect(await getAttributesSchema()).toEqual({
