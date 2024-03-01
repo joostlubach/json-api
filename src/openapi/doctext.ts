@@ -45,9 +45,10 @@ export default function doctext<M, Q, I>(config: ResourceConfig<M, Q, I>) {
   }
 
   for (const key of result.undocumentedKeys) {
-    // Skip attributes, as they may be documented by the adapter.
+    // Skip attributes and relationships, as they may be documented by the adapter.
     // TODO: This is not foolproof, as the adapter may not document all attributes.
     if (/^attributes\./.test(key)) { continue }
+    if (/^relationships\./.test(key)) { continue }
 
     const filename = Path.basename(result.callsite.path)
     jsonapi_config.logger.warn(chalk`{underline ${filename}}: Missing doctext for {yellow ${key}}`)
