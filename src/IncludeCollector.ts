@@ -25,7 +25,7 @@ export default class IncludeCollector<Model, Query, ID> {
 
     const collected: Document<ID>[] = []
     for (const [resource, models] of byResource) {
-      const adapter = this.jsonAPI.adapter(resource, this.context)
+      const adapter = resource.adapter(this.context)
       const documents = await Promise.all(models.map(model => (
         resource.modelToDocument(model, adapter, this.context)
       )))
@@ -91,7 +91,7 @@ export default class IncludeCollector<Model, Query, ID> {
       const resource = this.jsonAPI.registry.get(type)
       if (resource == null) { continue }
 
-      const adapter = this.jsonAPI.adapter(resource, this.context)
+      const adapter = resource.adapter(this.context)
       let ids = linkages.map(it => it.id)
 
       // Remove any already collected IDs.

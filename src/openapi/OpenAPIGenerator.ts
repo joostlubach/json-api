@@ -6,7 +6,6 @@ import { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types'
 import * as Path from 'path'
 import { deepMapValues, objectKeys, sparse } from 'ytil'
 
-import APIError from '../APIError'
 import Adapter from '../Adapter'
 import JSONAPI from '../JSONAPI'
 import RequestContext from '../RequestContext'
@@ -152,18 +151,17 @@ export default class OpenAPIGenerator {
     }
   }  
 
-  private async buildAttributesSchema(resource: Resource<any, any, any>, adapter: Adapter<any, any, any>): Promise<OpenAPIV3_1.SchemaObject> {
+  private async buildAttributesSchema(resource: Resource<any, any, any>, adapter: Adapter<any, any, any> | undefined): Promise<OpenAPIV3_1.SchemaObject> {
     const properties: Record<string, OpenAPIV3_1.SchemaObject> = {}
     const required: string[] = []
     await Promise.all(objectKeys(resource.config.attributes).map(async name => {
-      const schema = await adapter.openAPISchemaForAttribute?.(name, this.document)
-      if (schema == null) {
-        throw new APIError(509, `No schema found for attribute \`${resource.type}:${name}`)
-      }
-
       const defaults = await this.meta<any>(`attributes.${name}`, resource, true)
+      const schema = await adapter?.openAPISchemaForAttribute?.(name, this.document)
+
       properties[name] = {...defaults, ...schema}
-      if (await adapter.attributeRequired?.(name)) {
+
+      // TODO: Find a way to determine if an attribute is required if no adapter is available.
+      if (adapter == null || await adapter?.attributeRequired?.(name)) {
         required.push(name)
       }
     }))
@@ -175,7 +173,7 @@ export default class OpenAPIGenerator {
     }
   }
 
-  private buildRelationshipsSchema(resource: Resource<any, any, any>, adapter: Adapter<any, any, any>): OpenAPIV3_1.SchemaObject {
+  private buildRelationshipsSchema(resource: Resource<any, any, any>, adapter: Adapter<any, any, any> | undefined): OpenAPIV3_1.SchemaObject {
     const relationships = resource.config.relationships ?? {}
 
     return {
@@ -183,7 +181,7 @@ export default class OpenAPIGenerator {
 
       properties: mapValues(relationships, (relationship, key) => ({
         ...this.meta<any>(`relationships.${key}`, resource, true),
-        ...adapter.openAPIDocumentationForRelationship?.(key, this.document),
+        ...adapter?.openAPIDocumentationForRelationship?.(key, this.document),
         ...this.buildRelationshipSchema(relationship),
       })),
       required: objectKeys(relationships).filter(key => {

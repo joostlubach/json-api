@@ -47,12 +47,25 @@ export default class Resource<Model, Query, ID> {
 
   // #endregion
 
+  // #region Adapter
+
+  public adapter(context: RequestContext): Adapter<Model, Query, ID> {
+    const adapter = this.jsonAPI.adapter(this, context)
+    if (adapter == null) {
+      throw new APIError(509, `No adapter available for resource \`${this.type}\``)
+    }
+
+    return adapter
+  }
+
+  // #endregion
+
   // #region Validation
 
-  public async validate(adapter: Adapter<Model, Query, ID>) {
+  public async validate(adapter: Adapter<Model, Query, ID> | undefined) {
     for (const [name, attribute] of objectEntries(this.attributes)) {
       if (attribute.get != null) { continue }
-      if (adapter.attributeExists == null) { continue }
+      if (adapter?.attributeExists == null) { continue }
 
       if (!adapter.attributeExists?.(name)) {
         throw new APIError(509, `Attribute \`${this.type}:${name}\` not found`)

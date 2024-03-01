@@ -54,7 +54,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
   
   // #region Abstract interface
     
-  public abstract adapter(resource: Resource<Model, Query, ID>, context: RequestContext): Adapter<Model, Query, ID>
+  public abstract adapter(resource: Resource<Model, Query, ID>, context: RequestContext): Adapter<Model, Query, ID> | undefined
   public abstract nameForModel(model: Model): string
   public abstract parseID(id: string | number): ID
 
@@ -64,7 +64,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   public async show(resourceType: string, locator: DocumentLocator<ID>, context: RequestContext, options: RetrievalActionOptions = {}) {
     const resource = this.registry.get(resourceType)
-    const adapter = () => this.adapter(resource, context)
+    const adapter = () => resource.adapter(context)
 
     await resource.runBeforeHandlers(context)
     return await resource.show(locator, adapter, context, options)
@@ -72,7 +72,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   public async list(resourceType: string, params: ListParams, context: RequestContext, options: RetrievalActionOptions = {}) {
     const resource = this.registry.get(resourceType)
-    const adapter = () => this.adapter(resource, context)
+    const adapter = () => resource.adapter(context)
 
     await resource.runBeforeHandlers(context)
     return await resource.list(params, adapter, context, options)
@@ -80,7 +80,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   public async create(resourceType: string, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
     const resource = this.registry.get(resourceType)
-    const adapter = () => this.adapter(resource, context)
+    const adapter = () => resource.adapter(context)
 
     await resource.runBeforeHandlers(context)
     return await resource.create(requestPack, adapter, context, options)
@@ -88,7 +88,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   public async replace(resourceType: string, id: ID, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
     const resource = this.registry.get(resourceType)
-    const adapter = () => this.adapter(resource, context)
+    const adapter = () => resource.adapter(context)
 
     await resource.runBeforeHandlers(context)
     return await resource.replace(id,requestPack, adapter, context, options)
@@ -96,7 +96,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   public async update(resourceType: string, id: ID, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
     const resource = this.registry.get(resourceType)
-    const adapter = () => this.adapter(resource, context)
+    const adapter = () => resource.adapter(context)
 
     await resource.runBeforeHandlers(context)
     return await resource.update(id, requestPack, adapter, context, options)
@@ -104,7 +104,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   public async delete(resourceType: string, requestPack: Pack<ID>, context: RequestContext) {
     const resource = this.registry.get(resourceType)
-    const adapter = () => this.adapter(resource, context)
+    const adapter = () => resource.adapter(context)
 
     await resource.runBeforeHandlers(context)
     return await resource.delete(requestPack, adapter, context)
@@ -116,7 +116,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   public async collectionAction(resourceType: string, action: string, requestPack: Pack<any>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<any>> {
     const resource = this.registry.get(resourceType)
-    const adapter = () => this.adapter(resource, context)
+    const adapter = () => resource.adapter(context)
 
     await resource.runBeforeHandlers(context)
     return await resource.callCollectionAction(action, requestPack, adapter, context, options)
@@ -124,7 +124,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   public async documentAction(resourceType: string, locator: DocumentLocator<ID>, action: string, requestPack: Pack<any>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<any>> {
     const resource = this.registry.get(resourceType)
-    const adapter = () => this.adapter(resource, context)
+    const adapter = () => resource.adapter(context)
 
     await resource.runBeforeHandlers(context)
     return await resource.callDocumentAction(action, locator, requestPack, adapter, context, options)
@@ -136,7 +136,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
   public async documentPack(model: Model, context: RequestContext, options: DocumentPackOptions<Model> = {}) {
     const resource = this.registry.resourceForModel(this.nameForModel(model))
-    const adapter = this.adapter(resource, context)
+    const adapter = resource.adapter(context)
     return await resource.documentPack(model, undefined, adapter, context, options)
   }
 
@@ -144,20 +144,20 @@ export default abstract class JSONAPI<Model, Query, ID> {
     if (models.length === 0) { return new Pack(new Collection()) }
 
     const resource = this.registry.resourceForModel(this.nameForModel(models[0]))
-    const adapter = this.adapter(resource, context)
+    const adapter = resource.adapter(context)
     return await resource.collectionPack(models, undefined, undefined, undefined, adapter, context, options)
   }
 
   public async modelsToCollection(resourceType: string, models: Model[], context: RequestContext, options: ModelsToCollectionOptions = {}) {
     const resource = this.registry.get(resourceType)
-    const adapter = this.adapter(resource, context)
+    const adapter = resource.adapter(context)
 
     return await resource.modelsToCollection(models, adapter, context, options)
   }
 
   public async modelToDocument(resourceType: string, model: Model, context: RequestContext, options: ModelToDocumentOptions = {}) {
     const resource = this.registry.get(resourceType)
-    const adapter = this.adapter(resource, context)
+    const adapter = resource.adapter(context)
 
     return await resource.modelToDocument(model, adapter, context, options)
   }

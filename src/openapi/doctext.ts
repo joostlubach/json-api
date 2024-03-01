@@ -1,5 +1,7 @@
+import chalk from 'chalk'
 import { DoctextReader } from 'doctext'
 import { get, set } from 'lodash'
+import * as Path from 'path'
 import { objectEntries } from 'ytil'
 
 import { OpenAPIDocumentation } from '../Adapter'
@@ -43,7 +45,12 @@ export default function doctext<M, Q, I>(config: ResourceConfig<M, Q, I>) {
   }
 
   for (const key of result.undocumentedKeys) {
-    jsonapi_config.logger.warn(`Missing doctext for \`${key}\``)
+    // Skip attributes, as they may be documented by the adapter.
+    // TODO: This is not foolproof, as the adapter may not document all attributes.
+    if (/^attributes\./.test(key)) { continue }
+
+    const filename = Path.basename(result.callsite.path)
+    jsonapi_config.logger.warn(chalk`{underline ${filename}}: Missing doctext for {yellow ${key}}`)
   }
 
   return config

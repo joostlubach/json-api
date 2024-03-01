@@ -213,7 +213,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
   return {
     async list(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
       const params = resource.extractListParams(context)
-      const adapter = () => jsonAPI.adapter(resource, context)
+      const adapter = () => resource.adapter(context)
       const options = resource.extractRetrievalActionOptions(context)
 
       const pack = await resource.list(params, adapter, context, options)
@@ -223,7 +223,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
 
     async show(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
       const locator = resource.extractDocumentLocator(context)
-      const adapter = () => jsonAPI.adapter(resource, context)
+      const adapter = () => resource.adapter(context)
       const options = resource.extractRetrievalActionOptions(context)
 
       const pack = await resource.show(locator, adapter, context, options)
@@ -233,7 +233,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
 
     async create(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
       const requestPack = Pack.deserialize(jsonAPI.registry, request.body)
-      const adapter = () => jsonAPI.adapter(resource, context)
+      const adapter = () => resource.adapter(context)
       const options = resource.extractActionOptions(context)
 
       const responsePack = await resource.create(requestPack, adapter, context, options)
@@ -246,7 +246,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
     async replace(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
       const locator = resource.extractDocumentLocator(context, false)
       const requestPack = Pack.deserialize(jsonAPI.registry, request.body)
-      const adapter = () => jsonAPI.adapter(resource, context)
+      const adapter = () => resource.adapter(context)
       const options = resource.extractActionOptions(context)
 
       const responsePack = await resource.replace(locator.id, requestPack, adapter, context, options)
@@ -258,7 +258,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
     async update(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
       const locator = resource.extractDocumentLocator(context, false)
       const requestPack = Pack.deserialize(jsonAPI.registry, request.body)
-      const adapter = () => jsonAPI.adapter(resource, context)
+      const adapter = () => resource.adapter(context)
       const options = resource.extractActionOptions(context)
 
       const responsePack = await resource.update(locator.id, requestPack, adapter, context, options)
@@ -268,7 +268,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
     },
 
     async delete(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
-      const adapter = () => jsonAPI.adapter(resource, context)
+      const adapter = () => resource.adapter(context)
       const requestPack = request.body?.data != null ? Pack.deserialize(jsonAPI.registry, request.body) : new Pack<I>(null)
 
       const responsePack = await resource.delete(requestPack, adapter, context)
@@ -284,7 +284,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
           ? Pack.tryDeserialize(jsonAPI.registry, request.body) ?? new Pack(null)
           : request.body
 
-        const adapter = () => jsonAPI.adapter(resource, context)
+        const adapter = () => resource.adapter(context)
         const options = resource.extractActionOptions(context)
         const pack = await spec.action.call(resource, requestPack, adapter, context, options)
 
@@ -301,7 +301,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
           : request.body
 
         const locator = resource.extractDocumentLocator(context)
-        const adapter = () => jsonAPI.adapter(resource, context)
+        const adapter = () => resource.adapter(context)
         const options = resource.extractActionOptions(context)
 
         const pack = await spec.action.call(resource, locator, requestPack, adapter, context, options)
