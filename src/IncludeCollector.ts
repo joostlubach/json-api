@@ -1,9 +1,9 @@
 import { flatMap, MapBuilder } from 'ytil'
 
-import Document from './Document.js'
-import JSONAPI from './JSONAPI.js'
-import RequestContext from './RequestContext.js'
-import { Linkage, Relationship } from './types.js'
+import Document from './Document'
+import JSONAPI from './JSONAPI'
+import RequestContext from './RequestContext'
+import { Linkage, Relationship } from './types'
 
 export default class IncludeCollector<Model, Query, ID> {
 

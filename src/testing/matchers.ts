@@ -1,8 +1,8 @@
 import chalk from 'chalk'
 import { isArray, isFunction, isObject, isPlainObject } from 'lodash'
 
-import Pack from '../Pack.js'
-import { Links, Meta } from '../types.js'
+import Pack from '../Pack'
+import { Links, Meta } from '../types'
 
 expect.extend({
 

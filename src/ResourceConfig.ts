@@ -1,9 +1,9 @@
 import { Request } from 'express'
 
-import Adapter, { GetResponse } from './Adapter.js'
-import Pack from './Pack.js'
-import RequestContext from './RequestContext.js'
-import Resource from './Resource.js'
+import Adapter, { GetResponse } from './Adapter'
+import Pack from './Pack'
+import RequestContext from './RequestContext'
+import Resource from './Resource'
 import {
   ActionOptions,
   DocumentLocator,
@@ -13,7 +13,7 @@ import {
   OpenAPIResourceMeta,
   Relationship,
   RetrievalActionOptions,
-} from './types.js'
+} from './types'
 
 export type ResourceConfigMap = Record<string, ResourceConfig<any, any, any>>
 

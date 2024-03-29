@@ -3,16 +3,16 @@ import { isArray, isFunction, isPlainObject, mapValues } from 'lodash'
 import { any, boolean, dictionary, number, string } from 'validator/types'
 import { objectEntries } from 'ytil'
 
-import APIError from './APIError.js'
-import Adapter, { GetResponse } from './Adapter.js'
-import Collection from './Collection.js'
-import Document from './Document.js'
-import IncludeCollector from './IncludeCollector.js'
-import JSONAPI from './JSONAPI.js'
-import Pack from './Pack.js'
-import RequestContext from './RequestContext.js'
-import { AttributeConfig, RelationshipConfig, ResourceConfig } from './ResourceConfig.js'
-import config from './config.js'
+import APIError from './APIError'
+import Adapter, { GetResponse } from './Adapter'
+import Collection from './Collection'
+import Document from './Document'
+import IncludeCollector from './IncludeCollector'
+import JSONAPI from './JSONAPI'
+import Pack from './Pack'
+import RequestContext from './RequestContext'
+import { AttributeConfig, RelationshipConfig, ResourceConfig } from './ResourceConfig'
+import config from './config'
 import {
   ActionOptions,
   BulkSelector,
@@ -25,7 +25,7 @@ import {
   Relationship,
   RetrievalActionOptions,
   Sort,
-} from './types.js'
+} from './types'
 
 export default class Resource<Model, Query, ID> {
 

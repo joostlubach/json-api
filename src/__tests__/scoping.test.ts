@@ -1,9 +1,10 @@
 
+import { context, mockJSONAPI } from './mock'
+
 import { expectAsyncError } from 'yest'
 
-import APIError from '../APIError.js'
-import db, { Child, Query } from './db.js'
-import { context, mockJSONAPI } from './mock.js'
+import APIError from '../APIError'
+import db, { Child, Query } from './db'
 
 describe("scoping", () => {
 
