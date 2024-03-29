@@ -1,10 +1,9 @@
-import { context, mockJSONAPI } from './mock'
-
 import { delay, expectAsyncError } from 'yest'
 import { slugify } from 'ytil'
 
-import APIError from '../APIError'
-import db from './db'
+import APIError from '../APIError.js'
+import db from './db.js'
+import { context, mockJSONAPI } from './mock.js'
 
 describe("show", () => {
 

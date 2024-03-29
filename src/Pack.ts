@@ -1,10 +1,10 @@
 import { isArray, isPlainObject } from 'lodash'
 
-import APIError from './APIError'
-import Collection from './Collection'
-import Document from './Document'
-import ResourceRegistry from './ResourceRegistry'
-import { Meta } from './types'
+import APIError from './APIError.js'
+import Collection from './Collection.js'
+import Document from './Document.js'
+import ResourceRegistry from './ResourceRegistry.js'
+import { Meta } from './types.js'
 
 export default class Pack<ID> {
 

@@ -1,12 +1,12 @@
 import chalk from 'chalk'
 
-import APIError from './APIError'
-import JSONAPI from './JSONAPI'
-import RequestContext from './RequestContext'
-import Resource from './Resource'
-import { ResourceConfig } from './ResourceConfig'
-import config from './config'
-import { Middleware, runMiddleware } from './middleware'
+import APIError from './APIError.js'
+import JSONAPI from './JSONAPI.js'
+import RequestContext from './RequestContext.js'
+import Resource from './Resource.js'
+import { ResourceConfig } from './ResourceConfig.js'
+import config from './config.js'
+import { Middleware, runMiddleware } from './middleware.js'
 
 export default class ResourceRegistry<Model, Query, ID> {
 

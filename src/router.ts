@@ -4,13 +4,13 @@ import { NextFunction, Request, Response, Router } from 'express'
 import { isPlainObject, kebabCase } from 'lodash'
 import { objectEntries, objectKeys } from 'ytil'
 
-import APIError from './APIError'
-import JSONAPI from './JSONAPI'
-import Pack from './Pack'
-import RequestContext from './RequestContext'
-import Resource from './Resource'
-import { CustomCollectionAction, CustomDocumentAction } from './ResourceConfig'
-import { AnyResource, JSONAPIRoute, RouteMap } from './types'
+import APIError from './APIError.js'
+import JSONAPI from './JSONAPI.js'
+import Pack from './Pack.js'
+import RequestContext from './RequestContext.js'
+import Resource from './Resource.js'
+import { CustomCollectionAction, CustomDocumentAction } from './ResourceConfig.js'
+import { AnyResource, JSONAPIRoute, RouteMap } from './types.js'
 
 export function createExpressRouter<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
   const router = Router()

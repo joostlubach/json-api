@@ -1,5 +1,5 @@
-import ErrorPack from './ErrorPack'
-import { Meta, ValidationError } from './types'
+import ErrorPack from './ErrorPack.js'
+import { Meta, ValidationError } from './types.js'
 
 const DEV = process.env.NODE_ENV !== 'production'
 

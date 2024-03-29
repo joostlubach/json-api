@@ -1,14 +1,13 @@
-import { context, MockAdapter, mockJSONAPI } from './mock'
-
-import { ListParams } from 'json-api'
 import { isPlainObject } from 'lodash'
 import { expectAsyncError } from 'yest'
 
-import APIError from '../APIError'
-import Pack from '../Pack'
-import RequestContext from '../RequestContext'
-import Resource from '../Resource'
-import db, { Model, Query } from './db'
+import APIError from '../APIError.js'
+import Pack from '../Pack.js'
+import RequestContext from '../RequestContext.js'
+import Resource from '../Resource.js'
+import { ListParams } from '../types.js'
+import db, { Model, Query } from './db.js'
+import { context, MockAdapter, mockJSONAPI } from './mock.js'
 
 describe("custom actions", () => {
 

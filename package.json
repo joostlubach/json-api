@@ -4,36 +4,15 @@
   "description": "JSON API endpoints based on json-api by Ethan Resnick",
   "author": "Joost Lubach",
   "license": "ISC",
+  "type": "module",
   "exports": {
-    ".": {
-      "require": {
-        "types": "./dist/cjs/index.d.ts",
-        "default": "./dist/cjs/index.js"
-      },
-      "import": {
-        "types": "./dist/esm/index.d.ts",
-        "default": "./dist/esm/index.js"
-      }
-    },
-    "./testing": {
-      "require": {
-        "types": "./dist/cjs/testing/index.d.ts",
-        "default": "./dist/cjs/testing/index.js"
-      },
-      "import": {
-        "types": "./dist/esm/testing/index.d.ts",
-        "default": "./dist/esm/testing/index.js"
-      }
-    }
+    ".": "./dist/index.js",
+    "./testing": "./dist/testing/index.js"
   },
   "scripts": {
-    "build": "pnpm clean && pnpm build:esm && pnpm build:cjs",
-    "build:esm": "pnpm build:tsc:esm && pnpm build:copy:esm",
-    "build:tsc:esm": "tsc -p tsconfig.prod.json --module ESNext --outDir dist/esm",
-    "build:copy:esm": "copyfiles -u 1 src/**/*.yml dist/esm",
-    "build:cjs": "pnpm build:tsc:cjs && pnpm build:copy:cjs",
-    "build:tsc:cjs": "tsc -p tsconfig.prod.json --module CommonJS --outDir dist/cjs",
-    "build:copy:cjs": "copyfiles -u 1 src/**/*.yml dist/cjs",
+    "build": "pnpm clean && pnpm build:tsc && pnpm build:copy",
+    "build:tsc": "tsc -p tsconfig.prod.json",
+    "build:copy": "copyfiles -u 1 src/**/*.yml dist",
     "clean": "rimraf dist",
     "lint": "eslint src --ext .ts",
     "check": "tsc -p . --noEmit",

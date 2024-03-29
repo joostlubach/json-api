@@ -1,17 +1,18 @@
 import { isFunction } from 'lodash'
-import Validator, {
+import {
   INVALID,
   ObjectSchema,
   RequiredType,
   SchemaInstance,
   Type,
   TypeOptions,
+  Validator,
 } from 'validator'
 import { object } from 'validator/types'
 import { DependencyProvider } from 'ydeps'
 import { Constructor } from 'ytil'
 
-import APIError from './APIError'
+import APIError from './APIError.js'
 
 export default class RequestContext<P extends Record<string, any> = Record<string, any>> {
 

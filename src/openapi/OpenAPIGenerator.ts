@@ -6,13 +6,13 @@ import { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types'
 import * as Path from 'path'
 import { deepMapValues, objectKeys, sparse } from 'ytil'
 
-import Adapter from '../Adapter'
-import JSONAPI from '../JSONAPI'
-import RequestContext from '../RequestContext'
-import Resource from '../Resource'
-import { RelationshipConfig } from '../ResourceConfig'
-import { CommonActions, JSONAPIRoute, Method, OpenAPIMeta } from '../types'
-import { actionParameters, errorResponseBody, requestBodies, responseBodies } from './actions'
+import Adapter from '../Adapter.js'
+import JSONAPI from '../JSONAPI.js'
+import RequestContext from '../RequestContext.js'
+import Resource from '../Resource.js'
+import { RelationshipConfig } from '../ResourceConfig.js'
+import { CommonActions, JSONAPIRoute, Method } from '../types.js'
+import { actionParameters, errorResponseBody, requestBodies, responseBodies } from './actions.js'
 import {
   bulkSelector,
   error,
@@ -21,8 +21,8 @@ import {
   relationship,
   singularRelationship,
   validationErrorDetail,
-} from './objects'
-import { OpenAPIGeneratorOptions } from './types'
+} from './objects.js'
+import { OpenAPIGeneratorOptions, OpenAPIMeta } from './types.js'
 
 export default class OpenAPIGenerator {
 
