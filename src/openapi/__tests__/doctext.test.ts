@@ -1,5 +1,8 @@
 import { mockJSONAPI } from '../../__tests__/mock'
 
+import stripAnsi from 'strip-ansi'
+
+import Pack from '../../Pack'
 import Resource from '../../Resource'
 import { Parent, Query } from '../../__tests__/db'
 import config from '../../config'
@@ -108,9 +111,47 @@ describe("doctext", () => {
       })
     })
 
-    it("should warn about missing doctexts", () => {
-      expect(warnings).toEqual([
-        "Missing doctext for `attributes.age`",
+    it("should warn about missing doctexts, except attributes and relationships", () => {
+      parents = jsonAPI.registry.register('parents', doctext<Parent, Query, string>({
+        modelName: 'Parent',
+
+        labels: {
+          one: query => query,
+        },
+
+        filters: {
+          one: query => query,
+        },
+
+        singletons: {
+          one: async query => ({model: null}),
+        },
+
+        collectionActions: {
+          one: async () => new Pack(null),
+        },
+
+        documentActions: {
+          one: async () => new Pack(null),
+        },
+
+        attributes: {
+          one: true,
+        },
+        relationships: {
+          one: {
+            type:   'parents',
+            plural: false,
+          },
+        },
+      }))
+
+      expect(warnings.map(stripAnsi)).toEqual([
+        "doctext.test.ts: Missing doctext for `labels.one`",
+        "doctext.test.ts: Missing doctext for `filters.one`",
+        "doctext.test.ts: Missing doctext for `singletons.one`",
+        "doctext.test.ts: Missing doctext for `collectionActions.one`",
+        "doctext.test.ts: Missing doctext for `documentActions.one`",
       ])
     })
 

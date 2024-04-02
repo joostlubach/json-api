@@ -1,7 +1,7 @@
 import { singularize } from 'inflected'
-import { isArray, isFunction, isPlainObject, mapValues } from 'lodash'
+import { isArray, isFunction, mapValues } from 'lodash'
 import { any, boolean, dictionary, number, string } from 'validator/types'
-import { objectEntries } from 'ytil'
+import { isPlainObject, objectEntries } from 'ytil'
 
 import APIError from './APIError'
 import Adapter, { GetResponse } from './Adapter'
@@ -572,29 +572,31 @@ export default class Resource<Model, Query, ID> {
   // #region Custom actions
 
   public async callCollectionAction(name: string, requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}) {
-    const action = this.config.collectionActions?.find(it => it.name === name)
+    const action = this.config.collectionActions?.[name]
     if (action == null) {
       throw new APIError(405, `Action \`${name}\` not found`)
     }
 
-    return await action.action.call(this, requestPack, getAdapter, context, options)
+    const handler = isFunction(action) ? action : action.handler
+    return await handler.call(this, requestPack, getAdapter, context, options)
   }
 
   public async callDocumentAction(name: string, locator: DocumentLocator<ID>, requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}) {
-    const action = this.config.documentActions?.find(it => it.name === name)
+    const action = this.config.documentActions?.[name]
     if (action == null) {
       throw new APIError(405, `Action \`${name}\` not found`)
     }
 
-    return await action.action.call(this, locator, requestPack, getAdapter, context, options)
+    const handler = isFunction(action) ? action : action.handler
+    return await handler.call(this, locator, requestPack, getAdapter, context, options)
   }
 
   public get collectionActions() {
-    return this.config.collectionActions ?? []
+    return this.config.collectionActions ?? {}
   }
 
   public get documentActions() {
-    return this.config.documentActions ?? []
+    return this.config.documentActions ?? {}
   }
 
   // #endregion

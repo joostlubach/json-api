@@ -1,8 +1,8 @@
 import bodyParser from 'body-parser'
 import { parse as parseContentType } from 'content-type'
 import { NextFunction, Request, Response, Router } from 'express'
-import { isPlainObject, kebabCase } from 'lodash'
-import { objectEntries, objectKeys } from 'ytil'
+import { isFunction, kebabCase } from 'lodash'
+import { isPlainObject, objectEntries, objectKeys } from 'ytil'
 
 import APIError from './APIError'
 import JSONAPI from './JSONAPI'
@@ -41,19 +41,21 @@ export function createExpressRouter<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router 
   function mountResource(resource: Resource<M, Q, I>) {
     // Mount custom actions. Do this first, as they are more specific than the regular actions. If an author
     // of a resource wants to override something here, that should be possible.
-    for (const spec of resource.collectionActions) {
-      const action = regularAction(resource, spec.name, customCollectionAction(spec))
-      const route = jsonAPI.customCollectionRoute(resource, spec.name)
+    for (const [name, spec] of objectEntries(resource.collectionActions)) {
+      const action = regularAction(resource, name, customCollectionAction(spec))
+      const route = jsonAPI.customCollectionRoute(resource, name)
       if (route === false) { break }
 
-      router[spec.router?.method ?? 'post'](route, action)
+      const routerOptions = isFunction(spec) ? undefined : spec.router
+      router[routerOptions?.method ?? 'post'](route, action)
     }
-    for (const spec of resource.documentActions) {
-      const action = regularAction(resource, spec.name, customDocumentAction(spec))
-      const route = jsonAPI.customDocumentRoute(resource, spec.name)
+    for (const [name, spec] of objectEntries(resource.documentActions)) {
+      const action = regularAction(resource, name, customDocumentAction(spec))
+      const route = jsonAPI.customDocumentRoute(resource, name)
       if (route === false) { break }
 
-      router[spec.router?.method ?? 'post'](route, action)
+      const routerOptions = isFunction(spec) ? undefined : spec.router
+      router[routerOptions?.method ?? 'post'](route, action)
     }
 
     // Mount regular actions.
@@ -280,13 +282,16 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
 
     customCollectionAction<R extends Resource<M, Q, I>>(spec: CustomCollectionAction<M, Q, I>) {
       return async (resource: R, request: Request, response: Response, context: RequestContext) => {
-        const requestPack = spec.router?.deserialize !== false
+        const routerOptions = isFunction(spec) ? undefined : spec.router
+        const handler = isFunction(spec) ? spec : spec.handler
+
+        const requestPack = routerOptions?.deserialize !== false
           ? Pack.tryDeserialize(jsonAPI.registry, request.body) ?? new Pack(null)
           : request.body
 
         const adapter = () => resource.adapter(context)
         const options = resource.extractActionOptions(context)
-        const pack = await spec.action.call(resource, requestPack, adapter, context, options)
+        const pack = await handler.call(resource, requestPack, adapter, context, options)
 
         response.contentType(jsonAPI.allowedContentTypes[0])
         response.json(pack.serialize())
@@ -296,7 +301,10 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
 
     customDocumentAction<R extends Resource<M, Q, I>>(spec: CustomDocumentAction<M, Q, I>) {
       return async (resource: R, request: Request, response: Response, context: RequestContext) => {
-        const requestPack = spec.router?.deserialize !== false
+        const routerOptions = isFunction(spec) ? undefined : spec.router
+        const handler = isFunction(spec) ? spec : spec.handler
+
+        const requestPack = routerOptions?.deserialize !== false
           ? Pack.tryDeserialize(jsonAPI.registry, request.body) ?? new Pack(null)
           : request.body
 
@@ -304,7 +312,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
         const adapter = () => resource.adapter(context)
         const options = resource.extractActionOptions(context)
 
-        const pack = await spec.action.call(resource, locator, requestPack, adapter, context, options)
+        const pack = await handler.call(resource, locator, requestPack, adapter, context, options)
 
         response.contentType(jsonAPI.allowedContentTypes[0])
         response.json(pack.serialize())

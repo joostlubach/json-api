@@ -124,10 +124,10 @@ export interface ResourceConfig<Model, Query, ID> {
   delete?: false | DeleteAction<Model, Query, ID>
 
   /** Custom collection actions for this resource. */
-  collectionActions?: CustomCollectionAction<Model, Query, ID>[]
+  collectionActions?: Record<string, CustomCollectionAction<Model, Query, ID>>
 
   /** Custom document actions for this resource. */
-  documentActions?: CustomDocumentAction<Model, Query, ID>[]
+  documentActions?: Record<string, CustomDocumentAction<Model, Query, ID>>
 
   // #endregion
 
@@ -278,15 +278,20 @@ export type DeleteAction<M, Q, I> = (
 
 // #region Custom actions
 
-export interface CustomCollectionAction<M, Q, I> {
-  name:    string
-  action:  (this: Resource<M, Q, I>, pack: Pack<I>, adapter: () => Adapter<M, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
+export type CustomCollectionAction<M, Q, I> = CustomCollectionActionConfig<M, Q, I> | CustomCollectionActionHandler<M, Q, I>
+export type CustomCollectionActionHandler<M, Q, I> = (this: Resource<M, Q, I>, pack: Pack<I>, adapter: () => Adapter<M, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
+
+export interface CustomCollectionActionConfig<M, Q, I> {
+  handler: CustomCollectionActionHandler<M, Q, I>
   router?: CustomActionRouterOptions
 }
 
-export interface CustomDocumentAction<M, Q, I> {
-  name:    string
-  action:  (this: Resource<M, Q, I>, locator: DocumentLocator<I>, pack: Pack<I>, adapter: () => Adapter<M, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
+
+export type CustomDocumentAction<M, Q, I> = CustomDocumentActionConfig<M, Q, I> | CustomDocumentActionHandler<M, Q, I>
+export type CustomDocumentActionHandler<M, Q, I> = (this: Resource<M, Q, I>, locator: DocumentLocator<I>, pack: Pack<I>, adapter: () => Adapter<M, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
+
+export interface CustomDocumentActionConfig<M, Q, I> {
+  handler: CustomDocumentActionHandler<M, Q, I>
   router?: CustomActionRouterOptions
 }
 
@@ -309,15 +314,15 @@ export function mergeResourceConfig<M, Q, I>(config: ResourceConfig<M, Q, I>, de
       ...config.attributes,
     },
 
-    collectionActions: [
-      ...defaults.collectionActions || [],
-      ...config.collectionActions || [],
-    ],
+    collectionActions: {
+      ...defaults.collectionActions,
+      ...config.collectionActions,
+    },
 
-    documentActions: [
-      ...defaults.documentActions || [],
-      ...config.documentActions || [],
-    ],
+    documentActions: {
+      ...defaults.documentActions,
+      ...config.documentActions,
+    },
   }
 }
 

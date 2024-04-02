@@ -21,15 +21,13 @@ describe("custom actions", () => {
     handler = jest.fn()
 
     jsonAPI.registry.modify('parents', cfg => {
-      cfg.collectionActions = [{
-        name:   'test',
-        action: handler,
-      }]
+      cfg.collectionActions = {
+        test: handler,
+      }
 
-      cfg.documentActions = [{
-        name:   'test',
-        action: handler,
-      }]
+      cfg.documentActions = {
+        test: handler,
+      }
     })
   })
 
