@@ -1,7 +1,7 @@
 import { OpenAPIV3_1 } from 'openapi-types'
 import { DeepPartial } from 'ytil'
 
-import { CommonActions } from '../types'
+import { CommonActions } from '../types.js'
 
 export interface OpenAPIGeneratorOptions extends Partial<Omit<OpenAPIV3_1.Document, 'openapi'>> {
   version?:  OpenAPIV3_1.Document['openapi']

@@ -2,8 +2,8 @@ import { Request } from 'express'
 import { isArray, isPlainObject } from 'lodash'
 import { objectKeys, objectValues } from 'ytil'
 
-import RequestContext from './RequestContext'
-import Resource from './Resource'
+import RequestContext from './RequestContext.js'
+import Resource from './Resource.js'
 
 // #region General types
 
@@ -201,4 +201,4 @@ export type Method =
 
 // #endregion
 
-export * from './openapi/types'
+export * from './openapi/types.js'

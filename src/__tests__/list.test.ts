@@ -1,10 +1,10 @@
-import { context, mockJSONAPI } from './mock'
+import { context, mockJSONAPI } from './mock.js'
 
 import { omit } from 'lodash'
 import { delay } from 'yest'
 import { slugify } from 'ytil'
 
-import db from './db'
+import db from './db.js'
 
 describe("list", () => {
 

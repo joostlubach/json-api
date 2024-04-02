@@ -1,10 +1,10 @@
-import { context, mockJSONAPI } from './mock'
+import { context, mockJSONAPI } from './mock.js'
 
 import { expectAsyncError } from 'yest'
 
-import APIError from '../APIError'
-import Pack from '../Pack'
-import db from './db'
+import APIError from '../APIError.js'
+import Pack from '../Pack.js'
+import db from './db.js'
 
 describe("create", () => {
 

@@ -1,9 +1,9 @@
-import { context, MockAdapter, mockJSONAPI } from '../__tests__/mock'
+import { context, MockAdapter, mockJSONAPI } from '../__tests__/mock.js'
 
 import SwaggerParser from '@apidevtools/swagger-parser'
 import { OpenAPIV3_1 } from 'openapi-types'
 
-import { OpenAPIGeneratorOptions } from '../types'
+import { OpenAPIGeneratorOptions } from '../types.js'
 
 describe("openapi", () => {
 

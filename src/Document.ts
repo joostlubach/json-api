@@ -1,9 +1,9 @@
 import { isPlainObject, mapValues } from 'lodash'
 import { objectEntries, objectKeys } from 'ytil'
 
-import APIError from './APIError'
-import ResourceRegistry from './ResourceRegistry'
-import { AnyResource, Linkage, Meta, Relationship } from './types'
+import APIError from './APIError.js'
+import ResourceRegistry from './ResourceRegistry.js'
+import { AnyResource, Linkage, Meta, Relationship } from './types.js'
 
 export default class Document<ID> {
 

@@ -1,6 +1,6 @@
 import { Response } from 'express'
 
-import { Meta } from './types'
+import { Meta } from './types.js'
 
 export default class ErrorPack {
 

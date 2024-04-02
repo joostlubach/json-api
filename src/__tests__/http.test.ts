@@ -1,15 +1,15 @@
-import { context, MockAdapter, MockJSONAPI } from './mock'
+import { context, MockAdapter, MockJSONAPI } from './mock.js'
 
 import express, { Application, NextFunction, Request, Response, Router } from 'express'
 import supertest from 'supertest'
 import { objectKeys } from 'ytil'
 
-import Document from '../Document'
-import { JSONAPIOptions } from '../JSONAPI'
-import Pack from '../Pack'
-import RequestContext from '../RequestContext'
-import Resource from '../Resource'
-import { Model, Parent, Query } from './db'
+import Document from '../Document.js'
+import { JSONAPIOptions } from '../JSONAPI.js'
+import Pack from '../Pack.js'
+import RequestContext from '../RequestContext.js'
+import Resource from '../Resource.js'
+import { Model, Parent, Query } from './db.js'
 
 describe("http", () => {
 

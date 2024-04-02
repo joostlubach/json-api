@@ -1,8 +1,8 @@
 
 import { OpenAPIV3_1 } from 'openapi-types'
 
-import Pack from './Pack'
-import { AttributeConfig, RelationshipConfig } from './ResourceConfig'
+import Pack from './Pack.js'
+import { AttributeConfig, RelationshipConfig } from './ResourceConfig.js'
 import {
   ActionOptions,
   Linkage,
@@ -12,7 +12,7 @@ import {
   Relationship,
   RetrievalActionOptions,
   Sort,
-} from './types'
+} from './types.js'
 
 export default interface Adapter<Model, Query, ID> {
 
