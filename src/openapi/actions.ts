@@ -2,9 +2,9 @@ import { camelCase, upperFirst } from 'lodash'
 import { OpenAPIV3_1 } from 'openapi-types'
 import { sparse } from 'ytil'
 
-import Resource from '../Resource.js'
-import { JSONAPIRoute } from '../types.js'
-import { pathParam, queryParam } from './objects.js'
+import Resource from '../Resource'
+import { JSONAPIRoute } from '../types'
+import { pathParam, queryParam } from './objects'
 
 export const actionParameters = {
   list: (resource: Resource<any, any, any>, route: JSONAPIRoute) => sparse([

@@ -22,7 +22,7 @@ export const bulkSelector = (): OpenAPIV3_1.SchemaObject => ({
           type: 'string',
         },
       },
-    },
+    }
   },
 })
 
@@ -77,7 +77,7 @@ export const singularRelationship = (): OpenAPIV3_1.SchemaObject => ({
     },
     meta: {
       type: 'object',
-    },
+    }
   },
   required: ['data'],
 })
@@ -94,7 +94,7 @@ export const pluralRelationship = (): OpenAPIV3_1.SchemaObject => ({
     },
     meta: {
       type: 'object',
-    },
+    }
   },
   required: ['data'],
 })
@@ -111,7 +111,7 @@ export const linkage = (idType: OpenAPIV3_1.NonArraySchemaObjectType): OpenAPIV3
     },
     meta: {
       type: 'object',
-    },
+    }
   },
   required: ['type', 'id'],
 })

@@ -1,1 +1,1 @@
-export * from './matchers.js'
+export * from './matchers'

@@ -1,6 +1,6 @@
-import { context, MockAdapter, MockJSONAPI } from './mock.js'
+import { context, MockAdapter, MockJSONAPI } from './mock'
 
-import db, { Parent } from './db.js'
+import db, { Parent } from './db'
 
 describe("including", () => {
 

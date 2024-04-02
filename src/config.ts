@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { DoctextOptions } from './openapi/index.js'
+import { DoctextOptions } from './openapi'
 
 export interface Config {
   defaultPageSize:     number

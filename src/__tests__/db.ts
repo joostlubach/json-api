@@ -1,7 +1,7 @@
 import { isArray, isFunction } from 'lodash'
 import { slugify } from 'ytil'
 
-import { Filters, Sort } from '../types.js'
+import { Filters, Sort } from '../types'
 
 export interface Parent {
   family:   string

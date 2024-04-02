@@ -1,5 +1,5 @@
-import Document from './Document.js'
-import ResourceRegistry from './ResourceRegistry.js'
+import Document from './Document'
+import ResourceRegistry from './ResourceRegistry'
 
 export default class Collection<ID> {
 

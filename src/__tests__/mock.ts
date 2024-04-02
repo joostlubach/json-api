@@ -2,19 +2,19 @@ import { isArray, isPlainObject } from 'lodash'
 import { OpenAPIV3_1 } from 'openapi-types'
 import { dynamicProxy } from 'yest'
 
-import Adapter, { GetResponse, ListResponse, ReplaceResponse } from '../Adapter.js'
-import JSONAPI, { JSONAPIOptions } from '../JSONAPI.js'
-import Pack from '../Pack.js'
-import RequestContext from '../RequestContext.js'
-import Resource from '../Resource.js'
+import Adapter, { GetResponse, ListResponse, ReplaceResponse } from '../Adapter'
+import JSONAPI, { JSONAPIOptions } from '../JSONAPI'
+import Pack from '../Pack'
+import RequestContext from '../RequestContext'
+import Resource from '../Resource'
 import {
   ActionOptions,
   ListActionOptions,
   ListParams,
   RetrievalActionOptions,
   Sort,
-} from '../types.js'
-import db, { Model, Query } from './db.js'
+} from '../types'
+import db, { Model, Query } from './db'
 
 export function mockJSONAPI(options?: JSONAPIOptions<Model, Query, string>) {
   return dynamicProxy(() => new MockJSONAPI(options))

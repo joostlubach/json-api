@@ -10,7 +10,9 @@
   },
   "scripts": {
     "build": "pnpm clean && pnpm build:tsc && pnpm build:copy",
-    "build:tsc": "tsc -p tsconfig.prod.json",
+    "build:tsc": "pnpm build:tsc:esm && pnpm build:tsc:cjs",
+    "build:tsc:esm": "tsc -p tsconfig.prod.json --module esnext --outDir dist/esm --declarationDir dist/types",
+    "build:tsc:cjs": "tsc -p tsconfig.prod.json --module commonjs --outDir dist/cjs --declaration false --declarationMap false",
     "build:copy": "copyfiles -u 1 src/**/*.yml dist",
     "clean": "rimraf dist",
     "lint": "eslint src --ext .ts",

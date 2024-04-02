@@ -1,9 +1,9 @@
-import { context, mockJSONAPI } from './mock.js'
+import { context, mockJSONAPI } from './mock'
 
 import { expectAsyncError } from 'yest'
 
-import APIError from '../APIError.js'
-import db from './db.js'
+import APIError from '../APIError'
+import db from './db'
 
 describe("delete", () => {
 

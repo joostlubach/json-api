@@ -1,16 +1,16 @@
 import { isObject } from 'lodash'
 import { wrapArray } from 'ytil'
 
-import Adapter from './Adapter.js'
-import Collection from './Collection.js'
-import Pack from './Pack.js'
-import RequestContext from './RequestContext.js'
-import Resource from './Resource.js'
-import ResourceRegistry, { ResourceRegistryOptions } from './ResourceRegistry.js'
-import config from './config.js'
-import { Middleware } from './middleware.js'
-import { OpenAPIGenerator } from './openapi/index.js'
-import { createExpressRouter, defaultRoutes } from './router.js'
+import Adapter from './Adapter'
+import Collection from './Collection'
+import Pack from './Pack'
+import RequestContext from './RequestContext'
+import Resource from './Resource'
+import ResourceRegistry, { ResourceRegistryOptions } from './ResourceRegistry'
+import config from './config'
+import { Middleware } from './middleware'
+import { OpenAPIGenerator } from './openapi'
+import { createExpressRouter, defaultRoutes } from './router'
 import {
   ActionOptions,
   CommonActions,
@@ -23,7 +23,7 @@ import {
   RetrievalActionOptions,
   RouteMap,
   RouterOptions,
-} from './types.js'
+} from './types'
 
 /**
  * Facade base class. Derive from this class in your application to expose a JSON API.
