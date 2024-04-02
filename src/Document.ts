@@ -45,6 +45,7 @@ export default class Document<ID> {
   }
 
   public static canDeserialize(serialized: Record<string, any>) {
+    if (!isPlainObject(serialized)) { return false }
     if (!('type' in serialized) || typeof serialized.type !== 'string') { return false }
     if (!('attributes' in serialized) || !isPlainObject(serialized.attributes)) { return false }
     if ('relationships' in serialized && !isPlainObject(serialized.relationships)) { return false }

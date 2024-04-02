@@ -9,6 +9,7 @@ import { JSONAPIOptions } from '../JSONAPI'
 import Pack from '../Pack'
 import RequestContext from '../RequestContext'
 import Resource from '../Resource'
+import { CustomCollectionActionConfig, CustomDocumentActionConfig } from '../ResourceConfig'
 import { Model, Parent, Query } from './db'
 
 describe("http", () => {
@@ -61,7 +62,14 @@ describe("http", () => {
         routes.push(`${method} ${route.path}`)
       }
 
-      expect(routes).toEqual(expect.arrayContaining([
+      expect(routes).toEqual([
+        // These custom actions have been added in mock.ts
+        'POST /parents/test-1',
+        'GET /parents/test-2',
+        'POST /parents/:id/test-1',
+        'GET /parents/:id/test-2',
+
+        // Regular actions
         'GET /parents',
         'GET /parents/::family-a',
         'GET /parents/::family-b',
@@ -76,7 +84,7 @@ describe("http", () => {
         'PUT /children/:id',
         'PATCH /children/:id',
         'DELETE /children',
-      ]))
+      ])
     })
 
     it("should create an openapi endpoint if openapi is configured", async () => {
@@ -481,6 +489,142 @@ describe("http", () => {
         return fn.call(request, path)
       }
 
+    })
+
+  })
+
+  describe("POST /parents/test-1", () => {
+
+    let spy: jest.Mock
+
+    beforeEach(() => {
+      setUp()
+
+      spy = jest.fn().mockReturnValue(Promise.resolve(mockPack()))
+      jsonAPI.registry.modify('parents', cfg => {
+        (cfg.collectionActions!['test-1'] as CustomCollectionActionConfig<any, any, any>).handler = spy
+      })
+    })
+
+    it("should call our custom collection action handler and serialize its output", async () => {
+      const response = await request.post('/parents/test-1').send({
+        data: '💺',
+      })
+      expect(response.status).toEqual(200)
+      expect(response.text).toEqual('"🗿"')
+
+      expect(spy).toHaveBeenCalledTimes(1)
+      expect(spy.mock.calls[0][0]).toEqual(expect.any(Pack))
+      expect(spy.mock.calls[0][0].data).toEqual('💺')
+      expect(spy.mock.calls[0][1]).toEqual(expect.any(Function))
+      expect(spy.mock.calls[0][1]()).toBeInstanceOf(MockAdapter)
+      expect(spy.mock.calls[0][2]).toBeInstanceOf(RequestContext)
+      expect(spy.mock.calls[0][2].action).toEqual('test-1')
+    })
+
+  })
+
+  describe("GET /parents/test-2", () => {
+
+    let spy: jest.Mock
+
+    beforeEach(() => {
+      setUp()
+
+      spy = jest.fn().mockReturnValue(Promise.resolve(mockPack()))
+      jsonAPI.registry.modify('parents', cfg => {
+        (cfg.collectionActions!['test-2'] as CustomCollectionActionConfig<any, any, any>).handler = spy
+      })
+    })
+
+    it("should not react to a POST call", async () => {
+      const response = await request.post('/parents/test-2').send({
+        data: '💺',
+      })
+      expect(response.status).toEqual(404)
+    })
+
+    it("should call our custom collection action handler and serialize its output", async () => {
+      const response = await request.get('/parents/test-2')
+      expect(response.status).toEqual(200)
+      expect(response.text).toEqual('"🗿"')
+
+      expect(spy).toHaveBeenCalledTimes(1)
+      expect(spy.mock.calls[0][0]).toEqual(expect.any(Pack))
+      expect(spy.mock.calls[0][0].data).toBeNull()
+      expect(spy.mock.calls[0][1]).toEqual(expect.any(Function))
+      expect(spy.mock.calls[0][1]()).toBeInstanceOf(MockAdapter)
+      expect(spy.mock.calls[0][2]).toBeInstanceOf(RequestContext)
+      expect(spy.mock.calls[0][2].action).toEqual('test-2')
+    })
+
+  })
+
+  describe("POST /parents/alice/test-1", () => {
+
+    let spy: jest.Mock
+
+    beforeEach(() => {
+      setUp()
+
+      spy = jest.fn().mockReturnValue(Promise.resolve(mockPack()))
+      jsonAPI.registry.modify('parents', cfg => {
+        (cfg.documentActions!['test-1'] as CustomDocumentActionConfig<any, any, any>).handler = spy
+      })
+    })
+
+    it("should call our custom document action handler and serialize its output", async () => {
+      const response = await request.post('/parents/alice/test-1').send({
+        data: '💺',
+      })
+      expect(response.status).toEqual(200)
+      expect(response.text).toEqual('"🗿"')
+
+      expect(spy).toHaveBeenCalledTimes(1)
+      expect(spy.mock.calls[0][0]).toEqual({id: 'alice'})
+      expect(spy.mock.calls[0][1]).toEqual(expect.any(Pack))
+      expect(spy.mock.calls[0][1].data).toEqual('💺')
+      expect(spy.mock.calls[0][2]).toEqual(expect.any(Function))
+      expect(spy.mock.calls[0][2]()).toBeInstanceOf(MockAdapter)
+      expect(spy.mock.calls[0][3]).toBeInstanceOf(RequestContext)
+      expect(spy.mock.calls[0][3].action).toEqual('test-1')
+    })
+
+  })
+
+  describe("GET /parents/alice/test-2", () => {
+
+    let spy: jest.Mock
+
+    beforeEach(() => {
+      setUp()
+
+      spy = jest.fn().mockReturnValue(Promise.resolve(mockPack()))
+      jsonAPI.registry.modify('parents', cfg => {
+        (cfg.documentActions!['test-2'] as CustomDocumentActionConfig<any, any, any>).handler = spy
+      })
+    })
+
+    it("should not react to a POST call", async () => {
+      const response = await request.post('/parents/alice/test-2').send({
+        data: '💺',
+      })
+      expect(response.status).toEqual(404)
+    })
+
+    it("should call our custom document action handler and serialize its output", async () => {
+      const response = await request.get('/parents/alice/test-2')
+      expect(response.status).toEqual(200)
+      expect(response.text).toEqual('"🗿"')
+
+      expect(spy).toHaveBeenCalledTimes(1)
+      expect(spy.mock.calls[0][0]).toEqual({id: 'alice'})
+      expect(spy.mock.calls[0][1]).toEqual(expect.any(Pack))
+      expect(spy.mock.calls[0][1].data).toBeNull()
+      expect(spy.mock.calls[0][2]).toEqual(expect.any(Function))
+      expect(spy.mock.calls[0][2]()).toBeInstanceOf(MockAdapter)
+      expect(spy.mock.calls[0][3]).toBeInstanceOf(RequestContext)
+      expect(spy.mock.calls[0][3].action).toEqual('test-2')
     })
 
   })

@@ -206,8 +206,8 @@ export default abstract class JSONAPI<Model, Query, ID> {
   }
 
   public customDocumentRoute(resource: Resource<any, any, any>, name: string) {
-    if (this.options.router?.routes?.customCollection === false) { return false }
-    return this.options.router?.routes?.customCollection?.(resource, name) ?? `/${resource.plural}/${name}`
+    if (this.options.router?.routes?.customDocument === false) { return false }
+    return this.options.router?.routes?.customDocument?.(resource, name) ?? `/${resource.plural}/:id/${name}`
   }
 
   // #endregion

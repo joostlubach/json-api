@@ -89,6 +89,30 @@ export class MockJSONAPI extends JSONAPI<Model, Query, string> {
         'family-b': query => ({...query, filters: {...query.filters, family: 'b'}}),
       },
 
+      collectionActions: {
+        'test-1': {
+          handler: async () => new Pack<string>(null),
+        },
+        'test-2': {
+          handler: async () => new Pack<string>(null),
+          router:  {
+            method: 'get',
+          },
+        },
+      },
+
+      documentActions: {
+        'test-1': {
+          handler: async () => new Pack<string>(null),
+        },
+        'test-2': {
+          handler: async () => new Pack<string>(null),
+          router:  {
+            method: 'get',
+          },
+        },
+      },
+
       attributes: {
         name: true,
         age:  true,
