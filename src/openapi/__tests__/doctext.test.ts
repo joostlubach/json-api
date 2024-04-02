@@ -1,8 +1,8 @@
-import { mockJSONAPI } from '../__tests__/mock'
+import { mockJSONAPI } from '../../__tests__/mock'
 
 import Resource from '../../Resource'
+import { Parent, Query } from '../../__tests__/db'
 import config from '../../config'
-import { Parent, Query } from '../__tests__/db'
 import doctext from '../doctext'
 
 describe("doctext", () => {

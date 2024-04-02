@@ -1,4 +1,4 @@
-import { context, MockAdapter, mockJSONAPI } from '../__tests__/mock'
+import { context, MockAdapter, mockJSONAPI } from '../../__tests__/mock'
 
 import SwaggerParser from '@apidevtools/swagger-parser'
 import { OpenAPIV3_1 } from 'openapi-types'
