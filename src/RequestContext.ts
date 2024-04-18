@@ -9,7 +9,7 @@ import {
   Validator,
 } from 'validator'
 import { object } from 'validator/types'
-import { DependencyProvider } from 'ydeps'
+import { DependencyContainer } from 'ydeps'
 import { Constructor } from 'ytil'
 
 import APIError from './APIError'
@@ -19,12 +19,12 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
   constructor(
     public readonly action: string,
     private readonly params: P,
-    deps?: DependencyProvider,
+    deps?: DependencyContainer,
   ) {
-    this.deps = new DependencyProvider({upstream: deps})
+    this.deps = new DependencyContainer({upstream: deps})
   }
 
-  public readonly deps: DependencyProvider
+  public readonly deps: DependencyContainer
 
   // #region Parameters
 
