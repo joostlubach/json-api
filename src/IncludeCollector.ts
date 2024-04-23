@@ -99,7 +99,7 @@ export default class IncludeCollector<Model, Query, ID> {
       
       const query = await resource.applyFilters(adapter.query(), {id: ids}, adapter, this.context)
       const response = await adapter.list(query, {}, {totals: false})
-      for (const model of response.models) {
+      for (const model of response.data) {
         const document = await resource.modelToDocument(model, adapter, this.context)
         documents.push(document)
       }

@@ -20,7 +20,7 @@ export default interface Adapter<Model, Query, ID> {
 
   list(query: Query, params: ListParams, options: ListActionOptions): Promise<ListResponse<Model>>
   get(query: Query, id: ID, options: RetrievalActionOptions): Promise<GetResponse<Model>>
-  save(model: Model, requestPack: Pack<ID>, options: ActionOptions): Promise<SaveResponse<Model>>
+  save(data: Model, requestPack: Pack<ID>, options: ActionOptions): Promise<SaveResponse<Model>>
   delete(query: Query): Promise<Array<Model | ID>>
 
   // #endregion
@@ -41,10 +41,10 @@ export default interface Adapter<Model, Query, ID> {
 
   emptyModel(id: ID | null): Model | Promise<Model>
   
-  getAttribute?(model: Model, name: string, attribute: AttributeConfig<Model, Query, ID>): any | Promise<any>
-  setAttribute?(model: Model, name: string, value: any, attribute: AttributeConfig<Model, Query, ID>): void | Promise<void>
+  getAttribute?(data: Model, name: string, attribute: AttributeConfig<Model, Query, ID>): any | Promise<any>
+  setAttribute?(data: Model, name: string, value: any, attribute: AttributeConfig<Model, Query, ID>): void | Promise<void>
 
-  getRelationship?(model: Model, name: string, relationship: RelationshipConfig<Model, Query, ID>): Relationship<ID> | ID | Linkage<ID> | Promise<ID | Linkage<ID>>
+  getRelationship?(data: Model, name: string, relationship: RelationshipConfig<Model, Query, ID>): Relationship<ID> | ID | Linkage<ID> | Promise<ID | Linkage<ID>>
 
   // #endregion
 
@@ -69,29 +69,29 @@ export type OpenAPIDocumentation = Pick<OpenAPIV3_1.SchemaObject,
 >
 
 export interface ListResponse<M> {
-  models:    M[]
+  data:      M[]
   total?:    number
   included?: any[]
   meta?:     Meta
 }
 
 export interface GetResponse<M> {
-  model:     M | null
+  data:      M | null
   included?: any[]
   meta?:     Meta
 }
 
 export interface SaveResponse<M> {
-  model: M
+  data:  M
   meta?: Meta
 }
 
 export interface ReplaceResponse<M> {
-  model: M
+  data:  M
   meta?: Meta
 }
 
 export interface UpdateResponse<M> {
-  model: M
+  data:  M
   meta?: Meta
 }

@@ -396,7 +396,7 @@ export default class Resource<Model, Query, ID> {
     const response = await adapter.list(query, params, {...options, totals})
 
     return await this.collectionPack(
-      response.models,
+      response.data,
       response.included,
       params.offset,
       response.total,
@@ -415,10 +415,10 @@ export default class Resource<Model, Query, ID> {
     }
 
     const adapter = getAdapter()
-    const response = await this.getModel(locator, adapter, context)
+    const response = await this.load(locator, adapter, context)
     
     return await this.documentPack(
-      response.model,
+      response.data,
       response.included,
       adapter,
       context,
@@ -442,7 +442,7 @@ export default class Resource<Model, Query, ID> {
     await this.config.scope?.ensure.call(this, model, context)
 
     const response = await adapter.save(model, requestPack, options)
-    return await this.documentPack(response.model, undefined, adapter, context, options)
+    return await this.documentPack(response.data, undefined, adapter, context, options)
   }
 
   public async replace(id: ID, requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
@@ -456,8 +456,8 @@ export default class Resource<Model, Query, ID> {
     const adapter = getAdapter()
     const document = this.extractRequestDocument(requestPack, id)
     
-    // Run a getModel just to make sure the model exists.
-    await this.getModel({id}, adapter, context)
+    // Run a loadInstance just to make sure the model exists.
+    await this.load({id}, adapter, context)
 
     // Continue with a fresh model.
     const model = await adapter.emptyModel(id)
@@ -465,7 +465,7 @@ export default class Resource<Model, Query, ID> {
     await this.config.scope?.ensure.call(this, model, context)
 
     const response = await adapter.save(model, requestPack, options)
-    return await this.documentPack(response.model, undefined, adapter, context, options)
+    return await this.documentPack(response.data, undefined, adapter, context, options)
   }
 
   public async update(id: ID, requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
@@ -478,12 +478,12 @@ export default class Resource<Model, Query, ID> {
 
     const adapter = getAdapter()
     const document = this.extractRequestDocument(requestPack, id)
-    const {model} = await this.getModel({id}, adapter, context)
-    await this.setAttributes(model, document, false, adapter, context)
-    await this.config.scope?.ensure.call(this, model, context)
+    const {data} = await this.load({id}, adapter, context)
+    await this.setAttributes(data, document, false, adapter, context)
+    await this.config.scope?.ensure.call(this, data, context)
 
-    const response = await adapter.save(model, requestPack, options)
-    return await this.documentPack(response.model, undefined, adapter, context, options)
+    const response = await adapter.save(data, requestPack, options)
+    return await this.documentPack(response.data, undefined, adapter, context, options)
   }
 
   public async delete(requestPack: Pack<ID>, getAdapter: () => Adapter<Model, Query, ID>, context: RequestContext): Promise<Pack<ID>> {
@@ -543,7 +543,7 @@ export default class Resource<Model, Query, ID> {
     return new Collection(documents)
   }
 
-  public async getModel(locator: DocumentLocator<ID>, adapter: Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}): Promise<LoadResponse<Model>> {
+  public async load(locator: DocumentLocator<ID>, adapter: Adapter<Model, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}): Promise<LoadResponse<Model>> {
     const query = await this.listQuery(adapter, {}, context)
     if ('singleton' in locator) {
       const singleton = this.config.singletons?.[locator.singleton]
@@ -551,19 +551,19 @@ export default class Resource<Model, Query, ID> {
         throw new APIError(404, `Singleton \`${locator.singleton}\` (of ${this.type}) not found`)
       }
   
-      const response = await singleton(query, context, options)
-      if (response.model == null) {
+      const response = await singleton.call(this, query, context, options)
+      if (response.data == null) {
         throw new APIError(404, `Singleton \`${locator.singleton}\` (of ${this.type}) not found`)
       }
   
-      return response as GetResponse<Model> & {model: Model}
+      return response as GetResponse<Model> & {data: Model}
     } else {
       const response = await adapter.get(query, locator.id, options)
-      if (response.model == null) {
+      if (response.data == null) {
         throw new APIError(404, `Resource \`${this.type}\` with ID \`${locator.id}\` not found`)
       }
 
-      return response as GetResponse<Model> & {model: Model}
+      return response as GetResponse<Model> & {data: Model}
     }
   }
 
@@ -788,6 +788,6 @@ const offsetParam = number({integer: true, default: 0})
 const limitParam = number({integer: true, required: false})
 
 interface LoadResponse<M> {
-  model:     M
+  data:      M
   included?: M[]
 }

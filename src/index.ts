@@ -1,5 +1,6 @@
 export { default as APIError } from './APIError'
 export { type default as Adapter } from './Adapter'
+export * from './Adapter'
 export { default as Collection } from './Collection'
 export { default as Document } from './Document'
 export { default as ErrorPack } from './ErrorPack'

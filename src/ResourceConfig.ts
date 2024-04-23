@@ -73,7 +73,7 @@ export interface ResourceConfig<Model, Query, ID> {
   labels?: LabelMap<Model, Query, ID>
 
   /** Singleton configuration. */
-  singletons?: SingletonMap<Query, Model>
+  singletons?: SingletonMap<Query, Model, ID>
 
   /** Sort configuration. */
   sorts?: SortMap<Query>
@@ -209,8 +209,8 @@ export type LabelMap<M, Q, I> = Record<string, LabelModifier<M, Q, I>>
 export type LabelModifier<M, Q, I> = (this: Resource<M, Q, I>, query: Q, context: RequestContext) => Q | Promise<Q>
 export type WildcardLabelModifier<M, Q, I> = (this: Resource<M, Q, I>, label: string, query: Q, context: RequestContext) => Q
 
-export type SingletonMap<Q, M> = Record<string, Singleton<Q, M>>
-export type Singleton<Q, M> = (query: Q, context: RequestContext, options: RetrievalActionOptions) => Promise<GetResponse<M>>
+export type SingletonMap<Q, M, I> = Record<string, Singleton<Q, M, I>>
+export type Singleton<Q, M, I> = (this: Resource<M, Q, I>, query: Q, context: RequestContext, options: RetrievalActionOptions) => Promise<GetResponse<M>>
 
 export type SortMap<Q> = Record<string, SortModifier<Q>>
 export type SortModifier<Q> = (query: Q, direction: 1 | -1, context: RequestContext) => Q
