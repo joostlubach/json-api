@@ -153,21 +153,21 @@ export class MockAdapter implements Adapter<Model, Query, string> {
 
   public async list(query: Query, params: ListParams, options: ListActionOptions): Promise<ListResponse<Model>> {
     const models = db(this.resource.type).list(query)
-    if (options.totals === false) { return {models} }
+    if (options.totals === false) { return {data: models} }
 
     const total = db(this.resource.type).count({...query, offset: 0, limit: null})
-    return {models, total}
+    return {data: models, total}
   }
   
   public async get(query: Query, id: string, options: RetrievalActionOptions): Promise<GetResponse<Model>> {
     return {
-      model: db(this.resource.type).get(id, query),
+      data: db(this.resource.type).get(id, query),
     }
   }
   
   public async save(model: Model, _: Pack<string>, options: ActionOptions): Promise<ReplaceResponse<Model>> {
     const inserted = db(this.resource.type).insert(model)[0]
-    return {model: inserted}
+    return {data: inserted}
   }
   
   public async delete(query: Query): Promise<Model[]> {

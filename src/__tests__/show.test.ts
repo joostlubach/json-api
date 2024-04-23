@@ -207,7 +207,7 @@ describe("show", () => {
           firstborn: async query => {
             const children = db('children').list(query)
             children.sort((a, b) => b.age - a.age)
-            return {model: children[0]}
+            return {data: children[0]}
           },
         }
       })
@@ -232,7 +232,7 @@ describe("show", () => {
     it("should raise 404 if the adapter returned `null`", async () => {
       jsonAPI.registry.modify('children', cfg => {
         cfg.singletons = {
-          firstborn: async query => ({model: null}),
+          firstborn: () => Promise.resolve(({data: null})),
         }
       })
 

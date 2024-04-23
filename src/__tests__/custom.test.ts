@@ -75,26 +75,23 @@ describe("custom actions", () => {
     })
 
     it("should override show", async () => {
-      const locator = {id: 'alice'}
-      const pack = await jsonAPI.show('parents', locator, context('custom:show'))
+      const pack = await jsonAPI.show('parents', {id: 'alice'}, context('custom:show'))
       expect(handler).toHaveBeenCalledTimes(1)
-      expect(handler).toHaveBeenCalledWith(locator, expect.any(Function), context('custom:show'), {})
+      expect(handler).toHaveBeenCalledWith({id: 'alice'}, expect.any(Function), context('custom:show'), {})
       expect(pack).toBe(responsePack)
     })
 
     it("should override replace", async () => {
-      const locator = {id: 'alice'}
-      const pack = await jsonAPI.replace('parents', locator, requestPack, context('custom:replace'))
+      const pack = await jsonAPI.replace('parents', 'alice', requestPack, context('custom:replace'))
       expect(handler).toHaveBeenCalledTimes(1)
-      expect(handler).toHaveBeenCalledWith(locator, requestPack, expect.any(Function), context('custom:replace'), {})
+      expect(handler).toHaveBeenCalledWith('alice', requestPack, expect.any(Function), context('custom:replace'), {})
       expect(pack).toBe(responsePack)
     })
 
     it("should override update", async () => {
-      const locator = {id: 'alice'}
-      const pack = await jsonAPI.update('parents', locator, requestPack, context('custom:update'))
+      const pack = await jsonAPI.update('parents', 'alice', requestPack, context('custom:update'))
       expect(handler).toHaveBeenCalledTimes(1)
-      expect(handler).toHaveBeenCalledWith(locator, requestPack, expect.any(Function), context('custom:update'), {})
+      expect(handler).toHaveBeenCalledWith('alice', requestPack, expect.any(Function), context('custom:update'), {})
       expect(pack).toBe(responsePack)
     })
 

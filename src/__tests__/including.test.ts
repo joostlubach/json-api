@@ -95,8 +95,8 @@ describe("including", () => {
         const dolores = db('children').get('dolores')
 
         return action === 'list'
-          ? {models: [alice], total: 1, included: [charlie, dolores]}
-          : {model: alice, included: [charlie, dolores]}
+          ? {data: [alice], total: 1, included: [charlie, dolores]}
+          : {data: alice, included: [charlie, dolores]}
       })
 
       const out = await call(['one', 'two', 'three+four'])

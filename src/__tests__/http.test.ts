@@ -265,7 +265,7 @@ describe("http", () => {
     it("should use a singleton locator if a singleton with the given name is present", async () => {
       jsonAPI.registry.modify('parents', cfg => {
         cfg.singletons = {
-          alice: async () => ({model: null}),
+          alice: async () => ({data: null}),
         }
       })
       
