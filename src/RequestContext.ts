@@ -37,7 +37,7 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
    * @param type Optionally a type to validate against.
    */
   public param<K extends string & keyof P>(name: K): P[K]
-  public param<T>(name: string & keyof P, type?: RequiredType<T, TypeOptions<T>>): T
+  public param<T, O extends TypeOptions<T>>(name: string & keyof P, type?: RequiredType<T, O>): T
   public param<T>(name: string & keyof P, type?: Type<T, any>): T | null
   public param(name: string & keyof P, type?: Type<any, any>) {
     let value = this.params[name]
