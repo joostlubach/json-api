@@ -23,7 +23,7 @@
     "build:tsc:cjs": "tsc -p tsconfig.prod.json --module commonjs --outDir dist/cjs --declaration false --declarationMap false",
     "build:copy": "copyfiles -u 1 src/**/*.yml dist",
     "clean": "rimraf dist",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src/**",
     "check": "tsc -p . --noEmit",
     "test": "NODE_ENV=test jest"
   },
