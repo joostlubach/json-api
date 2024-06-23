@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "JSON API endpoints based on json-api by Ethan Resnick",
   "author": "Joost Lubach",
-  "license": "ISC",
+  "license": "MIT",
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
