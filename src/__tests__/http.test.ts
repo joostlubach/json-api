@@ -467,7 +467,7 @@ describe.skip("http", () => {
           delete jsonAPI.options.router
         })
       } else {
-        it.only("should not allow a request body", async () => {
+        it("should not allow a request body", async () => {
           setUp()
           const response = await call().send({data: null})
           expect(response.statusCode).toEqual(400)

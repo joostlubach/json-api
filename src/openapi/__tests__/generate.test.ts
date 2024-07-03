@@ -1,7 +1,7 @@
 import { context, MockAdapter, mockJSONAPI } from '../../__tests__/mock'
 
 import SwaggerParser from '@apidevtools/swagger-parser'
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test'
 import { OpenAPIV3_1 } from 'openapi-types'
 
 import { OpenAPIGeneratorOptions } from '../types'
@@ -47,7 +47,7 @@ describe("openapi", () => {
     jsonAPI.registry.drop('children')
   })
 
-  it.only("should allow generating a basic OpenAPI spec with the given info", async () => {
+  it("should allow generating a basic OpenAPI spec with the given info", async () => {
     const spec = await jsonAPI.openAPISpec(context('__openapi__'))
     expect(spec).toEqual({
       openapi: '3.1.0',

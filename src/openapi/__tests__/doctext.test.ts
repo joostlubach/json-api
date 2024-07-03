@@ -1,6 +1,6 @@
 import { mockJSONAPI } from '../../__tests__/mock'
 
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, jest, test } from 'bun:test'
 import stripAnsi from 'strip-ansi'
 
 import Pack from '../../Pack'
