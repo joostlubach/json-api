@@ -18,8 +18,7 @@
     "build:copy:cjs": "copyfiles -u 1 src/**/*.yml dist/cjs",
     "clean": "rimraf dist tsconfig.tsbuildinfo",
     "lint": "eslint src --ext ts,tsx",
-    "check": "tsc -p . --noEmit",
-    "test": "NODE_ENV=test jest"
+    "check": "tsc -p . --noEmit"
   },
   "dependencies": {
     "body-parser": "^1.20.2",

@@ -1,7 +1,7 @@
 import { singularize } from 'inflected'
-import { isArray, isFunction, mapValues } from 'lodash'
+import { isArray, mapValues } from 'lodash'
 import { any, boolean, dictionary, number, string } from 'validator/types'
-import { isPlainObject, objectEntries } from 'ytil'
+import { isFunction, isPlainObject, objectEntries } from 'ytil'
 
 import APIError from './APIError'
 import Adapter, { GetResponse } from './Adapter'

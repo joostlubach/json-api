@@ -1,4 +1,3 @@
-import { isFunction } from 'lodash'
 import {
   INVALID,
   ObjectSchema,
@@ -10,7 +9,7 @@ import {
 } from 'validator'
 import { object } from 'validator/types'
 import { DependencyContainer } from 'ydeps'
-import { Constructor } from 'ytil'
+import { Constructor, isFunction } from 'ytil'
 
 import APIError from './APIError'
 

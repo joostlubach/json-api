@@ -1,8 +1,8 @@
 import bodyParser from 'body-parser'
 import { parse as parseContentType } from 'content-type'
 import { NextFunction, Request, Response, Router } from 'express'
-import { isFunction, kebabCase } from 'lodash'
-import { isPlainObject, objectEntries, objectKeys } from 'ytil'
+import { kebabCase } from 'lodash'
+import { isFunction, isPlainObject, objectEntries, objectKeys } from 'ytil'
 
 import APIError from './APIError'
 import JSONAPI from './JSONAPI'

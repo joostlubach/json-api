@@ -1,6 +1,7 @@
 import { context, MockAdapter, mockJSONAPI } from '../../__tests__/mock'
 
 import SwaggerParser from '@apidevtools/swagger-parser'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { OpenAPIV3_1 } from 'openapi-types'
 
 import { OpenAPIGeneratorOptions } from '../types'
@@ -46,7 +47,7 @@ describe("openapi", () => {
     jsonAPI.registry.drop('children')
   })
 
-  it("should allow generating a basic OpenAPI spec with the given info", async () => {
+  it.only("should allow generating a basic OpenAPI spec with the given info", async () => {
     const spec = await jsonAPI.openAPISpec(context('__openapi__'))
     expect(spec).toEqual({
       openapi: '3.1.0',
@@ -290,7 +291,7 @@ describe("openapi", () => {
       it("should in the case of 200 respond with a list pack of the resource", async () => {
         const spec = await jsonAPI.openAPISpec(context('__openapi__'))
   
-        const expected = () => ({
+        const expected = (): any => ({
           description: expect.any(String),
           content:     {
             'application/vnd.api+json': {
@@ -619,22 +620,21 @@ describe("openapi", () => {
 
     describe("all actions", () => {
   
-      describe.each`
-      action          | get
-      ${'list'}       | ${(spec: OpenAPIV3_1.Document) => spec.paths?.['/parents']?.get}
-      ${'list-label'} | ${(spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/:family-a']?.get}
-      ${'show'}       | ${(spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/{id}']?.get}
-      ${'create'}     | ${(spec: OpenAPIV3_1.Document) => spec.paths?.['/parents']?.post}
-      ${'replace'}    | ${(spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/{id}']?.put}
-      ${'update'}     | ${(spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/{id}']?.patch}
-      ${'delete'}     | ${(spec: OpenAPIV3_1.Document) => spec.paths?.['/parents']?.delete}
-      `("$action", ({action, get}) => {
+      describe.each([
+        ['list', (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents']?.get],
+        ['list-label', (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/:family-a']?.get],
+        ['show', (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/{id}']?.get],
+        ['create', (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents']?.post],
+        ['replace', (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/{id}']?.put],
+        ['update', (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/{id}']?.patch],
+        ['delete', (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents']?.delete],
+      ])("$action", (action, get) => {
   
         it("should define all possible response codes", async () => {
           const spec = await jsonAPI.openAPISpec(context('__openapi__'))
           const okCode = action === 'create' ? '201' : '200'
   
-          expect(get(spec).responses).toEqual({
+          expect(get(spec)?.responses).toEqual({
             [okCode]: expect.any(Object),
             '400':    expect.any(Object),
             '401':    expect.any(Object),

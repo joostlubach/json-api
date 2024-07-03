@@ -1,5 +1,6 @@
-import { isArray, isFunction } from 'lodash'
-import { slugify } from 'ytil'
+import { afterEach } from 'bun:test'
+import { isArray } from 'lodash'
+import { isFunction, slugify } from 'ytil'
 
 import { Filters, Sort } from '../types'
 

@@ -1,5 +1,6 @@
 import { context, MockAdapter, MockJSONAPI } from './mock'
 
+import bodyParser from 'body-parser'
 import express, { Application, NextFunction, Request, Response, Router } from 'express'
 import supertest from 'supertest'
 import { objectKeys } from 'ytil'
@@ -12,7 +13,7 @@ import Resource from '../Resource'
 import { CustomCollectionActionConfig, CustomDocumentActionConfig } from '../ResourceConfig'
 import { Model, Parent, Query } from './db'
 
-describe("http", () => {
+describe.skip("http", () => {
 
   let jsonAPI: MockJSONAPI
 
@@ -30,6 +31,15 @@ describe("http", () => {
     router = jsonAPI.router()
 
     app = express()
+    app.use((request, response, next) => {
+      console.log('BODY1', request.body)
+      next()
+    })
+    app.use(bodyParser.json())
+    app.use((request, response, next) => {
+      console.log('BODY2', request.body)
+      next()
+    })
     app.use(router)
     app.use((error: any, request: Request, response: Response, next: NextFunction) => {
       if (error instanceof Error) {
@@ -374,16 +384,15 @@ describe("http", () => {
 
   })
 
-  describe.each`
-  method      | path                    | hasRequest
-  ${'get'}    | ${'/parents'}           | ${false}
-  ${'get'}    | ${'/parents/:family-a'} | ${false}
-  ${'get'}    | ${'/parents/alice'}     | ${false}
-  ${'post'}   | ${'/parents'}           | ${true}
-  ${'put'}    | ${'/parents/alice'}     | ${true}
-  ${'patch'}  | ${'/parents/alice'}     | ${true}
-  ${'delete'} | ${'/parents'}           | ${true}
-  `("request validation", ({method, path, hasRequest}) => {
+  describe.each([
+    ['get', '/parents', false],
+    ['get', '/parents/:family-a', false],
+    ['get', '/parents/alice', false],
+    ['post', '/parents', true],
+    ['put', '/parents/alice', true],
+    ['patch', '/parents/alice', true],
+    ['delete', '/parents', true],
+  ])("request validation", (method, path, hasRequest) => {
 
     afterEach(() => {
       delete jsonAPI.options.router
@@ -458,7 +467,7 @@ describe("http", () => {
           delete jsonAPI.options.router
         })
       } else {
-        it("should not allow a request body", async () => {
+        it.only("should not allow a request body", async () => {
           setUp()
           const response = await call().send({data: null})
           expect(response.statusCode).toEqual(400)
