@@ -1,7 +1,6 @@
 import { context, MockAdapter, mockJSONAPI } from '../../__tests__/mock'
 
 import SwaggerParser from '@apidevtools/swagger-parser'
-import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test'
 import { OpenAPIV3_1 } from 'openapi-types'
 
 import { OpenAPIGeneratorOptions } from '../types'

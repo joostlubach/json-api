@@ -1,6 +1,5 @@
 import { mockJSONAPI } from '../../__tests__/mock'
 
-import { afterEach, beforeEach, describe, expect, it, jest, test } from 'bun:test'
 import stripAnsi from 'strip-ansi'
 
 import Pack from '../../Pack'
@@ -125,7 +124,7 @@ describe("doctext", () => {
         },
 
         singletons: {
-          one: async query => ({model: null}),
+          one: async query => ({data: null}),
         },
 
         collectionActions: {

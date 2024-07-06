@@ -9,17 +9,10 @@
     "./testing": "./src/testing/index.ts"
   },
   "scripts": {
-    "build": "pnpm clean && pnpm build:tsc && pnpm build:copy",
-    "build:tsc": "pnpm build:tsc:esm && pnpm build:tsc:cjs",
-    "build:tsc:esm": "tsc -p tsconfig.prod.json --module esnext --outDir dist/esm --declarationDir dist/types",
-    "build:tsc:cjs": "tsc -p tsconfig.prod.json --module commonjs --outDir dist/cjs --declaration false --declarationMap false",
-    "build:copy": "pnpm build:copy:esm && pnpm build:copy:cjs",
-    "build:copy:esm": "copyfiles -u 1 src/**/*.yml dist/esm",
-    "build:copy:cjs": "copyfiles -u 1 src/**/*.yml dist/cjs",
-    "clean": "rimraf dist tsconfig.tsbuildinfo",
+    "check": "tsc -p . --noEmit",
     "lint": "eslint src --ext ts,tsx",
-    "check": "tsc -p . --noEmit"
-  },
+    "test": "NODE_ENV=test DATA_ENV=test jest"
+},
   "dependencies": {
     "body-parser": "^1.20.2",
     "chalk": "^3.0.0",
