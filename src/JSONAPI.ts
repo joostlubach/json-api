@@ -138,7 +138,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
   public async documentPack(model: Model, context: RequestContext, options: DocumentPackOptions<Model> = {}) {
     const resource = this.registry.resourceForModel(this.nameForModel(model))
     const adapter = resource.adapter(context)
-    return await resource.documentPack(model, undefined, adapter, context, options)
+    return await resource.documentPack(model, options.included ?? [], adapter, context, options)
   }
 
   public async collectionPack(models: Model[], context: RequestContext, options: DocumentPackOptions<Model> = {}) {
@@ -146,7 +146,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
 
     const resource = this.registry.resourceForModel(this.nameForModel(models[0]))
     const adapter = resource.adapter(context)
-    return await resource.collectionPack(models, undefined, undefined, undefined, adapter, context, options)
+    return await resource.collectionPack(models, options.included ?? [], undefined, undefined, adapter, context, options)
   }
 
   public async modelsToCollection(resourceType: string, models: Model[], context: RequestContext, options: ModelsToCollectionOptions = {}) {

@@ -533,12 +533,11 @@ export default class Resource<Model, Query, ID> {
   }
 
   private async resolveIncluded(base: Document<ID>[], includedModels: Model[] | undefined, context: RequestContext, options: RetrievalActionOptions): Promise<Collection<ID> | undefined> {
-    if (options.include == null) { return undefined }
-
     const collector = new IncludeCollector(this.jsonAPI, context)
-    const documents = includedModels != null
-      ? await collector.wrap(includedModels)
-      : await collector.collect(base, options.include)
+    const documents =
+      includedModels != null ? await collector.wrap(includedModels) :
+        options.include != null ? await collector.collect(base, options.include) :
+          []
 
     return new Collection(documents)
   }

@@ -14,6 +14,15 @@ export default class APIError extends Error {
     super(message)
   }
 
+  public static invalidField(pointer: string, code: string, title: string, detail?: string) {
+    return new APIError(422, 'Invalid field', [{
+      source: {pointer},
+      code,
+      title,
+      detail,
+    }])
+  }
+
   public toErrorPack() {
     return new ErrorPack(this.status, this.message, this.errors, {
       ...this.meta,
