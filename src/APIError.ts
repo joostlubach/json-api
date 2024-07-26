@@ -14,11 +14,11 @@ export default class APIError extends Error {
     super(message)
   }
 
-  public static invalidField(pointer: string, code: string, title: string, detail?: string) {
+  public static invalidField(pointer: string, code: string, detail: string) {
     return new APIError(422, 'Invalid field', [{
       source: {pointer},
       code,
-      title,
+      title:  "Invalid field",
       detail,
     }])
   }
