@@ -91,10 +91,13 @@ export type Links = Record<string, string>
 export type Meta = Record<string, any>
 
 export interface Relationship<ID> {
-  data:   Linkage<ID> | Linkage<ID>[] | null
+  data:   RelationshipData<ID>
   links?: Links
   meta?:  Meta
 }
+
+export type RelationshipDataLike<ID> = ID | Linkage<ID> | Array<ID | Linkage<ID>> | null
+export type RelationshipData<ID> = Linkage<ID> | Linkage<ID>[] | null
 
 export const Relationship: {
   isRelationship: <I>(arg: any) => arg is Relationship<I>

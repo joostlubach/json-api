@@ -23,6 +23,7 @@ import {
   ModelsToCollectionOptions,
   ModelToDocumentOptions,
   Relationship,
+  RelationshipDataLike,
   RetrievalActionOptions,
   Sort,
 } from './types'
@@ -267,31 +268,35 @@ export default class Resource<Model, Query, ID> {
   }
 
   private async getRelationshipValue(model: Model, name: string, relationship: RelationshipConfig<Model, Query, ID>, adapter: Adapter<Model, Query, ID> | undefined, context: RequestContext): Promise<Relationship<ID>> {
-    const coerce = (value: Relationship<ID> | Linkage<ID> | ID | Array<Linkage<ID> | ID> | null): Relationship<ID> => {
-      if (Relationship.isRelationship(value)) {
+    const coerce = (value: Relationship<ID> | RelationshipDataLike<ID>): Relationship<ID> => {
+      if (Relationship.isRelationship<ID>(value)) {
         return value
-      } else if (value == null) {
-        return {data: relationship.plural ? [] : null}
       }
 
       const {type} = relationship
-      if (type == null) {
-        throw new APIError(509, `Relationship "${name}" is polymorphic but its getter doesn't return linkages.`)
-      }
-
-      const data = isArray(value)
-        ? value.map(it => this.jsonAPI.toLinkage(it, type))
-        : this.jsonAPI.toLinkage(value, type)
-
-      if (isArray(data) !== relationship.plural) {
-        if (relationship.plural) {
-          throw new APIError(509, `Relationship "${name}" is plural, but does not yield an array.`)
+      const toLinkage = (value: ID | Linkage<ID>): Linkage<ID> => {
+        if (Linkage.isLinkage<ID>(value)) {
+          return value
+        } else if (type != null) {
+          return this.jsonAPI.toLinkage(value, type)
         } else {
-          throw new APIError(509, `Relationship "${name}" is singular, but yields an array.`)
+          throw new APIError(509, `Relationship "${name}" is polymorphic but its getter returns at least one single ID.`)
         }
       }
 
-      return {data}
+      if (relationship.plural) {
+        if (!isArray(value)) {
+          throw new APIError(509, `Relationship "${name}" is plural, but does not yield an array.`)
+        } else {
+          return {data: value.map(toLinkage)}
+        }
+      } else {
+        if (isArray(value)) {
+          throw new APIError(509, `Relationship "${name}" is singular, but yields an array.`)
+        } else {
+          return {data: value == null ? null : toLinkage(value)}
+        }
+      }
     }
 
     if (relationship.plural && relationship.get != null) {

@@ -5,11 +5,11 @@ import Pack from './Pack'
 import { AttributeConfig, RelationshipConfig } from './ResourceConfig'
 import {
   ActionOptions,
-  Linkage,
   ListActionOptions,
   ListParams,
   Meta,
   Relationship,
+  RelationshipDataLike,
   RetrievalActionOptions,
   Sort,
 } from './types'
@@ -44,7 +44,7 @@ export default interface Adapter<Model, Query, ID> {
   getAttribute?(data: Model, name: string, attribute: AttributeConfig<Model, Query, ID>): any | Promise<any>
   setAttribute?(data: Model, name: string, value: any, attribute: AttributeConfig<Model, Query, ID>): void | Promise<void>
 
-  getRelationship?(data: Model, name: string, relationship: RelationshipConfig<Model, Query, ID>): Relationship<ID> | ID | Linkage<ID> | Promise<ID | Linkage<ID>>
+  getRelationship?(data: Model, name: string, relationship: RelationshipConfig<Model, Query, ID>): Relationship<ID> | RelationshipDataLike<ID> | Promise<Relationship<ID> | RelationshipDataLike<ID>>
 
   // #endregion
 
