@@ -124,7 +124,7 @@ describe("doctext", () => {
         },
 
         singletons: {
-          one: async query => ({model: null}),
+          one: async query => ({data: null}),
         },
 
         collectionActions: {
