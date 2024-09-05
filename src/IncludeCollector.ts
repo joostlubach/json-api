@@ -3,7 +3,7 @@ import { flatMap, MapBuilder } from 'ytil'
 import Document from './Document'
 import JSONAPI from './JSONAPI'
 import RequestContext from './RequestContext'
-import { Linkage, Relationship } from './types'
+import { Linkage, ModelToDocumentOptions, Relationship } from './types'
 
 export default class IncludeCollector<Model, Query, ID> {
 
@@ -17,7 +17,7 @@ export default class IncludeCollector<Model, Query, ID> {
   /**
    * Wraps a bunch of models of different resource types and converts them to a list of documents.
    */
-  public async wrap(models: Model[]) {
+  public async wrap(models: Model[], options: ModelToDocumentOptions = {}) {
     const byResource = MapBuilder.groupBy(models, model => {
       const name = this.jsonAPI.nameForModel(model)
       return this.jsonAPI.registry.resourceForModel(name)
@@ -27,7 +27,7 @@ export default class IncludeCollector<Model, Query, ID> {
     for (const [resource, models] of byResource) {
       const adapter = resource.adapter(this.context)
       const documents = await Promise.all(models.map(model => (
-        resource.modelToDocument(model, adapter, this.context)
+        resource.modelToDocument(model, adapter, this.context, options)
       )))
       collected.push(...documents)
     }

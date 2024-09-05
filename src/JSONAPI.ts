@@ -3,6 +3,7 @@ import { wrapArray } from 'ytil'
 
 import Adapter from './Adapter'
 import Collection from './Collection'
+import IncludeCollector from './IncludeCollector'
 import Pack from './Pack'
 import RequestContext from './RequestContext'
 import Resource from './Resource'
@@ -161,6 +162,13 @@ export default abstract class JSONAPI<Model, Query, ID> {
     const adapter = resource.adapter(context)
 
     return await resource.modelToDocument(model, adapter, context, options)
+  }
+
+  public async buildIncluded(models: Model[], context: RequestContext, options: ModelToDocumentOptions = {}): Promise<Collection<ID> | undefined> {
+    const collector = new IncludeCollector(this, context)
+    const documents = await collector.wrap(models, options)
+    
+    return new Collection(documents)
   }
 
   public toLinkage<M, I>(arg: M | I | Linkage<I>, type: string): Linkage<I> {
