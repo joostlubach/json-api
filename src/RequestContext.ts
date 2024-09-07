@@ -1,3 +1,4 @@
+import { Request } from 'express'
 import { isFunction } from 'lodash'
 import {
   INVALID,
@@ -19,6 +20,7 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
   constructor(
     public readonly action: string,
     private readonly params: P,
+    public readonly request: Request | null,
     deps?: DependencyContainer,
   ) {
     this.deps = new DependencyContainer({upstream: deps})

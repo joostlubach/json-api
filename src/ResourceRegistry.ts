@@ -30,7 +30,7 @@ export default class ResourceRegistry<Model, Query, ID> {
     
     const resource = new Resource<M, Q, I>(this.jsonAPI, type, resourceConfig)
     if (this.options.validate !== false) {
-      const adapter = this.jsonAPI.adapter(resource, new RequestContext('validate', {}))
+      const adapter = this.jsonAPI.adapter(resource, new RequestContext('validate', {}, null))
       resource.validate(adapter)
     }
     this.resources.set(type, resource)

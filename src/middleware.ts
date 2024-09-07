@@ -2,7 +2,7 @@ import { isArray } from 'lodash'
 
 import { BeforeHandler, ResourceConfig } from './ResourceConfig'
 
-export function middleware<M, Q, I>(mw: Middleware<M, Q, I>) {
+export function middleware<M = any, Q = any, I = any>(mw: Middleware<M, Q, I>) {
   return mw
 }
 

@@ -369,8 +369,7 @@ function defaultRequestContext(action: string, request: Request) {
   return new RequestContext(action, {
     ...request.query,
     ...request.params,
-    $request: request,
-  })
+  }, request)
 }
 
 type ResourceActionHandler = (
