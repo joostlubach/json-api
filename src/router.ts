@@ -182,21 +182,16 @@ export function createExpressRouter<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router 
   }
   
   function negotiateResponseContentType(request: Request, requestContentType: string | null): string | null {
-    const accept = request.get('Accept')
-
-    // If the accept header is set, make sure it's one of our allowed content types.
-    if (accept != null && accept !== '*/*') {
-      if (!jsonAPI.allowedContentTypes.includes(accept)) {
-        throw new APIError(406, "Requested content type not available.")
-      }
+    const accept = request.get('Accept')?.split(',').map(it => it.trim())
+    if (accept == null || accept.includes('*/*')) {
+      return requestContentType ?? jsonAPI.preferredContentType
     }
-    
-    // 1. Try to use the requested content type. Set it to null if nothing specific is accepted.
-    let contentType = accept === '*/*' ? null : accept
 
-    // 2. If it's not set, use the content type of the request. We've already validated it.
-    //    Finally, fall back to the preferred content type.
-    return contentType ?? requestContentType ?? jsonAPI.preferredContentType
+    const accepted = accept.find(it => jsonAPI.allowedContentTypes.includes(it))
+    if (accepted != null) { return accepted }
+
+    // No acceptable content type found.
+    throw new APIError(406, "Requested content type not available.")
   }
   
   function getRequestContentType(request: Request) {

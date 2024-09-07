@@ -398,7 +398,7 @@ describe("http", () => {
           },
         })
   
-        const response = await call().set('Accept', 'application/json')
+        const response = await call().set('Accept', 'application/json, text/plain')
         expect(response.header['content-type']).toEqual('application/json; charset=utf-8')
       })
 
@@ -409,7 +409,7 @@ describe("http", () => {
           },
         })
   
-        const response = await call().set('Accept', 'application/bar')
+        const response = await call().set('Accept', 'application/bar, text/plain')
         expect(response.statusCode).toEqual(406)
       })
 
