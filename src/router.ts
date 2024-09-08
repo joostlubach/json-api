@@ -139,10 +139,7 @@ export function createExpressRouter<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router 
   
   function validateRequestBody(request: Request) {
     const present = bodyPresent(request)
-    const needs = needsBody(request)
-    if (!present && needs) {
-      throw new APIError(400, 'Request body required')
-    }
+    const needs = acceptsBody(request)
     if (present && !needs) {
       throw new APIError(400, 'Request body not allowed')
     }
@@ -155,7 +152,7 @@ export function createExpressRouter<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router 
     return true
   }
   
-  function needsBody(request: Request) {
+  function acceptsBody(request: Request) {
     const method = request.method.toLowerCase()
     return ['post', 'put', 'patch', 'delete'].includes(method)
   }
