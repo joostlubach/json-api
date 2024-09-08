@@ -70,5 +70,5 @@
     "typescript": "5.4.3",
     "yest": "workspace:^"
   },
-  "packageManager": "pnpm@8.4.0"
+  "packageManager": "pnpm@9.9.0"
 }
