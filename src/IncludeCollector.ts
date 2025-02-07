@@ -1,4 +1,4 @@
-import { flatMap, MapBuilder } from 'ytil'
+import { MapBuilder } from 'ytil'
 
 import Document from './Document'
 import JSONAPI from './JSONAPI'
@@ -58,7 +58,7 @@ export default class IncludeCollector<Model, Query, ID> {
 
     // Find the relationships in the document and flatten to all linkages.
     const relationships = this.collectRelationships(base, head)
-    const linkages = flatMap(relationships, it => it.data == null ? [] : it.data)
+    const linkages = relationships.flatMap(it => it.data == null ? [] : it.data)
 
     // Split linkages by type (relationships can be polymorphic).
     const documents = await this.collectDocuments(linkages)

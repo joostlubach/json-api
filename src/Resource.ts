@@ -1,7 +1,7 @@
 import { singularize } from 'inflected'
 import { isArray, isFunction, mapValues } from 'lodash'
-import { any, boolean, dictionary, number, string } from 'validator/types'
 import { isPlainObject, objectEntries } from 'ytil'
+import { z } from 'zod'
 
 import APIError from './APIError'
 import Adapter, { GetResponse } from './Adapter'
@@ -667,8 +667,12 @@ export default class Resource<Model, Query, ID> {
   }
 
   public extractRetrievalActionOptions(context: RequestContext): RetrievalActionOptions {
-    const include = context.param('include', string({default: ''})).split(',').map(it => it.trim()).filter(it => it !== '')
-    const detail = context.param('detail', boolean({default: false}))
+    const include = context.param('include', z.string().default(''))
+      .split(',')
+      .map(it => it.trim())
+      .filter(it => it !== '')
+
+    const detail = context.param('detail', z.boolean().default(false))
 
     return {
       ...this.extractActionOptions(context),
@@ -717,13 +721,13 @@ export default class Resource<Model, Query, ID> {
     const offset = context.param('offset', offsetParam)
     const limit = context.param('limit', limitParam)
 
-    return {offset, limit}
+    return {offset, limit: limit ?? null}
   }
 
   public extractDocumentLocator(context: RequestContext, singleton: false): {id: ID}
   public extractDocumentLocator(context: RequestContext, singleton?: boolean): DocumentLocator<ID>
   public extractDocumentLocator(context: RequestContext, singleton: boolean = true): DocumentLocator<ID> {
-    const id = context.param('id', string())
+    const id = context.param('id', z.string())
     if (singleton && this.config.singletons != null && id in this.config.singletons) {
       return {singleton: id}
     } else {
@@ -784,12 +788,12 @@ export default class Resource<Model, Query, ID> {
 
 }
 
-const labelParam = string({required: false})
-const filterParam = dictionary({valueType: any(), default: () => ({})})
-const searchParam = string({required: false})
-const sortParam = string({required: false})
-const offsetParam = number({integer: true, default: 0})
-const limitParam = number({integer: true, required: false})
+const labelParam = z.string().optional()
+const filterParam = z.record(z.any()).default(() => ({}))
+const searchParam = z.string().optional()
+const sortParam = z.string().optional()
+const offsetParam = z.number().int().default(0)
+const limitParam = z.number().int().optional()
 
 interface LoadResponse<M> {
   data:      M

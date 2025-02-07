@@ -1,17 +1,7 @@
 import { Request } from 'express'
-import { isFunction } from 'lodash'
-import {
-  INVALID,
-  ObjectSchema,
-  RequiredType,
-  SchemaInstance,
-  Type,
-  TypeOptions,
-  Validator,
-} from 'validator'
-import { object } from 'validator/types'
 import { DependencyContainer } from 'ydeps'
 import { Constructor } from 'ytil'
+import { z } from 'zod'
 
 import APIError from './APIError'
 
@@ -30,55 +20,27 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
 
   // #region Parameters
 
-  private readonly validator = new Validator()
-
   /**
    * Retrieves a param, and optionally validates / coerces it to the given type.
    *
    * @param name The name of the parameter to retrieve.
    * @param type Optionally a type to validate against.
    */
-  public param<K extends string & keyof P>(name: K): P[K]
-  public param<T, O extends TypeOptions<T>>(name: string & keyof P, type?: RequiredType<T, O>): T
-  public param<T>(name: string & keyof P, type?: Type<T, any>): T | null
-  public param(name: string & keyof P, type?: Type<any, any>) {
+  public param<Output, Def extends z.ZodTypeDef = z.ZodTypeDef, Input = Output>(name: string & keyof P, schema: z.ZodSchema<Output, Def, Input>): Output
+  public param(name: string & keyof P, schema: z.ZodSchema) {
     let value = this.params[name]
-    if (type == null) { return value }
+    if (schema == null) { return value }
 
-    if (value == null && type.options.required === false) {
-      return null
-    }
-    if (value == null && type.options.default != null) {
-      value = isFunction(type.options.default)
-        ? type.options.default.call(null)
-        : type.options.default
+    const result = schema.safeParse(value)
+    if (result.error != null) {
+      throw new APIError(400, `Parameter \`${name}\`: ${result.error.message}`)
     }
 
-    const coerced = this.validator.coerce(value, type, false)
-    if (type.options.required !== false && coerced == null) {
-      throw new APIError(400, `Parameter \`${name}\`: required`)
-    }
-    if (coerced === INVALID) {
-      throw new APIError(400, `Parameter \`${name}\`: invalid`)
-    }
-
-    return coerced
+    return result.data
   }
 
   public setParams(params: Partial<P>) {
     Object.assign(this.params, params)
-  }
-
-  /**
-   * Validates all parameters at once. It will assert a specific type, so you don't have to use the
-   * `type` parameter in the {@link param} method.
-   *
-   * @param schema The param schema to use.
-   * @returns Whether the parameters match the schema.
-   */
-  public validate<S extends ObjectSchema>(schema: S): this is RequestContext<SchemaInstance<S>> {
-    const result = this.validator.validateType(this.params as SchemaInstance<S>, object({schema}))
-    return result.isValid
   }
 
   // #endregion
