@@ -92,7 +92,7 @@ export default class Resource<Model, Query, ID> {
     if (params.label != null) {
       query = await this.applyLabel(query, params.label, context)
     }
-    if (params.sorts != null) {
+    if (params.sorts != null && params.sorts.length > 0) {
       query = adapter.clearSorts(query)
       query = await this.applySorts(query, params.sorts, adapter, context)
     }
@@ -121,7 +121,6 @@ export default class Resource<Model, Query, ID> {
 
     return query
   }
-
 
   public async applyQueryDefaults(query: Query, context: RequestContext): Promise<Query> {
     if (this.config.query == null) { return query }
