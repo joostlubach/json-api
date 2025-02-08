@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import { DependencyContainer } from 'ydeps'
 
 import APIError from './APIError'
 import JSONAPI from './JSONAPI'
@@ -25,12 +26,12 @@ export default class ResourceRegistry<Model, Query, ID> {
 
   // #region Registering
 
-  public register<M extends Model, Q extends Query, I extends ID>(type: string, resourceConfig: ResourceConfig<M, Q, I>) {
+  public register<M extends Model, Q extends Query, I extends ID>(type: string, resourceConfig: ResourceConfig<M, Q, I>, deps: DependencyContainer) {
     runMiddleware(this.middleware, resourceConfig)
     
     const resource = new Resource<M, Q, I>(this.jsonAPI, type, resourceConfig)
     if (this.options.validate !== false) {
-      const adapter = this.jsonAPI.adapter(resource, new RequestContext('validate', {}, null))
+      const adapter = this.jsonAPI.adapter(resource, new RequestContext('validate', {}, null, deps))
       resource.validate(adapter)
     }
     this.resources.set(type, resource)
