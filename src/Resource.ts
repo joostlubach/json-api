@@ -92,7 +92,7 @@ export default class Resource<Model, Query, ID> {
     if (params.label != null) {
       query = await this.applyLabel(query, params.label, context)
     }
-    if (params.sorts != null && params.sorts.length > 0) {
+    if (params.sorts != null) {
       query = adapter.clearSorts(query)
       query = await this.applySorts(query, params.sorts, adapter, context)
     }
