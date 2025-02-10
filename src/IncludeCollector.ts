@@ -25,7 +25,7 @@ export default class IncludeCollector<Model, Query, ID> {
 
     const collected: Document<ID>[] = []
     for (const [resource, models] of byResource) {
-      const adapter = resource.adapter(this.context)
+      const adapter = this.jsonAPI.adapter(resource, this.context)
       const documents = await Promise.all(models.map(model => (
         resource.modelToDocument(model, adapter, this.context, options)
       )))

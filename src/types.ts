@@ -34,8 +34,13 @@ export interface SingletonLocator {
 }
 
 export const DocumentLocator: {
+  isID:       <I>(locator: DocumentLocator<I>) => locator is IDLocator<I>
   isSingleton: <I>(locator: DocumentLocator<I>) => locator is SingletonLocator
 } = {
+  isID<I>(locator: DocumentLocator<I>): locator is IDLocator<I> {
+    return 'id' in locator
+  },
+
   isSingleton(locator: DocumentLocator<any>): locator is SingletonLocator {
     return 'singleton' in locator
   },

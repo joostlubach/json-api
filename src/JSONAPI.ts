@@ -52,6 +52,10 @@ export default abstract class JSONAPI<Model, Query, ID> {
     }
   }
 
+  public resourceForModel(model: Model): Resource<Model, Query, ID> {
+    return this.registry.resourceForModel(this.nameForModel(model))
+  }
+
   // #endregion
   
   // #region Abstract interface
@@ -137,29 +141,29 @@ export default abstract class JSONAPI<Model, Query, ID> {
   // #region Serialization
 
   public async documentPack(model: Model, context: RequestContext, options: DocumentPackOptions<Model> = {}) {
-    const resource = this.registry.resourceForModel(this.nameForModel(model))
-    const adapter = resource.adapter(context)
+    const resource = this.resourceForModel(model)
+    const adapter = resource.maybeAdapter(context)
     return await resource.documentPack(model, options.included, adapter, context, options)
   }
 
   public async collectionPack(models: Model[], context: RequestContext, options: CollectionPackOptions<Model> = {}) {
     if (models.length === 0) { return new Pack(new Collection()) }
 
-    const resource = this.registry.resourceForModel(this.nameForModel(models[0]))
-    const adapter = resource.adapter(context)
+    const resource = this.resourceForModel(models[0])
+    const adapter = resource.maybeAdapter(context)
     return await resource.collectionPack(models, options.included, undefined, undefined, adapter, context, options)
   }
 
   public async modelsToCollection(resourceType: string, models: Model[], context: RequestContext, options: ModelsToCollectionOptions = {}) {
     const resource = this.registry.get(resourceType)
-    const adapter = resource.adapter(context)
+    const adapter = resource.maybeAdapter(context)
 
     return await resource.modelsToCollection(models, adapter, context, options)
   }
 
   public async modelToDocument(resourceType: string, model: Model, context: RequestContext, options: ModelToDocumentOptions = {}) {
     const resource = this.registry.get(resourceType)
-    const adapter = resource.adapter(context)
+    const adapter = resource.maybeAdapter(context)
 
     return await resource.modelToDocument(model, adapter, context, options)
   }

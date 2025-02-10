@@ -59,6 +59,10 @@ export default class Resource<Model, Query, ID> {
     return adapter
   }
 
+  public maybeAdapter(context: RequestContext): Adapter<Model, Query, ID> | undefined {
+    return this.jsonAPI.adapter(this, context)
+  }
+
   // #endregion
 
   // #region Validation
