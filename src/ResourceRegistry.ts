@@ -26,7 +26,7 @@ export default class ResourceRegistry<Model, Query, ID> {
 
   // #region Registering
 
-  public register<M extends Model, Q extends Query, I extends ID>(type: string, resourceConfig: ResourceConfig<M, Q, I>, deps: DependencyContainer) {
+  public register<M extends Model, Q extends Query, I extends ID>(type: string, resourceConfig: ResourceConfig<M, Q, I>, deps?: DependencyContainer) {
     runMiddleware(this.middleware, resourceConfig)
     
     const resource = new Resource<M, Q, I>(this.jsonAPI, type, resourceConfig)
