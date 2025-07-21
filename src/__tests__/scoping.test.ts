@@ -1,10 +1,10 @@
 
-import { context, mockJSONAPI } from './mock'
-
 import { expectAsyncError } from 'yest'
+import { z } from 'zod'
 
 import APIError from '../APIError'
 import db, { Child, Query } from './db'
+import { context, mockJSONAPI } from './mock'
 
 describe("scoping", () => {
 
@@ -24,12 +24,12 @@ describe("scoping", () => {
             ...query,
             filters: {
               ...query.filters,
-              parents: (parents: string[]) => parents.includes(context.param('parent')),
+              parents: (parents: string[]) => parents.includes(context.param('parent', z.string())),
             },
           }
         },
         ensure: (model, context) => {
-          model.parents = [context.param('parent')]
+          model.parents = [context.param('parent', z.string())]
         },
       }
     })

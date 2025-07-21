@@ -21,7 +21,7 @@ export function mockJSONAPI(options?: JSONAPIOptions<Model, Query, string>) {
 }
 
 export function context(action: string, params: Record<string, any> = {}) {
-  return new RequestContext(action, params)
+  return new RequestContext(action, params, null)
 }
 
 export class MockJSONAPI extends JSONAPI<Model, Query, string> {
