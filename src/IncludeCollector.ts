@@ -18,7 +18,7 @@ export default class IncludeCollector<Model, Query, ID> {
    * Wraps a bunch of models of different resource types and converts them to a list of documents.
    */
   public async wrap(models: Model[], options: ModelToDocumentOptions = {}) {
-    const byResource = MapBuilder.zstackBy(models, model => {
+    const byResource = MapBuilder.groupBy(models, model => {
       const name = this.jsonAPI.nameForModel(model)
       return this.jsonAPI.registry.resourceForModel(name)
     })
@@ -84,7 +84,7 @@ export default class IncludeCollector<Model, Query, ID> {
   }
 
   private async collectDocuments(linkages: Linkage<ID>[]) {
-    const byType = MapBuilder.zstackBy(linkages, it => it.type)
+    const byType = MapBuilder.groupBy(linkages, it => it.type)
     const documents: Document<ID>[] = []
 
     for (const [type, linkages] of byType) {
