@@ -26,8 +26,8 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
    * @param name The name of the parameter to retrieve.
    * @param type Optionally a type to validate against.
    */
-  public param<Output, Def extends z.ZodTypeDef = z.ZodTypeDef, Input = Output>(name: string & keyof P, schema: z.ZodSchema<Output, Def, Input>): Output
-  public param(name: string & keyof P, schema: z.ZodSchema) {
+  public param<Output, Def extends z.ZodTypeDef = z.ZodTypeDef, Input = Output>(name: string & keyof P, schema: z.Schema<Output, Def, Input>): Output
+  public param(name: string & keyof P, schema: z.Schema) {
     let value = this.params[name]
     if (schema == null) { return value }
 
