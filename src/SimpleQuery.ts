@@ -86,6 +86,7 @@ export class SimpleQuery<T> {
   }
 
   // #endregion
+
 }
 
 export interface QueryData {

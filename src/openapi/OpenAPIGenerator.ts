@@ -256,7 +256,7 @@ export default class OpenAPIGenerator {
 
           ...builtInErrorCodes.reduce(
             (acc, code) => ({...acc, [code]: this.errorResponse(resource, code)}),
-            {}
+            {},
           ),
         },
       },
@@ -274,7 +274,7 @@ export default class OpenAPIGenerator {
   private media(content: OpenAPIV3_1.MediaTypeObject): Record<string, OpenAPIV3_1.MediaTypeObject> {
     return this.jsonAPI.allowedContentTypes.reduce(
       (acc, it) => ({...acc, [it]: content}), 
-      {}
+      {},
     )
   }
 

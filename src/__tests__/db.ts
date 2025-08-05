@@ -161,7 +161,7 @@ export default db
 
 function createFamily(
   parents: [Omit<Parent, 'id' | 'spouse' | 'children'>, Omit<Parent, 'id' | 'spouse' | 'children'>],
-  children: Omit<Child, 'id' | 'parents'>[]
+  children: Omit<Child, 'id' | 'parents'>[],
 ) {
   const parentModels = db('parents').insert(...parents)
   const childModels = db('children').insert(...children)

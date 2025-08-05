@@ -64,8 +64,8 @@ export default class Pack<ID> {
     const included = this.included.serialize()
     const data =
       this.data instanceof Document ? this.data.serialize() :
-      this.data instanceof Collection ? this.data.serialize() :
-      this.data
+        this.data instanceof Collection ? this.data.serialize() :
+          this.data
 
     return {
       data,

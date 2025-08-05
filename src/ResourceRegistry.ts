@@ -14,7 +14,7 @@ export default class ResourceRegistry<Model, Query, ID> {
   constructor(
     jsonAPI: JSONAPI<Model, Query, ID>,
     middleware: Middleware<Model, Query, ID>[] = [],
-    private readonly options: ResourceRegistryOptions = {}
+    private readonly options: ResourceRegistryOptions = {},
   ) {
     this.jsonAPI = jsonAPI
     this.middleware = middleware

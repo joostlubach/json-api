@@ -9,7 +9,7 @@ export default class IncludeCollector<Model, Query, ID> {
 
   constructor(
     private readonly jsonAPI: JSONAPI<Model, Query, ID>,
-    private readonly context: RequestContext
+    private readonly context: RequestContext,
   ) {}
 
   private readonly collected = new Map<string, ID[]>()

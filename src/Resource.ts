@@ -410,7 +410,7 @@ export default class Resource<Model, Query, ID> {
       response.total,
       adapter,
       context,
-      options
+      options,
     )
   }
 
@@ -430,7 +430,7 @@ export default class Resource<Model, Query, ID> {
       response.included,
       adapter,
       context,
-      options
+      options,
     )
   }
 

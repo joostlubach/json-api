@@ -38,7 +38,7 @@ export default abstract class JSONAPI<Model, Query, ID> {
   ) {
     this.registry = new ResourceRegistry<Model, Query, ID>(
       this,
-      options.middleware == null ? [] : wrapArray(options.middleware)
+      options.middleware == null ? [] : wrapArray(options.middleware),
     )
     this._routes = {...defaultRoutes, ...this.options.router?.routes}
   }
