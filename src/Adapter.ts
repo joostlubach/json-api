@@ -1,10 +1,8 @@
 
 import { OpenAPIV3_1 } from 'openapi-types'
 
-import Pack from './Pack'
 import { AttributeConfig, RelationshipConfig } from './ResourceConfig'
 import {
-  ActionOptions,
   ListActionOptions,
   ListParams,
   Meta,
@@ -14,14 +12,17 @@ import {
   Sort,
 } from './types'
 
-export default interface Adapter<Model, Query, ID> {
+export default interface Adapter<Entity, Query, ID> {
 
   // #region Actions
 
-  list(query: Query, params: ListParams, options: ListActionOptions): Promise<ListResponse<Model>>
-  get(query: Query, id: ID, options: RetrievalActionOptions): Promise<GetResponse<Model>>
-  save(data: Model, requestPack: Pack<ID>, options: ActionOptions): Promise<SaveResponse<Model>>
-  delete(query: Query): Promise<Array<Model | ID>>
+  list(query: Query, params: ListParams, options: ListActionOptions): Promise<ListResponse<Entity>>
+  get(query: Query, id: ID, options: RetrievalActionOptions): Promise<GetResponse<Entity>>
+
+  create(cb: (entity: Entity) => Promise<void>): Promise<CreateResponse<Entity>>
+  update(id: ID, cb: (entity: Entity) => Promise<void>): Promise<UpdateResponse<Entity>>
+  replace(id: ID, cb: (entity: Entity) => Promise<void>): Promise<ReplaceResponse<Entity>>
+  delete(query: Query): Promise<Array<Entity | ID>>
 
   // #endregion
 
@@ -39,12 +40,10 @@ export default interface Adapter<Model, Query, ID> {
   
   // #region (De)serialization
 
-  emptyModel(id: ID | null): Model | Promise<Model>
-  
-  getAttribute?(data: Model, name: string, attribute: AttributeConfig<Model, Query, ID>): any | Promise<any>
-  setAttribute?(data: Model, name: string, value: any, attribute: AttributeConfig<Model, Query, ID>): void | Promise<void>
+  getAttribute?(data: Entity, name: string, attribute: AttributeConfig<Entity, Query, ID>): any | Promise<any>
+  setAttribute?(data: Entity, name: string, value: any, attribute: AttributeConfig<Entity, Query, ID>): void | Promise<void>
 
-  getRelationship?(data: Model, name: string, relationship: RelationshipConfig<Model, Query, ID>): Relationship<ID> | RelationshipDataLike<ID> | Promise<Relationship<ID> | RelationshipDataLike<ID>>
+  getRelationship?(data: Entity, name: string, relationship: RelationshipConfig<Entity, Query, ID>): Relationship<ID> | RelationshipDataLike<ID> | Promise<Relationship<ID> | RelationshipDataLike<ID>>
 
   // #endregion
 
@@ -68,30 +67,30 @@ export type OpenAPIDocumentation = Pick<OpenAPIV3_1.SchemaObject,
   | 'externalDocs'
 >
 
-export interface ListResponse<M> {
-  data:      M[]
+export interface ListResponse<E> {
+  data:      E[]
   total?:    number
   included?: any[]
   meta?:     Meta
 }
 
-export interface GetResponse<M> {
-  data:      M | null
+export interface GetResponse<E> {
+  data:      E | null
   included?: any[]
   meta?:     Meta
 }
 
-export interface SaveResponse<M> {
-  data:  M
+export interface CreateResponse<E> {
+  data: E
   meta?: Meta
 }
 
-export interface ReplaceResponse<M> {
-  data:  M
+export interface ReplaceResponse<E> {
+  data:  E
   meta?: Meta
 }
 
-export interface UpdateResponse<M> {
-  data:  M
+export interface UpdateResponse<E> {
+  data:  E
   meta?: Meta
 }

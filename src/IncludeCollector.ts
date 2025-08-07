@@ -5,10 +5,10 @@ import JSONAPI from './JSONAPI'
 import RequestContext from './RequestContext'
 import { Linkage, ModelToDocumentOptions, Relationship } from './types'
 
-export default class IncludeCollector<Model, Query, ID> {
+export default class IncludeCollector<Entity, Query, ID> {
 
   constructor(
-    private readonly jsonAPI: JSONAPI<Model, Query, ID>,
+    private readonly jsonAPI: JSONAPI<Entity, Query, ID>,
     private readonly context: RequestContext,
   ) {}
 
@@ -17,17 +17,17 @@ export default class IncludeCollector<Model, Query, ID> {
   /**
    * Wraps a bunch of models of different resource types and converts them to a list of documents.
    */
-  public async wrap(models: Model[], options: ModelToDocumentOptions = {}) {
-    const byResource = MapBuilder.groupBy(models, model => {
-      const name = this.jsonAPI.nameForModel(model)
-      return this.jsonAPI.registry.resourceForModel(name)
+  public async wrap(models: Entity[], options: ModelToDocumentOptions = {}) {
+    const byResource = MapBuilder.groupBy(models, entity => {
+      const name = this.jsonAPI.nameForModel(entity)
+      return this.jsonAPI.registry.resourceForEntity(name)
     })
 
     const collected: Document<ID>[] = []
     for (const [resource, models] of byResource) {
       const adapter = this.jsonAPI.adapter(resource, this.context)
-      const documents = await Promise.all(models.map(model => (
-        resource.modelToDocument(model, adapter, this.context, options)
+      const documents = await Promise.all(models.map(entity => (
+        resource.entityToDocument(entity, adapter, this.context, options)
       )))
       collected.push(...documents)
     }
@@ -99,8 +99,8 @@ export default class IncludeCollector<Model, Query, ID> {
       
       const query = await resource.applyFilters(adapter.query(), {id: ids}, adapter, this.context)
       const response = await adapter.list(query, {}, {totals: false})
-      for (const model of response.data) {
-        const document = await resource.modelToDocument(model, adapter, this.context)
+      for (const entity of response.data) {
+        const document = await resource.entityToDocument(entity, adapter, this.context)
         documents.push(document)
       }
     }

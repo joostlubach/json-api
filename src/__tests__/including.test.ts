@@ -1,6 +1,5 @@
-import { context, MockAdapter, MockJSONAPI } from './mock'
-
 import db, { Parent } from './db'
+import { context, MockAdapter, MockJSONAPI } from './mock'
 
 describe("including", () => {
 
@@ -129,7 +128,7 @@ describe("including", () => {
 
   describe("duplicates", () => {
 
-    it("should never include the same model twice, nor get caught on cycles", async () => {
+    it("should never include the same entity twice, nor get caught on cycles", async () => {
       const pack = await jsonAPI.show('parents', {id: 'alice'}, context('show'), {
         include: [
           'spouse',

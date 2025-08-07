@@ -17,7 +17,7 @@ import {
 
 export type ResourceConfigMap = Record<string, ResourceConfig<any, any, any>>
 
-export interface ResourceConfig<Model, Query, ID> {
+export interface ResourceConfig<Entity, Query, ID> {
 
   // #region Naming
 
@@ -31,13 +31,13 @@ export interface ResourceConfig<Model, Query, ID> {
 
   // #region Overall
 
-  /** The name of the model that backs this resource. */
-  modelName?: string
+  /** The name of the entity that backs this resource. */
+  entity?: string
 
   /** Any literal meta / texts used in OpenAPI generation. */
   openapi?: OpenAPIResourceMeta
 
-  /** If true, this resource won't be resolved as the default resource for the given model class. */
+  /** If true, this resource won't be resolved as the default resource for the given entity class. */
   auxiliary?: boolean
 
   /** Whether to include totals. */
@@ -51,29 +51,29 @@ export interface ResourceConfig<Model, Query, ID> {
   idAttribute?: string
 
   /** The serialzable attributes for this resource. */
-  attributes: AttributeMap<Model, Query, ID>
+  attributes: AttributeMap<Entity, Query, ID>
 
   /** Relationship configuration for this resource. */
-  relationships?: RelationshipMap<Model, Query, ID>
+  relationships?: RelationshipMap<Entity, Query, ID>
 
   // #endregion
 
   // #region Data retrieval
 
   /** A scope configuration. */
-  scope?: ScopeConfig<Model, Query, ID>
+  scope?: ScopeConfig<Entity, Query, ID>
 
   /** Query defaults. */
-  query?: QueryModifier<Model, Query, ID>
+  query?: QueryModifier<Entity, Query, ID>
 
   /** A search configuration. */
-  search?: SearchModifier<Model, Query, ID>
+  search?: SearchModifier<Entity, Query, ID>
 
   /** Label configuration. */
-  labels?: LabelMap<Model, Query, ID>
+  labels?: LabelMap<Entity, Query, ID>
 
   /** Singleton configuration. */
-  singletons?: SingletonMap<Query, Model, ID>
+  singletons?: SingletonMap<Query, Entity, ID>
 
   /** Sort configuration. */
   sorts?: SortMap<Query>
@@ -85,8 +85,8 @@ export interface ResourceConfig<Model, Query, ID> {
 
   // #region Meta
 
-  meta?:         Meta | DynamicMeta<Model, Query, ID>
-  documentMeta?: DynamicDocumentMeta<Model, Query, ID>
+  meta?:         Meta | DynamicMeta<Entity, Query, ID>
+  documentMeta?: DynamicDocumentMeta<Entity, Query, ID>
 
   // #endregion
 
@@ -106,28 +106,28 @@ export interface ResourceConfig<Model, Query, ID> {
   before?: BeforeHandler[]
 
   /** A custom `list` action or `false` to disable this action. */
-  list?: false | ListAction<Model, Query, ID>
+  list?: false | ListAction<Entity, Query, ID>
 
   /** A custom `show` action or `false` to disable this action. */
-  show?: false | GetAction<Model, Query, ID>
+  show?: false | GetAction<Entity, Query, ID>
 
   /** A custom `create` action or `false` to disable this action. */
-  create?: false | CreateAction<Model, Query, ID>
+  create?: false | CreateAction<Entity, Query, ID>
 
   /** A custom `replace` action or `false` to disable this action. */
-  replace?: false | ReplaceAction<Model, Query, ID>
+  replace?: false | ReplaceAction<Entity, Query, ID>
 
   /** A custom `update` action or `false` to disable this action. */
-  update?: false | UpdateAction<Model, Query, ID>
+  update?: false | UpdateAction<Entity, Query, ID>
 
   /** A custom `delete` action or `false` to disable this action. */
-  delete?: false | DeleteAction<Model, Query, ID>
+  delete?: false | DeleteAction<Entity, Query, ID>
 
   /** Custom collection actions for this resource. */
-  collectionActions?: Record<string, CustomCollectionAction<Model, Query, ID>>
+  collectionActions?: Record<string, CustomCollectionAction<Entity, Query, ID>>
 
   /** Custom document actions for this resource. */
-  documentActions?: Record<string, CustomDocumentAction<Model, Query, ID>>
+  documentActions?: Record<string, CustomDocumentAction<Entity, Query, ID>>
 
   // #endregion
 
@@ -153,8 +153,8 @@ export type AttributeSetter<M, Q, I> = (this: Resource<M, Q, I>, item: M, value:
 
 // #region Meta types
 
-export type DynamicMeta<M, Q, I> = (this: Resource<M, Q, I>, meta: Meta, model: M | null, context: RequestContext) => Meta | Promise<Meta>
-export type DynamicDocumentMeta<M, Q, I> = (this: Resource<M, Q, I>, meta: Meta, model: M, context: RequestContext) => Meta | Promise<Meta>
+export type DynamicMeta<M, Q, I> = (this: Resource<M, Q, I>, meta: Meta, entity: M | null, context: RequestContext) => Meta | Promise<Meta>
+export type DynamicDocumentMeta<M, Q, I> = (this: Resource<M, Q, I>, meta: Meta, entity: M, context: RequestContext) => Meta | Promise<Meta>
 
 // #endregion
 
@@ -167,7 +167,7 @@ interface RelationshipConfigCommon<M, Q, I> {
   type?:     string
   writable?: boolean | 'create'
   detail?:   boolean
-  if?:       (this: Resource<M, Q, I>, model: M, context: RequestContext) => boolean | Promise<boolean>
+  if?:       (this: Resource<M, Q, I>, entity: M, context: RequestContext) => boolean | Promise<boolean>
   include?:  RelationshipIncludeConfig
 }
 
@@ -179,15 +179,15 @@ export interface RelationshipIncludeConfig {
 export type SingularRelationshipConfig<M, Q, I> = RelationshipConfigCommon<M, Q, I> & {
   plural: false
 
-  get?: (this: Resource<M, Q, I>, model: M, context: RequestContext) => Promise<Relationship<I> | I | Linkage<I> | null>
-  set?: (this: Resource<M, Q, I>, model: M, value: I | null, context: RequestContext) => any | Promise<any>
+  get?: (this: Resource<M, Q, I>, entity: M, context: RequestContext) => Promise<Relationship<I> | I | Linkage<I> | null>
+  set?: (this: Resource<M, Q, I>, entity: M, value: I | null, context: RequestContext) => any | Promise<any>
 }
 
 export type PluralRelationshipConfig<M, Q, I> = RelationshipConfigCommon<M, Q, I> & {
   plural: true
 
-  get?: (this: Resource<M, Q, I>, model: M, context: RequestContext) => Promise<Relationship<I> | Array<Linkage<I> | I>>
-  set?: (this: Resource<M, Q, I>, model: M, ids: I[], context: RequestContext) => any | Promise<any>
+  get?: (this: Resource<M, Q, I>, entity: M, context: RequestContext) => Promise<Relationship<I> | Array<Linkage<I> | I>>
+  set?: (this: Resource<M, Q, I>, entity: M, ids: I[], context: RequestContext) => any | Promise<any>
 }
 
 // #endregion
@@ -200,7 +200,7 @@ export interface ScopeConfig<M, Q, I> {
 }
 
 export type QueryModifier<M, Q, I> = (this: Resource<M, Q, I>, query: Q, context: RequestContext) => Q | Promise<Q>
-export type EnsureFunction<M, Q, I> = (this: Resource<M, Q, I>, model: M, context: RequestContext) => void | Promise<void>
+export type EnsureFunction<M, Q, I> = (this: Resource<M, Q, I>, entity: M, context: RequestContext) => void | Promise<void>
 
 export type ScopeOption<M, Q, I> = (this: Resource<M, Q, I>, request: Request) => any
 export type SearchModifier<M, Q, I> = (this: Resource<M, Q, I>, query: Q, term: string, context: RequestContext) => Q | Promise<Q>

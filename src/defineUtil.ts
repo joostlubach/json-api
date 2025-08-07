@@ -1,5 +1,5 @@
 import { ResourceConfig } from './ResourceConfig'
 
-export function resource<M, Q, I>(config: ResourceConfig<M, Q, I>) {
+export function resource<E, Q, I>(config: ResourceConfig<E, Q, I>) {
   return config
 }

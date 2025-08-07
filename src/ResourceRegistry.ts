@@ -9,11 +9,11 @@ import { ResourceConfig } from './ResourceConfig'
 import config from './config'
 import { Middleware, runMiddleware } from './middleware'
 
-export default class ResourceRegistry<Model, Query, ID> {
+export default class ResourceRegistry<Entity, Query, ID> {
 
   constructor(
-    jsonAPI: JSONAPI<Model, Query, ID>,
-    middleware: Middleware<Model, Query, ID>[] = [],
+    jsonAPI: JSONAPI<Entity, Query, ID>,
+    middleware: Middleware<Entity, Query, ID>[] = [],
     private readonly options: ResourceRegistryOptions = {},
   ) {
     this.jsonAPI = jsonAPI
@@ -26,7 +26,7 @@ export default class ResourceRegistry<Model, Query, ID> {
 
   // #region Registering
 
-  public register<M extends Model, Q extends Query, I extends ID>(type: string, resourceConfig: ResourceConfig<M, Q, I>, deps?: DependencyContainer) {
+  public register<M extends Entity, Q extends Query, I extends ID>(type: string, resourceConfig: ResourceConfig<M, Q, I>, deps?: DependencyContainer) {
     runMiddleware(this.middleware, resourceConfig)
     
     const resource = new Resource<M, Q, I>(this.jsonAPI, type, resourceConfig)
@@ -40,7 +40,7 @@ export default class ResourceRegistry<Model, Query, ID> {
     return resource
   }
 
-  public modify<M extends Model, Q extends Query, I extends ID>(type: string, fn: (config: ResourceConfig<M, Q, I>) => void) {
+  public modify<M extends Entity, Q extends Query, I extends ID>(type: string, fn: (config: ResourceConfig<M, Q, I>) => void) {
     const resource = this.get(type) as Resource<M, Q, I>
     fn(resource.config)
   }
@@ -61,7 +61,7 @@ export default class ResourceRegistry<Model, Query, ID> {
     return this.resources.has(name)
   }
 
-  public get<M extends Model, Q extends Query, I extends ID>(name: string): Resource<M, Q, I> {
+  public get<M extends Entity, Q extends Query, I extends ID>(name: string): Resource<M, Q, I> {
     const resource = this.resources.get(name)
     if (resource == null) {
       throw new APIError(404, `No resource found for name '${name}'`)
@@ -69,18 +69,18 @@ export default class ResourceRegistry<Model, Query, ID> {
     return resource
   }
 
-  public all(): Resource<Model, Query, ID>[] {
+  public all(): Resource<Entity, Query, ID>[] {
     return Array.from(this.resources.values())
   }
 
-  public resourceForModel<M extends Model, Q extends Query, I extends ID>(modelName: string): Resource<M, Q, I> {
+  public resourceForEntity<M extends Entity, Q extends Query, I extends ID>(entity: string): Resource<M, Q, I> {
     for (const [, resource] of this.resources) {
-      if (!resource.config.auxiliary && resource.config.modelName === modelName) {
+      if (!resource.config.auxiliary && resource.config.entity === entity) {
         return resource
       }
     }
 
-    throw new APIError(404, `No resource found for model '${modelName}'`)
+    throw new APIError(404, `No resource found for entity '${entity}'`)
   }
 
   // #endregion

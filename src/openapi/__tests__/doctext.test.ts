@@ -1,10 +1,9 @@
-import { mockJSONAPI } from '../../__tests__/mock'
-
 import stripAnsi from 'strip-ansi'
 
 import Pack from '../../Pack'
 import Resource from '../../Resource'
 import { Parent, Query } from '../../__tests__/db'
+import { mockJSONAPI } from '../../__tests__/mock'
 import config from '../../config'
 import doctext from '../doctext'
 
@@ -36,7 +35,7 @@ describe("doctext", () => {
         /// There are two nuclear families, A & B. Each have two parents and two children.
         /// Relationships show spouses and children, and children's parents reciprocally.
   
-        modelName: 'Parent',
+        entity: 'Parent',
   
         openapi: {
           idType: 'integer',
@@ -113,7 +112,7 @@ describe("doctext", () => {
 
     it("should warn about missing doctexts, except attributes and relationships", () => {
       parents = jsonAPI.registry.register('parents', doctext<Parent, Query, string>({
-        modelName: 'Parent',
+        entity: 'Parent',
 
         labels: {
           one: query => query,

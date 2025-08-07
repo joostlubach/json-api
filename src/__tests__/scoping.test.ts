@@ -28,8 +28,8 @@ describe("scoping", () => {
             },
           }
         },
-        ensure: (model, context) => {
-          model.parents = [context.param('parent', z.string())]
+        ensure: (entity, context) => {
+          entity.parents = [context.param('parent', z.string())]
         },
       }
     })

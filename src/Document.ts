@@ -53,7 +53,7 @@ export default class Document<ID> {
     return true
   }
 
-  public static deserialize<M, Q, I>(registry: ResourceRegistry<M, Q, I>, serialized: Record<string, any>): Document<I> {
+  public static deserialize<E, Q, I>(registry: ResourceRegistry<E, Q, I>, serialized: Record<string, any>): Document<I> {
     if (serialized.type == null) {
       throw new APIError(400, "missing 'type' node")
     }

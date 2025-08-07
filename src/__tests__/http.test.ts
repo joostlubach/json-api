@@ -1,5 +1,3 @@
-import { context, MockAdapter, MockJSONAPI } from './mock'
-
 import express, { Application, NextFunction, Request, Response, Router } from 'express'
 import supertest from 'supertest'
 import { objectKeys } from 'ytil'
@@ -10,7 +8,8 @@ import Pack from '../Pack'
 import RequestContext from '../RequestContext'
 import Resource from '../Resource'
 import { CustomCollectionActionConfig, CustomDocumentActionConfig } from '../ResourceConfig'
-import { Model, Parent, Query } from './db'
+import { Entity, Parent, Query } from './db'
+import { context, MockAdapter, MockJSONAPI } from './mock'
 
 describe("http", () => {
 
@@ -23,7 +22,7 @@ describe("http", () => {
   let app: Application
   let request: supertest.Agent
 
-  function setUp(options: JSONAPIOptions<Model, Query, string> = {}) {
+  function setUp(options: JSONAPIOptions<Entity, Query, string> = {}) {
     jsonAPI = new MockJSONAPI(options)
 
     parents = jsonAPI.registry.get<Parent, Query, string>('parents')

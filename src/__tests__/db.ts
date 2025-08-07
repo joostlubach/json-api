@@ -20,7 +20,7 @@ export interface Child {
   parents: string[]
 }
 
-export type Model = Parent | Child
+export type Entity = Parent | Child
 
 export interface Query {
   filters: Filters
@@ -31,7 +31,7 @@ export interface Query {
 
 export class Db {
 
-  private models: Model[] = []
+  private models: Entity[] = []
 
   public list(query: Query) {
     let models = this.models.filter(it => this.match(query, it))
@@ -64,21 +64,25 @@ export class Db {
     return this.load(query, id)
   }
 
+  public build() {
+    return {} as Entity
+  }
+
   public insert(...items: Record<string, any>[]) {
     return items.map(attrs => {
       const id = attrs.id ?? (attrs.name == null ? undefined : slugify(attrs.name))
-      const model = {...attrs, id} as Model
-      this.models = this.models.filter(it => it.id !== model.id)
-      this.models.push(model)
-      return model
+      const entity = {...attrs, id} as Entity
+      this.models = this.models.filter(it => it.id !== entity.id)
+      this.models.push(entity)
+      return entity
     })
   }
 
   public delete(query: Query) {
-    const deleted: Model[] = []
-    this.models = this.models.filter(model => {
-      if (this.match(query, model)) {
-        deleted.push(model)
+    const deleted: Entity[] = []
+    this.models = this.models.filter(entity => {
+      if (this.match(query, entity)) {
+        deleted.push(entity)
         return false
       } else {
         return true
@@ -95,18 +99,18 @@ export class Db {
     this.models = []
   }
 
-  private match(query: Query, model: Model) {
+  private match(query: Query, entity: Entity) {
     for (const [name, value] of Object.entries(query.filters)) {
       if (isFunction(value)) {
-        if (!value((model as any)[name])) {
+        if (!value((entity as any)[name])) {
           return false
         }
       } else if (isArray(value)) {
-        if (!value.includes((model as any)[name])) {
+        if (!value.includes((entity as any)[name])) {
           return false
         }
       } else {
-        if ((model as any)[name] !== value) {
+        if ((entity as any)[name] !== value) {
           return false
         }
       }

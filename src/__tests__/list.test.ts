@@ -1,10 +1,9 @@
-import { context, mockJSONAPI } from './mock'
-
 import { omit } from 'lodash'
 import { delay } from 'yest'
 import { slugify } from 'ytil'
 
 import db from './db'
+import { context, mockJSONAPI } from './mock'
 
 describe("list", () => {
 
@@ -108,7 +107,7 @@ describe("list", () => {
     it("should handle conditional attributes", async () => {
       jsonAPI.registry.modify('parents', cfg => {
         cfg.attributes.age = {
-          if: model => model.age > 30,
+          if: entity => entity.age > 30,
         }
       })
 
@@ -123,7 +122,7 @@ describe("list", () => {
         cfg.relationships!.children = {
           type:   'children',
           plural: true,
-          if:     model => model.age > 30,
+          if:     entity => entity.age > 30,
         }
       })
 
@@ -141,7 +140,7 @@ describe("list", () => {
     it("should handle custom attributes", async () => {
       jsonAPI.registry.modify('parents', cfg => {
         cfg.attributes.foo = {
-          get: model => model.name.toUpperCase(),
+          get: entity => entity.name.toUpperCase(),
         }
       })
 
@@ -156,7 +155,7 @@ describe("list", () => {
         cfg.relationships!.parent = {
           type:   'parents',
           plural: false,
-          get:    async (model) => ({type: 'parents', id: model.id + '-parent'}),
+          get:    async (entity) => ({type: 'parents', id: entity.id + '-parent'}),
         }
       })
 
@@ -232,11 +231,11 @@ describe("list", () => {
 
     it("should include document meta in each document if configured", async () => {
       jsonAPI.registry.modify('parents', cfg => {
-        cfg.documentMeta = async (meta, model, context) => {
+        cfg.documentMeta = async (meta, entity, context) => {
           await delay(10)
           return {
             action: context.action,
-            slug:   slugify(model.name),
+            slug:   slugify(entity.name),
           }
         }
       })
