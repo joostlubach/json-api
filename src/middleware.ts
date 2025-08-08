@@ -2,20 +2,20 @@ import { isArray } from 'lodash'
 
 import { BeforeHandler, ResourceConfig } from './ResourceConfig'
 
-export function middleware<M = any, Q = any, I = any>(mw: Middleware<M, Q, I>) {
+export function middleware<E = any, Q = any, I = any, M = any>(mw: Middleware<E, Q, I>) {
   return mw
 }
 
 export namespace middleware {
 
-  export function first<M, Q, I>(handler: BeforeHandler): Middleware<M, Q, I> {
+  export function first<E, Q, I>(handler: BeforeHandler): Middleware<E, Q, I> {
     return config => {
       config.before ??= []
       config.before.unshift(handler)
     }
   }
 
-  export function before<M, Q, I>(handler: BeforeHandler): Middleware<M, Q, I> {
+  export function before<E, Q, I>(handler: BeforeHandler): Middleware<E, Q, I> {
     return config => {
       config.before ??= []
       config.before.push(handler)
@@ -24,22 +24,22 @@ export namespace middleware {
 
 }
 
-export function compose<M, Q, I>(pre: Middleware<M, Q, I>[], config: ResourceConfig<M, Q, I>, ...post: Middleware<M, Q, I>[]): ResourceConfig<M, Q, I>
-export function compose<M, Q, I>(config: ResourceConfig<M, Q, I>, ...post: Middleware<M, Q, I>[]): ResourceConfig<M, Q, I>
-export function compose<M, Q, I>(...args: any[]) {
-  const pre:    Middleware<M, Q, I>[] = isArray(args[0]) ? args.shift() : []
-  const config: ResourceConfig<M, Q, I> = args.shift()
-  const post:   Middleware<M, Q, I>[] = args
+export function compose<E, Q, I>(pre: Middleware<E, Q, I>[], config: ResourceConfig<E, Q, I>, ...post: Middleware<E, Q, I>[]): ResourceConfig<E, Q, I>
+export function compose<E, Q, I>(config: ResourceConfig<E, Q, I>, ...post: Middleware<E, Q, I>[]): ResourceConfig<E, Q, I>
+export function compose<E, Q, I>(...args: any[]) {
+  const pre:    Middleware<E, Q, I>[] = isArray(args[0]) ? args.shift() : []
+  const config: ResourceConfig<E, Q, I> = args.shift()
+  const post:   Middleware<E, Q, I>[] = args
 
   runMiddleware(pre, config)
   runMiddleware(post, config)
   return config
 }
 
-export function runMiddleware<M, Q, I>(middleware: Middleware<M, Q, I>[], config: ResourceConfig<M, Q, I>) {
+export function runMiddleware<E, Q, I>(middleware: Middleware<E, Q, I>[], config: ResourceConfig<E, Q, I>) {
   for (const mw of middleware) {
     mw(config)
   }
 }
 
-export type Middleware<M, Q, I> = (config: ResourceConfig<M, Q, I>) => void
+export type Middleware<E, Q, I> = (config: ResourceConfig<E, Q, I>) => void

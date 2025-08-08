@@ -19,6 +19,9 @@ export type ModelOf<R extends Resource<any, any, any>> = R extends Resource<infe
 export type QueryOf<R extends Resource<any, any, any>> = R extends Resource<any, infer Q, any> ? Q : never
 export type IDOf<R extends Resource<any, any, any>> = R extends Resource<any, any, infer I> ? I : never
 
+// Can be extended by client code.
+export interface ConfigExtra {}
+
 // #endregion
 
 // #region DocumentLocator

@@ -6,6 +6,7 @@ import RequestContext from './RequestContext'
 import Resource from './Resource'
 import {
   ActionOptions,
+  ConfigExtra,
   DocumentLocator,
   Linkage,
   ListParams,
@@ -73,7 +74,7 @@ export interface ResourceConfig<Entity, Query, ID> {
   labels?: LabelMap<Entity, Query, ID>
 
   /** Singleton configuration. */
-  singletons?: SingletonMap<Query, Entity, ID>
+  singletons?: SingletonMap<Entity, Query, ID>
 
   /** Sort configuration. */
   sorts?: SortMap<Query>
@@ -131,43 +132,49 @@ export interface ResourceConfig<Entity, Query, ID> {
 
   // #endregion
 
+  // #region Extra
+
+  extra?: ConfigExtra
+
+  // #endregion
+
 }
 
 // #region Attribute types
 
-export type AttributeMap<M, Q, I> = Record<string, AttributeConfig<M, Q, I> | true>
-export interface AttributeConfig<M, Q, I> {
-  writable?:  boolean | AttributeIf<M, Q, I> | 'create'
+export type AttributeMap<E, Q, I> = Record<string, AttributeConfig<E, Q, I> | true>
+export interface AttributeConfig<E, Q, I> {
+  writable?:  boolean | AttributeIf<E, Q, I> | 'create'
   detail?:    boolean
-  if?:        AttributeIf<M, Q, I>
-  get?:       AttributeGetter<M, Q, I>
-  set?:       AttributeSetter<M, Q, I>
+  if?:        AttributeIf<E, Q, I>
+  get?:       AttributeGetter<E, Q, I>
+  set?:       AttributeSetter<E, Q, I>
   serialize?: (value: any) => any
 }
 
-export type AttributeIf<M, Q, I> = (this: Resource<M, Q, I>, item: M, context: RequestContext) => boolean | Promise<boolean>
-export type AttributeGetter<M, Q, I> = (this: Resource<M, Q, I>, item: M, context: RequestContext) => unknown | Promise<unknown>
-export type AttributeSetter<M, Q, I> = (this: Resource<M, Q, I>, item: M, value: unknown, context: RequestContext) => void | Promise<void>
+export type AttributeIf<E, Q, I> = (this: Resource<E, Q, I>, entity: E, context: RequestContext) => boolean | Promise<boolean>
+export type AttributeGetter<E, Q, I> = (this: Resource<E, Q, I>, entity: E, context: RequestContext) => unknown | Promise<unknown>
+export type AttributeSetter<E, Q, I> = (this: Resource<E, Q, I>, entity: E, value: unknown, context: RequestContext) => void | Promise<void>
 
 // #endregion
 
 // #region Meta types
 
-export type DynamicMeta<M, Q, I> = (this: Resource<M, Q, I>, meta: Meta, entity: M | null, context: RequestContext) => Meta | Promise<Meta>
-export type DynamicDocumentMeta<M, Q, I> = (this: Resource<M, Q, I>, meta: Meta, entity: M, context: RequestContext) => Meta | Promise<Meta>
+export type DynamicMeta<E, Q, I> = (this: Resource<E, Q, I>, meta: Meta, entity: E | null, context: RequestContext) => Meta | Promise<Meta>
+export type DynamicDocumentMeta<E, Q, I> = (this: Resource<E, Q, I>, meta: Meta, entity: E, context: RequestContext) => Meta | Promise<Meta>
 
 // #endregion
 
 // #region Relationship #region types
 
-export type RelationshipMap<M, Q, I> = Record<string, RelationshipConfig<M, Q, I>>
-export type RelationshipConfig<M, Q, I> = SingularRelationshipConfig<M, Q, I> | PluralRelationshipConfig<M, Q, I>
+export type RelationshipMap<E, Q, I> = Record<string, RelationshipConfig<E, Q, I>>
+export type RelationshipConfig<E, Q, I> = SingularRelationshipConfig<E, Q, I> | PluralRelationshipConfig<E, Q, I>
 
-interface RelationshipConfigCommon<M, Q, I> {
+interface RelationshipConfigCommon<E, Q, I> {
   type?:     string
   writable?: boolean | 'create'
   detail?:   boolean
-  if?:       (this: Resource<M, Q, I>, entity: M, context: RequestContext) => boolean | Promise<boolean>
+  if?:       (this: Resource<E, Q, I>, entity: E, context: RequestContext) => boolean | Promise<boolean>
   include?:  RelationshipIncludeConfig
 }
 
@@ -176,41 +183,41 @@ export interface RelationshipIncludeConfig {
   detail?: boolean
 }
 
-export type SingularRelationshipConfig<M, Q, I> = RelationshipConfigCommon<M, Q, I> & {
+export type SingularRelationshipConfig<E, Q, I> = RelationshipConfigCommon<E, Q, I> & {
   plural: false
 
-  get?: (this: Resource<M, Q, I>, entity: M, context: RequestContext) => Promise<Relationship<I> | I | Linkage<I> | null>
-  set?: (this: Resource<M, Q, I>, entity: M, value: I | null, context: RequestContext) => any | Promise<any>
+  get?: (this: Resource<E, Q, I>, entity: E, context: RequestContext) => Promise<Relationship<I> | I | Linkage<I> | null>
+  set?: (this: Resource<E, Q, I>, entity: E, value: I | null, context: RequestContext) => any | Promise<any>
 }
 
-export type PluralRelationshipConfig<M, Q, I> = RelationshipConfigCommon<M, Q, I> & {
+export type PluralRelationshipConfig<E, Q, I> = RelationshipConfigCommon<E, Q, I> & {
   plural: true
 
-  get?: (this: Resource<M, Q, I>, entity: M, context: RequestContext) => Promise<Relationship<I> | Array<Linkage<I> | I>>
-  set?: (this: Resource<M, Q, I>, entity: M, ids: I[], context: RequestContext) => any | Promise<any>
+  get?: (this: Resource<E, Q, I>, entity: E, context: RequestContext) => Promise<Relationship<I> | Array<Linkage<I> | I>>
+  set?: (this: Resource<E, Q, I>, entity: E, ids: I[], context: RequestContext) => any | Promise<any>
 }
 
 // #endregion
 
 // #region Scope & search
 
-export interface ScopeConfig<M, Q, I> {
-  query:  QueryModifier<M, Q, I>
-  ensure: EnsureFunction<M, Q, I>
+export interface ScopeConfig<E, Q, I> {
+  query:  QueryModifier<E, Q, I>
+  ensure: EnsureFunction<E, Q, I>
 }
 
-export type QueryModifier<M, Q, I> = (this: Resource<M, Q, I>, query: Q, context: RequestContext) => Q | Promise<Q>
-export type EnsureFunction<M, Q, I> = (this: Resource<M, Q, I>, entity: M, context: RequestContext) => void | Promise<void>
+export type QueryModifier<E, Q, I> = (this: Resource<E, Q, I>, query: Q, context: RequestContext) => Q | Promise<Q>
+export type EnsureFunction<E, Q, I> = (this: Resource<E, Q, I>, entity: E, context: RequestContext) => void | Promise<void>
 
-export type ScopeOption<M, Q, I> = (this: Resource<M, Q, I>, request: Request) => any
-export type SearchModifier<M, Q, I> = (this: Resource<M, Q, I>, query: Q, term: string, context: RequestContext) => Q | Promise<Q>
+export type ScopeOption<E, Q, I> = (this: Resource<E, Q, I>, request: Request) => any
+export type SearchModifier<E, Q, I> = (this: Resource<E, Q, I>, query: Q, term: string, context: RequestContext) => Q | Promise<Q>
 
-export type LabelMap<M, Q, I> = Record<string, LabelModifier<M, Q, I>>
-export type LabelModifier<M, Q, I> = (this: Resource<M, Q, I>, query: Q, context: RequestContext) => Q | Promise<Q>
-export type WildcardLabelModifier<M, Q, I> = (this: Resource<M, Q, I>, label: string, query: Q, context: RequestContext) => Q
+export type LabelMap<E, Q, I> = Record<string, LabelModifier<E, Q, I>>
+export type LabelModifier<E, Q, I> = (this: Resource<E, Q, I>, query: Q, context: RequestContext) => Q | Promise<Q>
+export type WildcardLabelModifier<E, Q, I> = (this: Resource<E, Q, I>, label: string, query: Q, context: RequestContext) => Q
 
-export type SingletonMap<Q, M, I> = Record<string, Singleton<Q, M, I>>
-export type Singleton<Q, M, I> = (this: Resource<M, Q, I>, query: Q, context: RequestContext, options: RetrievalActionOptions) => Promise<GetResponse<M>>
+export type SingletonMap<E, Q, I> = Record<string, Singleton<E, Q, I>>
+export type Singleton<E, Q, I> = (this: Resource<E, Q, I>, query: Q, context: RequestContext, options: RetrievalActionOptions) => Promise<GetResponse<E>>
 
 export type SortMap<Q> = Record<string, SortModifier<Q>>
 export type SortModifier<Q> = (query: Q, direction: 1 | -1, context: RequestContext) => Q
@@ -224,52 +231,52 @@ export type FilterModifier<Q> = (query: Q, value: any, context: RequestContext) 
 
 export type BeforeHandler = (context: RequestContext) => void | Promise<void>
 
-export type ListAction<M, Q, I> = (
-  this:    Resource<M, Q, I>,
+export type ListAction<E, Q, I> = (
+  this:    Resource<E, Q, I>,
   params:  ListParams,
-  adapter: () => Adapter<M, Q, I>,
+  adapter: () => Adapter<E, Q, I>,
   context: RequestContext,
   options: ActionOptions
 ) => Promise<Pack<I>>
 
-export type GetAction<M, Q, I> = (
-  this:    Resource<M, Q, I>,
+export type GetAction<E, Q, I> = (
+  this:    Resource<E, Q, I>,
   locator: DocumentLocator<I>,
-  adapter: () => Adapter<M, Q, I>,
+  adapter: () => Adapter<E, Q, I>,
   context: RequestContext,
   options: ActionOptions
 ) => Promise<Pack<I>>
 
-export type CreateAction<M, Q, I> = (
-  this:     Resource<M, Q, I>,
+export type CreateAction<E, Q, I> = (
+  this:     Resource<E, Q, I>,
   pack:     Pack<I>,
-  adapter:  () => Adapter<M, Q, I>,
+  adapter:  () => Adapter<E, Q, I>,
   context:  RequestContext,
   options:  ActionOptions
 ) => Promise<Pack<I>>
 
-export type ReplaceAction<M, Q, I> = (
-  this:        Resource<M, Q, I>,
+export type ReplaceAction<E, Q, I> = (
+  this:        Resource<E, Q, I>,
   id:          I,
   requestPack: Pack<I>,
-  adapter:     () => Adapter<M, Q, I>,
+  adapter:     () => Adapter<E, Q, I>,
   context:     RequestContext,
   options:     ActionOptions
 ) => Promise<Pack<I>>
 
-export type UpdateAction<M, Q, I> = (
-  this:        Resource<M, Q, I>,
+export type UpdateAction<E, Q, I> = (
+  this:        Resource<E, Q, I>,
   id:          I,
   requestPack: Pack<I>,
-  adapter:     () => Adapter<M, Q, I>,
+  adapter:     () => Adapter<E, Q, I>,
   context:     RequestContext,
   options:     ActionOptions
 ) => Promise<Pack<I>>
 
-export type DeleteAction<M, Q, I> = (
-  this:        Resource<M, Q, I>,
+export type DeleteAction<E, Q, I> = (
+  this:        Resource<E, Q, I>,
   requestPack: Pack<I>,
-  adapter:     () => Adapter<M, Q, I>,
+  adapter:     () => Adapter<E, Q, I>,
   context:     RequestContext
 ) => Promise<Pack<I>>
 
@@ -278,20 +285,20 @@ export type DeleteAction<M, Q, I> = (
 
 // #region Custom actions
 
-export type CustomCollectionAction<M, Q, I> = CustomCollectionActionConfig<M, Q, I> | CustomCollectionActionHandler<M, Q, I>
-export type CustomCollectionActionHandler<M, Q, I> = (this: Resource<M, Q, I>, pack: Pack<I>, adapter: () => Adapter<M, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
+export type CustomCollectionAction<E, Q, I> = CustomCollectionActionConfig<E, Q, I> | CustomCollectionActionHandler<E, Q, I>
+export type CustomCollectionActionHandler<E, Q, I> = (this: Resource<E, Q, I>, pack: Pack<I>, adapter: () => Adapter<E, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
 
-export interface CustomCollectionActionConfig<M, Q, I> {
-  handler: CustomCollectionActionHandler<M, Q, I>
+export interface CustomCollectionActionConfig<E, Q, I> {
+  handler: CustomCollectionActionHandler<E, Q, I>
   router?: CustomActionRouterOptions
 }
 
 
-export type CustomDocumentAction<M, Q, I> = CustomDocumentActionConfig<M, Q, I> | CustomDocumentActionHandler<M, Q, I>
-export type CustomDocumentActionHandler<M, Q, I> = (this: Resource<M, Q, I>, locator: DocumentLocator<I>, pack: Pack<I>, adapter: () => Adapter<M, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
+export type CustomDocumentAction<E, Q, I> = CustomDocumentActionConfig<E, Q, I> | CustomDocumentActionHandler<E, Q, I>
+export type CustomDocumentActionHandler<E, Q, I> = (this: Resource<E, Q, I>, locator: DocumentLocator<I>, pack: Pack<I>, adapter: () => Adapter<E, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
 
-export interface CustomDocumentActionConfig<M, Q, I> {
-  handler: CustomDocumentActionHandler<M, Q, I>
+export interface CustomDocumentActionConfig<E, Q, I> {
+  handler: CustomDocumentActionHandler<E, Q, I>
   router?: CustomActionRouterOptions
 }
 
@@ -304,7 +311,7 @@ export interface CustomActionRouterOptions {
 
 // #region Utility
 
-export function mergeResourceConfig<M, Q, I>(config: ResourceConfig<M, Q, I>, defaults: Partial<ResourceConfig<M, Q, I>>): ResourceConfig<M, Q, I> {
+export function mergeResourceConfig<E, Q, I>(config: ResourceConfig<E, Q, I>, defaults: Partial<ResourceConfig<E, Q, I>>): ResourceConfig<E, Q, I> {
   return {
     ...defaults,
     ...config,

@@ -501,9 +501,9 @@ export default class Resource<Entity, Query, ID> {
 
     const adapter = getAdapter()
     const selector = this.extractBulkSelector(requestPack, context)
-    const entitysOrIDs = await adapter.delete(await this.bulkSelectorQuery(adapter, selector, context))
+    const entitiesOrIDs = await adapter.delete(await this.bulkSelectorQuery(adapter, selector, context))
 
-    const linkages = entitysOrIDs.map(it => this.jsonAPI.toLinkage(it, this.type))
+    const linkages = entitiesOrIDs.map(it => this.jsonAPI.toLinkage(it, this.type))
     const pack = new Pack<ID>(linkages, undefined, {
       deletedCount: linkages.length,
     })
@@ -511,7 +511,7 @@ export default class Resource<Entity, Query, ID> {
   }
 
   public async collectionPack(entities: Entity[], includedModels: Entity[] | undefined, offset: number | undefined, total: number | undefined, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: RetrievalActionOptions = {}) {
-    const collection = await this.entitysToCollection(entities, adapter, context, {
+    const collection = await this.entitiesToCollection(entities, adapter, context, {
       detail: options.detail,
     })
 
@@ -607,7 +607,7 @@ export default class Resource<Entity, Query, ID> {
 
   // #region Serialization
   
-  public async entitysToCollection(entities: Entity[], adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: ModelsToCollectionOptions = {}): Promise<Collection<ID>> {
+  public async entitiesToCollection(entities: Entity[], adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: ModelsToCollectionOptions = {}): Promise<Collection<ID>> {
     const {
       detail = false,
     } = options

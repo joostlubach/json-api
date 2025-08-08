@@ -154,11 +154,11 @@ export default abstract class JSONAPI<Entity, Query, ID> {
     return await resource.collectionPack(entities, options.included, undefined, undefined, adapter, context, options)
   }
 
-  public async entitysToCollection(resourceType: string, entities: Entity[], context: RequestContext, options: ModelsToCollectionOptions = {}) {
+  public async entitiesToCollection(resourceType: string, entities: Entity[], context: RequestContext, options: ModelsToCollectionOptions = {}) {
     const resource = this.registry.get(resourceType)
     const adapter = resource.maybeAdapter(context)
 
-    return await resource.entitysToCollection(entities, adapter, context, options)
+    return await resource.entitiesToCollection(entities, adapter, context, options)
   }
 
   public async entityToDocument(resourceType: string, entity: Entity, context: RequestContext, options: ModelToDocumentOptions = {}) {
@@ -244,8 +244,8 @@ export default abstract class JSONAPI<Entity, Query, ID> {
 
 }
 
-export interface JSONAPIOptions<M, Q, I> {
-  middleware?: Middleware<M, Q, I>[]
+export interface JSONAPIOptions<E, Q, I> {
+  middleware?: Middleware<E, Q, I>[]
   router?:     RouterOptions
   openAPI?:    OpenAPIGeneratorOptions | true
   registry?:   ResourceRegistryOptions

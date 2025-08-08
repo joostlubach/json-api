@@ -26,10 +26,10 @@ export default class ResourceRegistry<Entity, Query, ID> {
 
   // #region Registering
 
-  public register<M extends Entity, Q extends Query, I extends ID>(type: string, resourceConfig: ResourceConfig<M, Q, I>, deps?: DependencyContainer) {
+  public register<E extends Entity, Q extends Query, I extends ID>(type: string, resourceConfig: ResourceConfig<E, Q, I>, deps?: DependencyContainer) {
     runMiddleware(this.middleware, resourceConfig)
-    
-    const resource = new Resource<M, Q, I>(this.jsonAPI, type, resourceConfig)
+
+    const resource = new Resource<E, Q, I>(this.jsonAPI, type, resourceConfig)
     if (this.options.validate !== false) {
       const adapter = this.jsonAPI.adapter(resource, new RequestContext('validate', {}, null, deps))
       resource.validate(adapter)
@@ -40,8 +40,8 @@ export default class ResourceRegistry<Entity, Query, ID> {
     return resource
   }
 
-  public modify<M extends Entity, Q extends Query, I extends ID>(type: string, fn: (config: ResourceConfig<M, Q, I>) => void) {
-    const resource = this.get(type) as Resource<M, Q, I>
+  public modify<E extends Entity, Q extends Query, I extends ID>(type: string, fn: (config: ResourceConfig<E, Q, I>) => void) {
+    const resource = this.get(type) as Resource<E, Q, I>
     fn(resource.config)
   }
 
@@ -61,7 +61,7 @@ export default class ResourceRegistry<Entity, Query, ID> {
     return this.resources.has(name)
   }
 
-  public get<M extends Entity, Q extends Query, I extends ID>(name: string): Resource<M, Q, I> {
+  public get<E extends Entity, Q extends Query, I extends ID>(name: string): Resource<E, Q, I> {
     const resource = this.resources.get(name)
     if (resource == null) {
       throw new APIError(404, `No resource found for name '${name}'`)
@@ -73,7 +73,7 @@ export default class ResourceRegistry<Entity, Query, ID> {
     return Array.from(this.resources.values())
   }
 
-  public resourceForEntity<M extends Entity, Q extends Query, I extends ID>(entity: string): Resource<M, Q, I> {
+  public resourceForEntity<E extends Entity, Q extends Query, I extends ID>(entity: string): Resource<E, Q, I> {
     for (const [, resource] of this.resources) {
       if (!resource.config.auxiliary && resource.config.entity === entity) {
         return resource
