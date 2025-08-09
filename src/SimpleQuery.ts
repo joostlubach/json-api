@@ -7,8 +7,8 @@ export class SimpleQuery<T> {
   constructor(
     private readonly _filters: Filters = {},
     private readonly _sorts: Sort[] = [],
-    private readonly _offset: number = 0,
-    private readonly _limit: number = 0,
+    private readonly _offset: number | undefined = undefined,
+    private readonly _limit: number | undefined = undefined,
   ) {}
 
   public clone<Q extends SimpleQuery<any>>(this: Q, update: Partial<QueryData>): Q {
@@ -65,24 +65,19 @@ export class SimpleQuery<T> {
 
   // #region Pagination
 
-  public offset(): number
-  public offset(offset: number): this
-  public offset(offset?: number) {
-    if (offset === undefined) {
-      return this._offset
-    } else {
-      return this.clone({offset})
-    }
+  public pagination(limit: number, offset?: number) {
+    return this.clone({
+      limit,
+      offset,
+    })
   }
 
-  public limit(): number
-  public limit(limit: number): this
-  public limit(limit?: number) {
-    if (limit === undefined) {
-      return this._limit
-    } else {
-      return this.clone({limit})
-    }
+  public offset(): number | undefined {
+    return this._offset
+  }
+
+  public limit(): number | undefined {
+    return this._limit
   }
 
   // #endregion

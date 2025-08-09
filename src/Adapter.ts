@@ -33,9 +33,8 @@ export default interface Adapter<Entity, Query, ID> {
   applyFilter(query: Query, field: string, value: any): Query | Promise<Query>
   clearSorts(query: Query): Query
   applySort(query: Query, sort: Sort): Query | Promise<Query>
-  applyOffset(query: Query, offset: number): Query | Promise<Query>
-  applyLimit(query: Query, limit: number): Query | Promise<Query>
-  
+  applyPagination(query: Query, limit: number, offset?: number): Query | Promise<Query>
+
   // #endregion
   
   // #region (De)serialization

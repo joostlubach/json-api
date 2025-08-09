@@ -100,11 +100,8 @@ export default class Resource<Entity, Query, ID> {
       query = adapter.clearSorts(query)
       query = await this.applySorts(query, params.sorts, adapter, context)
     }
-    if (params.offset != null) {
-      query = await adapter.applyOffset(query, params.offset)
-    }
     if (params.limit != null) {
-      query = await adapter.applyLimit(query, params.limit)
+      query = await adapter.applyPagination(query, params.limit, params.offset)
     }
 
     return query
@@ -501,7 +498,8 @@ export default class Resource<Entity, Query, ID> {
 
     const adapter = getAdapter()
     const selector = this.extractBulkSelector(requestPack, context)
-    const entitiesOrIDs = await adapter.delete(await this.bulkSelectorQuery(adapter, selector, context))
+    const query = await this.bulkSelectorQuery(adapter, selector, context)
+    const entitiesOrIDs = await adapter.delete(query)
 
     const linkages = entitiesOrIDs.map(it => this.jsonAPI.toLinkage(it, this.type))
     const pack = new Pack<ID>(linkages, undefined, {
