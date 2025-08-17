@@ -7,17 +7,15 @@ export default class ErrorPack {
   constructor(
     public readonly status: number,
     public readonly message: string,
-    public readonly errors?: any[],
     public readonly meta: Meta = {},
   ) {}
 
   public serialize(): any {
     return {
-      error: {
+      errors: [{
         status:  this.status,
         message: this.message,
-        errors:  this.errors,
-      },
+      }],
       meta: this.meta,
     }
   }
