@@ -46,7 +46,7 @@
     "url-template": "^2.0.8",
     "ydeps": "workspace:^",
     "ytil": "workspace:^",
-    "zod": "^3.25.76"
+    "zod": "^4.0.17"
   },
   "peerDependencies": {
     "express": "^5.1.0",

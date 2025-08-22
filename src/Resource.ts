@@ -787,7 +787,7 @@ export default class Resource<Entity, Query, ID> {
 }
 
 const labelParam = z.string().optional()
-const filterParam = z.record(z.any()).default(() => ({}))
+const filterParam = z.record(z.string(), z.any()).default(() => ({}))
 const searchParam = z.string().optional()
 const sortParam = z.string().optional()
 const offsetParam = z.number().int().default(0)
