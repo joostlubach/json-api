@@ -69,7 +69,7 @@ export default class Resource<Entity, Query, ID> {
 
   public async validate(adapter: Adapter<Entity, Query, ID> | undefined) {
     for (const [name, attribute] of objectEntries(this.attributes)) {
-      if (attribute.get != null) { continue }
+      if (attribute.get != null || attribute.set != null) { continue }
       if (adapter?.attributeExists == null) { continue }
 
       if (!adapter.attributeExists?.(name)) {
@@ -188,6 +188,7 @@ export default class Resource<Entity, Query, ID> {
     const attributes: Record<string, any> = {}
     for (const [name, attribute] of objectEntries(this.attributes)) {
       if (!await this.attributeAvailable(attribute, entity, true, context)) { continue }
+      if (!this.attributeReadable(attribute, entity, context)) { continue }
       if (!detail && attribute.detail) { continue }
       attributes[name] = await this.getAttributeValue(entity, name, attribute, adapter, context)
     }
@@ -195,6 +196,13 @@ export default class Resource<Entity, Query, ID> {
   }
 
   private async getAttributeValue(entity: Entity, name: string, attribute: AttributeConfig<Entity, Query, ID>, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext) {
+    if (!await this.attributeAvailable(attribute, entity, true, context)) {
+      throw new APIError(403, `Attribute "${name}" is not available`)
+    }
+    if (!this.attributeReadable(attribute, entity, context)) {
+      throw new APIError(403, `Attribute "${name}" is not readable`)
+    }
+
     if (attribute.get != null) {
       return await attribute.get.call(this, entity, context)
     } else if (adapter?.getAttribute != null) {
@@ -238,10 +246,20 @@ export default class Resource<Entity, Query, ID> {
   }
 
   public attributeWritable(attribute: AttributeConfig<Entity, Query, ID> , entity: Entity, create: boolean, context: RequestContext) {
-    if (attribute.writable == null) { return true }
+    if (attribute.writable == null) {
+      if (attribute.set == null && attribute.get != null) { return false }
+      return true
+    }
     if (isFunction(attribute.writable)) { return attribute.writable.call(this, entity, context) }
     if (attribute.writable === 'create') { return create }
     return attribute.writable
+  }
+
+  public attributeReadable(attribute: AttributeConfig<Entity, Query, ID> , entity: Entity, context: RequestContext) {
+    // There is only one situation where an attribute is not readable, which is when a setter is specified, but a
+    // getter is not.
+    if (attribute.get == null && attribute.set != null) { return false }
+    return true
   }
 
   // #endregion
