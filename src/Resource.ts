@@ -285,6 +285,16 @@ export default class Resource<Entity, Query, ID> {
     return relationships
   }
 
+  private getAutoIncludes(detail: boolean) {
+    return objectEntries(this.relationships)
+      .filter(([_, rel]) => {
+        if (rel.include?.always) { return true }
+        if (rel.include?.detail && !detail) { return false }
+        return true
+      })
+      .map(([name]) => name)
+  }
+
   private async getRelationshipValue(entity: Entity, name: string, relationship: RelationshipConfig<Entity, Query, ID>, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext): Promise<Relationship<ID>> {
     const coerce = (value: Relationship<ID> | RelationshipDataLike<ID>): Relationship<ID> => {
       if (Relationship.isRelationship<ID>(value)) {
@@ -413,10 +423,16 @@ export default class Resource<Entity, Query, ID> {
       params.limit = this.pageSize
     }
 
-    const {totals = this.config.totals ?? true} = options
+    const {
+      totals = this.config.totals ?? true,
+      include = [],
+      detail = false,
+    } = options
+    include.push(...this.getAutoIncludes(detail))
+
     const adapter = getAdapter()
     const query = await this.listQuery(adapter, params, context)
-    const response = await adapter.list(query, params, {...options, totals})
+    const response = await adapter.list(query, params, {totals, include, detail})
 
     return await this.collectionPack(
       response.data,
@@ -425,7 +441,7 @@ export default class Resource<Entity, Query, ID> {
       response.total,
       adapter,
       context,
-      options,
+      {include, detail},
     )
   }
 
@@ -437,15 +453,21 @@ export default class Resource<Entity, Query, ID> {
       return await this.config.show.call(this, locator, getAdapter, context, options)
     }
 
+    const {
+      include = [],
+      detail = true,
+    } = options
+
+    include.push(...this.getAutoIncludes(detail))
     const adapter = getAdapter()
-    const response = await this.load(locator, adapter, context)
+    const response = await this.load(locator, adapter, context, {include, detail})
     
     return await this.documentPack(
       response.data,
       response.included,
       adapter,
       context,
-      options,
+      {include, detail},
     )
   }
 
@@ -591,24 +613,36 @@ export default class Resource<Entity, Query, ID> {
 
   // #region Custom actions
 
-  public async callCollectionAction(name: string, requestPack: Pack<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: ActionOptions = {}) {
+  public async callCollectionAction(name: string, requestPack: Pack<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}) {
     const action = this.config.collectionActions?.[name]
     if (action == null) {
-      throw new APIError(405, `Action \`${name}\` not found`)
+      throw new APIError(404, `Collection action \`${this.type}::${name}\` not found`)
     }
+
+    const {
+      include = [],
+      detail = false,
+    } = options
+    include.push(...this.getAutoIncludes(detail))
 
     const handler = isFunction(action) ? action : action.handler
     return await handler.call(this, requestPack, getAdapter, context, options)
   }
 
-  public async callDocumentAction(name: string, locator: DocumentLocator<ID>, requestPack: Pack<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: ActionOptions = {}) {
+  public async callDocumentAction(name: string, locator: DocumentLocator<ID>, requestPack: Pack<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}) {
     const action = this.config.documentActions?.[name]
     if (action == null) {
-      throw new APIError(405, `Action \`${name}\` not found`)
+      throw new APIError(404, `Document action \`${this.type}::${name}\` not found`)
     }
 
+    const {
+      include = [],
+      detail = true,
+    } = options
+    include.push(...this.getAutoIncludes(detail))
+
     const handler = isFunction(action) ? action : action.handler
-    return await handler.call(this, locator, requestPack, getAdapter, context, options)
+    return await handler.call(this, locator, requestPack, getAdapter, context, {include, detail})
   }
 
   public get collectionActions() {

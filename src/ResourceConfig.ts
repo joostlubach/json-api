@@ -303,7 +303,8 @@ export interface CustomDocumentActionConfig<E, Q, I> {
 }
 
 export interface CustomActionRouterOptions {
-  method?:      'get' | 'post' | 'put' | 'delete'
+  endpoint?:    string
+  method?:      'post' | 'put' | 'patch' | 'delete'
   deserialize?: boolean
 }
 
