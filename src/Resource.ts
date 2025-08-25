@@ -8,7 +8,7 @@ import Adapter, { GetResponse } from './Adapter'
 import Collection from './Collection'
 import Document from './Document'
 import IncludeCollector from './IncludeCollector'
-import JSONAPI from './JSONAPI'
+import JSONAPI, { CollectionPackOptions, DocumentPackOptions } from './JSONAPI'
 import Pack from './Pack'
 import RequestContext from './RequestContext'
 import { AttributeConfig, RelationshipConfig, ResourceConfig } from './ResourceConfig'
@@ -548,20 +548,20 @@ export default class Resource<Entity, Query, ID> {
     return pack
   }
 
-  public async collectionPack(entities: Entity[], includedModels: Entity[] | undefined, offset: number | undefined, total: number | undefined, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: RetrievalActionOptions = {}) {
+  public async collectionPack(entities: Entity[], includedModels: Entity[] | undefined, offset: number | undefined, total: number | undefined, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: CollectionPackOptions<Entity, any> = {}) {
     const collection = await this.entitiesToCollection(entities, adapter, context, {
       detail: options.detail,
     })
 
     const included = await this.resolveIncluded(collection.documents, includedModels, context, options)
-    const pack = new Pack<ID>(collection, included)
+    const pack = new Pack<ID>(collection, included, options.meta)
     await this.injectPaginationMeta(pack, offset, total, context)
     await this.injectPackMeta(pack, null, context)
 
     return pack
   }
 
-  public async documentPack(entity: Entity, includedModels: Entity[] | undefined, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: RetrievalActionOptions = {}) {
+  public async documentPack(entity: Entity, includedModels: Entity[] | undefined, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: DocumentPackOptions<Entity, any> = {}) {
     const document = await this.entityToDocument(entity, adapter, context, {
       detail: options.detail,
     })
@@ -569,7 +569,7 @@ export default class Resource<Entity, Query, ID> {
     const included = await this.resolveIncluded([document], includedModels, context, options)
     await this.injectDocumentMeta(document, entity, context)
 
-    const pack = new Pack<ID>(document, included)
+    const pack = new Pack<ID>(document, included, options.meta)
     await this.injectPackMeta(pack, entity, context)
 
     return pack
