@@ -140,13 +140,13 @@ export default abstract class JSONAPI<Entity, Query, ID> {
 
   // #region Serialization
 
-  public async documentPack(entity: Entity, context: RequestContext, options: DocumentPackOptions<Entity> = {}) {
+  public async documentPack(entity: Entity, context: RequestContext, options: DocumentPackOptions<Entity, any> = {}) {
     const resource = this.resourceForModel(entity)
     const adapter = resource.maybeAdapter(context)
     return await resource.documentPack(entity, options.included, adapter, context, options)
   }
 
-  public async collectionPack(entities: Entity[], context: RequestContext, options: CollectionPackOptions<Entity> = {}) {
+  public async collectionPack(entities: Entity[], context: RequestContext, options: CollectionPackOptions<Entity, any> = {}) {
     if (entities.length === 0) { return new Pack(new Collection()) }
 
     const resource = this.resourceForModel(entities[0])
@@ -252,14 +252,16 @@ export interface JSONAPIOptions<E, Q, I> {
 }
 
 
-export interface DocumentPackOptions<M> {
+export interface DocumentPackOptions<E, M> {
   detail?:   boolean
   include?:  string[]
-  included?: M[]
+  included?: E[]
+  meta?:     M
 }
 
-export interface CollectionPackOptions<M> {
+export interface CollectionPackOptions<E, M> {
   detail?:   boolean
   include?:  string[]
-  included?: M[]
+  included?: E[]
+  meta?:     M
 }
