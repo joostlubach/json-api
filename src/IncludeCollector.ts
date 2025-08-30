@@ -1,4 +1,4 @@
-import { MapBuilder } from 'ytil'
+import { MapBuilder, sparse } from 'ytil'
 
 import Document from './Document'
 import JSONAPI from './JSONAPI'
@@ -12,7 +12,7 @@ export default class IncludeCollector<Entity, Query, ID> {
     private readonly context: RequestContext,
   ) {}
 
-  private readonly collected = new Map<string, ID[]>()
+  private readonly collected = new Map<string, Document<ID>[]>()
 
   /**
    * Wraps a bunch of models of different resource types and converts them to a list of documents.
@@ -62,7 +62,9 @@ export default class IncludeCollector<Entity, Query, ID> {
 
     // Split linkages by type (relationships can be polymorphic).
     const documents = await this.collectDocuments(linkages)
-    collected.push(...documents)
+
+    // Add the newly collected documents to the collected array. Skip any previously collected documents.
+    collected.push(...documents.filter(doc => !collected.some(other => other.id === doc.id && other.resource.type === doc.resource.type)))
 
     // Mark all of these as collected.
     this.markCollected(documents)
@@ -92,12 +94,15 @@ export default class IncludeCollector<Entity, Query, ID> {
       if (resource == null) { continue }
 
       const adapter = resource.adapter(this.context)
-      let ids = linkages.map(it => it.id)
+      const allIDs = linkages.map(it => it.id)
 
-      // Remove any already collected IDs.
-      ids = ids.filter(it => !this.collected.get(type)?.includes(it))      
-      
-      const query = await resource.applyFilters(adapter.query(), {id: ids}, adapter, this.context)
+      // Check if we have already collected some.
+      const existingDocuments = sparse(allIDs.map(id => this.collected.get(type)?.find(doc => doc.id === id)))
+      const newIDs = allIDs.filter(id => !existingDocuments.some(doc => doc.id === id))
+
+      documents.push(...existingDocuments)
+
+      const query = await resource.applyFilters(adapter.query(), {id: newIDs}, adapter, this.context)
       const response = await adapter.list(query, {}, {totals: false})
       for (const entity of response.data) {
         const document = await resource.entityToDocument(entity, adapter, this.context)
@@ -113,7 +118,7 @@ export default class IncludeCollector<Entity, Query, ID> {
       if (doc.id == null) { continue }
 
       const ids = MapBuilder.setDefault(this.collected, doc.resource.type, [])
-      ids.push(doc.id)
+      ids.push(doc)
     }
   }
 
