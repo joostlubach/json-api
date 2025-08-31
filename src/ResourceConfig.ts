@@ -175,11 +175,10 @@ interface RelationshipConfigCommon<E, Q, I> {
   writable?: boolean | 'create'
   detail?:   boolean
   if?:       (this: Resource<E, Q, I>, entity: E, context: RequestContext) => boolean | Promise<boolean>
-  include?:  RelationshipIncludeConfig
+  include?:  boolean | RelationshipIncludeConfig
 }
 
 export interface RelationshipIncludeConfig {
-  always?: boolean
   detail?: boolean
 }
 

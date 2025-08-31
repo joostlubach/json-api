@@ -288,8 +288,9 @@ export default class Resource<Entity, Query, ID> {
   private getAutoIncludes(detail: boolean) {
     return objectEntries(this.relationships)
       .filter(([_, rel]) => {
-        if (rel.include?.always) { return true }
-        if (rel.include?.detail && !detail) { return false }
+        if (!rel.include) { return false }
+        if (rel.include === true) { return true }
+        if (rel.include.detail && !detail) { return false }
         return true
       })
       .map(([name]) => name)
