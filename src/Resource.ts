@@ -450,7 +450,6 @@ export default class Resource<Entity, Query, ID> {
       include = [],
       detail = false,
     } = options
-    include.push(...this.getAutoIncludes(detail))
 
     const adapter = getAdapter()
     const query = await this.listQuery(adapter, params, context)
@@ -480,7 +479,6 @@ export default class Resource<Entity, Query, ID> {
       detail = true,
     } = options
 
-    include.push(...this.getAutoIncludes(detail))
     const adapter = getAdapter()
     const response = await this.load(locator, adapter, context, {include, detail})
     
@@ -571,12 +569,17 @@ export default class Resource<Entity, Query, ID> {
   }
 
   public async collectionPack(entities: Entity[], includedModels: Entity[] | undefined, offset: number | undefined, total: number | undefined, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: CollectionPackOptions<Entity, any> = {}) {
-    const collection = await this.entitiesToCollection(entities, adapter, context, {
-      detail: options.detail,
-    })
+    const {
+      include = [],
+      detail = true,
+      meta = {},
+    } = options
+    include.push(...this.getAutoIncludes(detail))
 
-    const included = await this.resolveIncluded(collection.documents, includedModels, context, options)
-    const pack = new Pack<ID>(collection, included, options.meta)
+    const collection = await this.entitiesToCollection(entities, adapter, context, {detail})
+
+    const included = await this.resolveIncluded(collection.documents, includedModels, context, {include, detail})
+    const pack = new Pack<ID>(collection, included, meta)
     await this.injectPaginationMeta(pack, offset, total, context)
     await this.injectPackMeta(pack, null, context)
 
@@ -584,14 +587,19 @@ export default class Resource<Entity, Query, ID> {
   }
 
   public async documentPack(entity: Entity, includedModels: Entity[] | undefined, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: DocumentPackOptions<Entity, any> = {}) {
-    const document = await this.entityToDocument(entity, adapter, context, {
-      detail: options.detail,
-    })
+    const {
+      include = [],
+      detail = true,
+      meta = {},
+    } = options
+    include.push(...this.getAutoIncludes(detail))
 
-    const included = await this.resolveIncluded([document], includedModels, context, options)
+    const document = await this.entityToDocument(entity, adapter, context, {detail})
+
+    const included = await this.resolveIncluded([document], includedModels, context, {include, detail})
     await this.injectDocumentMeta(document, entity, context)
 
-    const pack = new Pack<ID>(document, included, options.meta)
+    const pack = new Pack<ID>(document, included, meta)
     await this.injectPackMeta(pack, entity, context)
 
     return pack
@@ -645,7 +653,6 @@ export default class Resource<Entity, Query, ID> {
       include = [],
       detail = false,
     } = options
-    include.push(...this.getAutoIncludes(detail))
 
     const handler = isFunction(action) ? action : action.handler
     return await handler.call(this, requestPack, getAdapter, context, options)
@@ -661,7 +668,6 @@ export default class Resource<Entity, Query, ID> {
       include = [],
       detail = true,
     } = options
-    include.push(...this.getAutoIncludes(detail))
 
     const handler = isFunction(action) ? action : action.handler
     return await handler.call(this, locator, requestPack, getAdapter, context, {include, detail})
