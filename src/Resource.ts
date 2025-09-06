@@ -1,5 +1,5 @@
 import { singularize } from 'inflected'
-import { isArray, isFunction, mapValues } from 'lodash'
+import { isArray, isFunction, mapValues, uniq } from 'lodash'
 import { isPlainObject, objectEntries } from 'ytil'
 import { z } from 'zod'
 
@@ -285,15 +285,32 @@ export default class Resource<Entity, Query, ID> {
     return relationships
   }
 
-  private getAutoIncludes(detail: boolean) {
-    return objectEntries(this.relationships)
-      .filter(([_, rel]) => {
-        if (!rel.include) { return false }
-        if (rel.include === true) { return true }
-        if (rel.include.detail && !detail) { return false }
-        return true
-      })
-      .map(([name]) => name)
+  private getAutoIncludes(detail: boolean): string[] {
+    return uniq(this.getAutoIncludeRelationships(detail).map(it => it[0]))
+  }
+
+  private getAutoIncludeRelationships(detail: boolean): Array<[string, RelationshipConfig<Entity, Query, ID>]> {
+    const relationships = this.getOwnAutoIncludeRelationships(detail, '')
+    for (const [name, relationship] of relationships) {
+      if (relationship.type == null) { continue }
+
+      const relatedResource = this.jsonAPI.registry.get(relationship.type)
+      if (relatedResource == null) { continue }
+
+      const nested = relatedResource.getOwnAutoIncludeRelationships(detail, `${name}+`)
+      relationships.push(...nested)
+    }
+
+    return relationships
+  }
+
+  private getOwnAutoIncludeRelationships(detail: boolean, prefix: string): Array<[string, RelationshipConfig<Entity, Query, ID>]> {
+    return objectEntries(this.relationships).filter(([name, rel]) => {
+      if (!rel.include) { return false }
+      if (rel.include === true) { return true }
+      if (rel.include.detail && !detail) { return false }
+      return true
+    }).map(([name, rel]) => [`${prefix}${name}`, rel])
   }
 
   private async getRelationshipValue(entity: Entity, name: string, relationship: RelationshipConfig<Entity, Query, ID>, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext): Promise<Relationship<ID>> {
