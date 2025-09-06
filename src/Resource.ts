@@ -1,5 +1,5 @@
 import { singularize } from 'inflected'
-import { isArray, isFunction, mapValues, uniq } from 'lodash'
+import { isArray, isFunction, mapValues } from 'lodash'
 import { isPlainObject, objectEntries } from 'ytil'
 import { z } from 'zod'
 
@@ -13,8 +13,10 @@ import Pack from './Pack'
 import RequestContext from './RequestContext'
 import { AttributeConfig, RelationshipConfig, ResourceConfig } from './ResourceConfig'
 import config from './config'
+import { relationship } from './openapi/objects'
 import {
   ActionOptions,
+  AnyResource,
   BulkSelector,
   DocumentLocator,
   Linkage,
@@ -286,31 +288,33 @@ export default class Resource<Entity, Query, ID> {
   }
 
   private getAutoIncludes(detail: boolean): string[] {
-    return uniq(this.getAutoIncludeRelationships(detail).map(it => it[0]))
+    const includes: Array<[string, RelationshipConfig<Entity, Query, ID>]> = []
+    this.collectAutoIncludes(includes, detail, new Set([this]), null)
+    return includes.map(it => it[0])
   }
 
-  private getAutoIncludeRelationships(detail: boolean): Array<[string, RelationshipConfig<Entity, Query, ID>]> {
-    const relationships = this.getOwnAutoIncludeRelationships(detail, '')
-    for (const [name, relationship] of relationships) {
-      if (relationship.type == null) { continue }
+  private collectAutoIncludes(includes: Array<[string, RelationshipConfig<any, any, any>]>, detail: boolean, processed: Set<AnyResource>, prefix: string | null) {
+    for (const [name, relationship] of this.getOwnAutoIncludeRelationships(detail)) {
+      const prefixedName = prefix == null ? name : `${prefix}+${name}`
+      const nestedResource = relationship.type == null ? null : this.jsonAPI.registry.get(relationship.type)
+      if (nestedResource == null) { continue }
 
-      const relatedResource = this.jsonAPI.registry.get(relationship.type)
-      if (relatedResource == null) { continue }
+      // Prevent loops by checking that we didn't process this resource already
+      if (processed.has(nestedResource)) { continue }
+      processed.add(nestedResource)
 
-      const nested = relatedResource.getOwnAutoIncludeRelationships(detail, `${name}+`)
-      relationships.push(...nested)
+      includes.push([prefixedName, relationship])
+      nestedResource.collectAutoIncludes(includes, detail, processed, prefixedName)
     }
-
-    return relationships
   }
 
-  private getOwnAutoIncludeRelationships(detail: boolean, prefix: string): Array<[string, RelationshipConfig<Entity, Query, ID>]> {
+  private getOwnAutoIncludeRelationships(detail: boolean): Array<[string, RelationshipConfig<Entity, Query, ID>]> {
     return objectEntries(this.relationships).filter(([name, rel]) => {
       if (!rel.include) { return false }
       if (rel.include === true) { return true }
       if (rel.include.detail && !detail) { return false }
       return true
-    }).map(([name, rel]) => [`${prefix}${name}`, rel])
+    })
   }
 
   private async getRelationshipValue(entity: Entity, name: string, relationship: RelationshipConfig<Entity, Query, ID>, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext): Promise<Relationship<ID>> {
