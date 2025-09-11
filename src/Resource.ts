@@ -289,22 +289,24 @@ export default class Resource<Entity, Query, ID> {
 
   private getAutoIncludes(detail: boolean): string[] {
     const includes: Array<[string, RelationshipConfig<Entity, Query, ID>]> = []
-    this.collectAutoIncludes(includes, detail, new Set([this]), null)
+    for (const [name, relationship] of this.getOwnAutoIncludeRelationships(detail)) {
+      this.collectAutoIncludes(includes, name, relationship, detail, new Set([this]), null)
+    }
     return includes.map(it => it[0])
   }
 
-  private collectAutoIncludes(includes: Array<[string, RelationshipConfig<any, any, any>]>, detail: boolean, processed: Set<AnyResource>, prefix: string | null) {
-    for (const [name, relationship] of this.getOwnAutoIncludeRelationships(detail)) {
-      const prefixedName = prefix == null ? name : `${prefix}+${name}`
-      const nestedResource = relationship.type == null ? null : this.jsonAPI.registry.get(relationship.type)
-      if (nestedResource == null) { continue }
+  private collectAutoIncludes(includes: Array<[string, RelationshipConfig<any, any, any>]>, name: string, relationship: RelationshipConfig<Entity, Query, ID>, detail: boolean, processed: Set<AnyResource>, prefix: string | null) {
+    const prefixedName = prefix == null ? name : `${prefix}+${name}`
+    const nestedResource = relationship.type == null ? null : this.jsonAPI.registry.get(relationship.type)
+    if (nestedResource == null) { return }
 
-      // Prevent loops by checking that we didn't process this resource already
-      if (processed.has(nestedResource)) { continue }
-      processed.add(nestedResource)
+    // Prevent loops by checking that we didn't process this resource already
+    if (processed.has(nestedResource)) { return }
+    processed.add(nestedResource)
 
-      includes.push([prefixedName, relationship])
-      nestedResource.collectAutoIncludes(includes, detail, processed, prefixedName)
+    includes.push([prefixedName, relationship])
+    for (const [name, relationship] of nestedResource.getOwnAutoIncludeRelationships(detail)) {
+      nestedResource.collectAutoIncludes(includes, name, relationship, detail, processed, prefixedName)
     }
   }
 
