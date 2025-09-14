@@ -188,7 +188,7 @@ export default abstract class JSONAPI<Entity, Query, ID> {
   }
 
   public toLinkage<M, I>(arg: M | I | Linkage<I>, type: string): Linkage<I> {
-    const linkage = Linkage.isLinkage(arg) ? (
+    const linkage = Linkage.is(arg) ? (
       arg
     ) : isObject(arg) && 'id' in arg ? (
       {type, id: arg.id as any}

@@ -344,7 +344,7 @@ export default class OpenAPIGenerator {
       meta = merge({}, get(this.defaults, key), meta)
     }
 
-    if (interpolate && resource != null) {
+    if (interpolate && resource != null && meta != null) {
       return deepMapValues(meta, (value: any) => {
         if (typeof value !== 'string') { return value }
         if (!value.includes('{{')) { return value }

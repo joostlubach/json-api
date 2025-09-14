@@ -327,7 +327,7 @@ export default class Resource<Entity, Query, ID> {
 
       const {type} = relationship
       const toLinkage = (value: ID | Linkage<ID>): Linkage<ID> => {
-        if (Linkage.isLinkage<ID>(value)) {
+        if (Linkage.is<ID>(value)) {
           return value
         } else if (type != null) {
           return this.jsonAPI.toLinkage(value, type)
@@ -848,7 +848,7 @@ export default class Resource<Entity, Query, ID> {
 
     const ids: Array<string | number> = []
     for (const linkage of data) {
-      if (!Linkage.isLinkage<string | number>(linkage)) {
+      if (!Linkage.is<string | number>(linkage)) {
         throw new APIError(400, `Invalid linkage: ${JSON.stringify(linkage)}`)
       }
       if (linkage.type !== this.type) {
