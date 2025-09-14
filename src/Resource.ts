@@ -875,7 +875,7 @@ const sortParam = z.string().optional()
 const offsetParam = z.number().int().default(0)
 const limitParam = z.number().int().optional()
 
-interface LoadResponse<M> {
+export interface LoadResponse<M> {
   data:      M
   included?: M[]
 }

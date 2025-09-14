@@ -138,6 +138,18 @@ export default abstract class JSONAPI<Entity, Query, ID> {
 
   // #endregion
 
+  // #region Other interface
+
+  public async load(linkage: Linkage<any>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
+    const resource = this.registry.get(linkage.type)
+    const adapter = resource.adapter(context)
+
+    const {data} = await resource.load({id: linkage.id}, adapter, context, {detail: true, ...options})
+    return await resource.documentPack(data, undefined, adapter, context, {detail: true, ...options})
+  }
+
+  // #endregion
+
   // #region Serialization
 
   public async documentPack(entity: Entity, context: RequestContext, options: DocumentPackOptions<Entity, any> = {}) {
