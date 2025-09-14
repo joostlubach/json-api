@@ -120,8 +120,8 @@ export const Relationship: {
     if (meta != null && !isPlainObject(meta)) { return false }
 
     if (data == null) { return true }
-    if (isArray(data)) { return data.every(Linkage.isLinkage) }
-    return Linkage.isLinkage(data)
+    if (isArray(data)) { return data.every(Linkage.is) }
+    return Linkage.is(data)
   },
 }
 
@@ -131,15 +131,15 @@ export interface Linkage<ID> {
   meta?: Meta
 }
 
-export const Linkage: {
-  isLinkage: <I>(arg: any) => arg is Linkage<I>
-} = {
-  isLinkage: (arg: any): arg is Linkage<any> => {
+export namespace Linkage {
+  
+  export function is<I>(arg: any): arg is Linkage<I> {
     if (!isPlainObject(arg)) { return false }
     if (!('type' in arg) || typeof arg.type !== 'string') { return false }
     if (!('id' in arg)) { return false }
     return true
-  },
+  }
+  
 }
 
 export interface BulkSelector<I> {
