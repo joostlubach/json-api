@@ -717,10 +717,10 @@ export default class Resource<Entity, Query, ID> {
 
   // #region Request extracters
 
-  public extractRequestDocument(pack: Pack<ID>, expectID: ID): Document<ID> & {id: string}
-  public extractRequestDocument(pack: Pack<ID>, expectID: null): Document<ID>
-  public extractRequestDocument(pack: Pack<ID>, expectID: ID | null): Document<ID>
-  public extractRequestDocument(pack: Pack<ID>, expectID: ID | null): Document<ID> {
+  public extractRequestDocument(pack: Pack<ID>, endpointID: ID): Document<ID> & {id: string}
+  public extractRequestDocument(pack: Pack<ID>, endpointID: null): Document<ID>
+  public extractRequestDocument(pack: Pack<ID>, endpointID: ID | null): Document<ID>
+  public extractRequestDocument(pack: Pack<ID>, endpointID: ID | null): Document<ID> {
     const document = pack.data
 
     if (document == null) {
@@ -729,10 +729,10 @@ export default class Resource<Entity, Query, ID> {
     if (!(document instanceof Document)) {
       throw new APIError(400, "Expected Document")
     }
-    if (expectID != null && document.id == null) {
+    if (endpointID != null && document.id == null) {
       throw new APIError(400, "Document ID required")
     }
-    if (expectID != null && document.id !== expectID) {
+    if (endpointID != null && `${document.id}` !== `${endpointID}`) {
       throw new APIError(409, "Document ID does not match endpoint ID")
     }
     if (document.resource.type !== this.type) {
