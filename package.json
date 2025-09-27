@@ -4,10 +4,19 @@
   "description": "JSON API endpoints based on json-api by Ethan Resnick",
   "author": "Joost Lubach",
   "license": "MIT",
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/types/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./testing": "./src/testing/index.ts"
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "module": "./dist/esm/index.js",
+      "default": "./dist/cjs/index.js"
+    },
+    "./testing": {
+      "types": "./dist/types/testing/index.d.ts",
+      "module": "./dist/esm/testing/index.js",
+      "default": "./dist/cjs/testing/index.js"
+    }
   },
   "scripts": {
     "build": "pnpm clean && pnpm build:tsc && pnpm build:copy",
@@ -35,7 +44,7 @@
     "openapi-types": "^12.1.3",
     "url-template": "^2.0.8",
     "ydeps": "workspace:^",
-    "ytil": "workspace:^",
+    "ytil": "workspace:*",
     "zod": "^4.1.5"
   },
   "peerDependencies": {
@@ -56,6 +65,8 @@
     "node-mocks-http": "^1.17.2",
     "strip-ansi": "^6.0.1",
     "supertest": "^6.3.4",
+    "copyfiles": "^2.4.1",
+    "rimraf": "^6.0.1",
     "typescript": "^5.8.3",
     "yest": "workspace:^"
   },
