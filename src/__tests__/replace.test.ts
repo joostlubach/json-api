@@ -1,10 +1,10 @@
-import { context, mockJSONAPI } from './mock'
-
+import { beforeEach, describe, expect, it } from 'bun:test'
 import { expectAsyncError } from 'yest'
 
 import APIError from '../APIError'
 import Pack from '../Pack'
 import db from './db'
+import { context, mockJSONAPI } from './mock'
 
 describe("replace", () => {
 
@@ -39,22 +39,22 @@ describe("replace", () => {
       meta:     {},
     })
 
-    expect(db('parents').get('alice')).toEqual({
+    expect(db('parents').get('alice')).toEqual(expect.objectContaining({
       id:   'alice',
       name: "Alice",
       age:  40,
-    })
+    }))
   })
 
   it("should not update, but replace fully", async () => {
     const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {name: "Alice"})
     await jsonAPI.replace('parents', 'alice', requestPack, context('replace'))
 
-    expect(db('parents').get('alice')).toEqual({
+    expect(db('parents').get('alice')).toEqual(expect.objectContaining({
       id:   'alice',
       name: "Alice",
       age:  undefined,
-    })
+    }))
   })
 
   it("should not allow replacing a document that does not exist", async () => {

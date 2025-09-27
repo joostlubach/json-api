@@ -1,3 +1,4 @@
+import { afterEach } from 'bun:test'
 import { isArray, isFunction } from 'lodash'
 import { slugify } from 'ytil'
 
@@ -20,7 +21,7 @@ export interface Child {
   parents: string[]
 }
 
-export type Entity = Parent | Child
+export type Model = Parent | Child
 
 export interface Query {
   filters: Filters
@@ -31,7 +32,7 @@ export interface Query {
 
 export class Db {
 
-  private models: Entity[] = []
+  private models: Model[] = []
 
   public list(query: Query) {
     let models = this.models.filter(it => this.match(query, it))
@@ -65,13 +66,13 @@ export class Db {
   }
 
   public build() {
-    return {} as Entity
+    return {} as Model
   }
 
   public insert(...items: Record<string, any>[]) {
     return items.map(attrs => {
       const id = attrs.id ?? (attrs.name == null ? undefined : slugify(attrs.name))
-      const entity = {...attrs, id} as Entity
+      const entity = {...attrs, id} as Model
       this.models = this.models.filter(it => it.id !== entity.id)
       this.models.push(entity)
       return entity
@@ -79,7 +80,7 @@ export class Db {
   }
 
   public delete(query: Query) {
-    const deleted: Entity[] = []
+    const deleted: Model[] = []
     this.models = this.models.filter(entity => {
       if (this.match(query, entity)) {
         deleted.push(entity)
@@ -99,7 +100,7 @@ export class Db {
     this.models = []
   }
 
-  private match(query: Query, entity: Entity) {
+  private match(query: Query, entity: Model) {
     for (const [name, value] of Object.entries(query.filters)) {
       if (isFunction(value)) {
         if (!value((entity as any)[name])) {

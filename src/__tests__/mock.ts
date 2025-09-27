@@ -22,9 +22,9 @@ import {
   RetrievalActionOptions,
   Sort,
 } from '../types'
-import db, { Entity, Query } from './db'
+import db, { Model, Query } from './db'
 
-export function mockJSONAPI(options?: JSONAPIOptions<Entity, Query, string>) {
+export function mockJSONAPI(options?: JSONAPIOptions<Model, Query, string>) {
   return dynamicProxy(() => new MockJSONAPI(options))
 }
 
@@ -32,18 +32,18 @@ export function context(action: string, params: Record<string, any> = {}) {
   return new RequestContext(action, params, null)
 }
 
-export class MockJSONAPI extends JSONAPI<Entity, Query, string> {
+export class MockJSONAPI extends JSONAPI<Model, Query, string> {
 
-  constructor(options: JSONAPIOptions<Entity, Query, string> = {}) {
+  constructor(options: JSONAPIOptions<Model, Query, string> = {}) {
     super(options)
     this.reset()
   }
 
-  public adapter(resource: Resource<Entity, Query, string>, context: RequestContext<Record<string, any>>): MockAdapter {
+  public adapter(resource: Resource<Model, Query, string>, context: RequestContext<Record<string, any>>): MockAdapter {
     return new MockAdapter(resource, context)
   }
 
-  public nameForModel(entity: Entity): string {
+  public nameForModel(entity: Model): string {
     if (db('parents').ids().includes(entity.id)) {
       return 'Parent'
     } else {
@@ -56,11 +56,11 @@ export class MockJSONAPI extends JSONAPI<Entity, Query, string> {
   }
 
   public nullPack() {
-    return Pack.deserialize<Entity, Query, string>(this.registry, {data: null})
+    return Pack.deserialize<Model, Query, string>(this.registry, {data: null})
   }
 
   public documentRequestPack(type: string, id: string | null, attributes: Record<string, any>) {
-    return Pack.deserialize<Entity, Query, string>(this.registry, {
+    return Pack.deserialize<Model, Query, string>(this.registry, {
       data: {
         type,
         id,
@@ -74,15 +74,15 @@ export class MockJSONAPI extends JSONAPI<Entity, Query, string> {
   public bulkSelectorPack(type: string, search: string): Pack<string>
   public bulkSelectorPack(type: string, arg: any): Pack<string> {
     if (isArray(arg)) {
-      return Pack.deserialize<Entity, Query, string>(this.registry, {
+      return Pack.deserialize<Model, Query, string>(this.registry, {
         data: arg.map(id => ({type, id})),
       })
     } else if (isPlainObject(arg)) {
-      return Pack.deserialize<Entity, Query, string>(this.registry, {
+      return Pack.deserialize<Model, Query, string>(this.registry, {
         meta: {filters: arg},
       })
     } else {
-      return Pack.deserialize<Entity, Query, string>(this.registry, {
+      return Pack.deserialize<Model, Query, string>(this.registry, {
         meta: {search: arg},
       })
     }
@@ -152,14 +152,14 @@ export class MockJSONAPI extends JSONAPI<Entity, Query, string> {
 
 }
 
-export class MockAdapter implements Adapter<Entity, Query, string> {
+export class MockAdapter implements Adapter<Model, Query, string> {
 
   constructor(
-    private readonly resource: Resource<Entity, Query, string>,
+    private readonly resource: Resource<Model, Query, string>,
     private readonly context: RequestContext,
   ) {}
 
-  public async list(query: Query, params: ListParams, options: ListActionOptions): Promise<ListResponse<Entity>> {
+  public async list(query: Query, params: ListParams, options: ListActionOptions): Promise<ListResponse<Model>> {
     const models = db(this.resource.type).list(query)
     if (options.totals === false) { return {data: models} }
 
@@ -167,19 +167,19 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
     return {data: models, total}
   }
   
-  public async get(query: Query, id: string, options: RetrievalActionOptions): Promise<GetResponse<Entity>> {
+  public async get(query: Query, id: string, options: RetrievalActionOptions): Promise<GetResponse<Model>> {
     return {
       data: db(this.resource.type).get(id, query),
     }
   }
 
-  public async create(cb: (entity: Entity) => Promise<void>): Promise<CreateResponse<Entity>> {
+  public async create(cb: (entity: Model) => Promise<void>): Promise<CreateResponse<Model>> {
     const entity = db(this.resource.type).build()
     await cb(entity)
     return {data: entity}
   }
 
-  public async update(id: string, cb: (entity: Entity) => Promise<void>): Promise<UpdateResponse<Entity>> {
+  public async update(id: string, cb: (entity: Model) => Promise<void>): Promise<UpdateResponse<Model>> {
     const entity = db(this.resource.type).get(id)
     if (!entity) {
       throw new Error(`Entity with id ${id} not found`)
@@ -188,7 +188,7 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
     return {data: entity}
   }
 
-  public async replace(id: string, cb: (entity: Entity) => Promise<void>): Promise<ReplaceResponse<Entity>> {
+  public async replace(id: string, cb: (entity: Model) => Promise<void>): Promise<ReplaceResponse<Model>> {
     const entity = db(this.resource.type).get(id)
     if (!entity) {
       throw new Error(`Entity with id ${id} not found`)
@@ -197,7 +197,7 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
     return {data: entity}
   }
   
-  public async delete(query: Query): Promise<Entity[]> {
+  public async delete(query: Query): Promise<Model[]> {
     return db(this.resource.type).delete(query)
   }
   
@@ -253,18 +253,18 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
     }
   }
 
-  public getAttribute(data: Entity, name: string, attribute: AttributeConfig<Entity, Query, string>) {
+  public getAttribute(data: Model, name: string, attribute: AttributeConfig<Model, Query, string>) {
     return (data as any)[name]
   }
 
-  public setAttribute(data: Entity, name: string, value: any, attribute: AttributeConfig<Entity, Query, string>): void | Promise<void> {
+  public setAttribute(data: Model, name: string, value: any, attribute: AttributeConfig<Model, Query, string>): void | Promise<void> {
     Object.assign(data, {[name]: value})
   }
 
   public getRelationship(
-    data: Entity,
+    data: Model,
     name: string,
-    relationship: RelationshipConfig<Entity, Query, string>,
+    relationship: RelationshipConfig<Model, Query, string>,
   ): Relationship<string> | RelationshipDataLike<string> | Promise<Relationship<string> | RelationshipDataLike<string>> {
     return (data as any)[name]
   }
@@ -273,8 +273,8 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
     return true
   }
 
-  public emptyModel(id: string | null): Entity | Promise<Entity> {
-    return {id} as Entity
+  public emptyModel(id: string | null): Model | Promise<Model> {
+    return {id} as Model
   }
   
   public openAPISchemaForAttribute(attribute: string): OpenAPIV3_1.SchemaObject | Promise<OpenAPIV3_1.SchemaObject> {

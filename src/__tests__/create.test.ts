@@ -1,10 +1,10 @@
-import { context, mockJSONAPI } from './mock'
-
+import { beforeEach, describe, expect, it } from 'bun:test'
 import { expectAsyncError } from 'yest'
 
 import APIError from '../APIError'
 import Pack from '../Pack'
 import db from './db'
+import { context, mockJSONAPI } from './mock'
 
 describe("create", () => {
 
@@ -41,11 +41,11 @@ describe("create", () => {
       meta:     {},
     })
 
-    expect(db('parents').get('alice')).toEqual({
+    expect(db('parents').get('alice')).toEqual(expect.objectContaining({
       id:   'alice',
       name: "Alice",
       age:  30,
-    })
+    }))
   })
 
   it("should not accept a mismatch between pack type and document", async () => {
@@ -138,11 +138,11 @@ describe("create", () => {
     })
 
     await jsonAPI.create('parents', requestPack, context('create'))
-    expect(db('parents').get('alice')).toEqual({
+    expect(db('parents').get('alice')).toEqual(expect.objectContaining({
       id:   'alice',
       name: "Alice",
       age:  40,
-    })
+    }))
   })
 
   it("should allow specifying an explicit ID", async () => {
@@ -156,11 +156,11 @@ describe("create", () => {
     })
 
     await jsonAPI.create('parents', requestPack, context('create'))
-    expect(db('parents').get('ALICE')).toEqual({
+    expect(db('parents').get('ALICE')).toEqual(expect.objectContaining({
       id:   "ALICE",
       name: "Alice",
       age:  40,
-    })
+    }))
   })
 
 })

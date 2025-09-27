@@ -1,23 +1,25 @@
+import { beforeEach, describe, expect, it, Mock, vi } from 'bun:test'
 import { isPlainObject } from 'lodash'
 import { expectAsyncError } from 'yest'
+import { AnyFunction } from 'ytil'
 
 import APIError from '../APIError'
 import Pack from '../Pack'
 import RequestContext from '../RequestContext'
 import Resource from '../Resource'
 import { ListParams } from '../types'
-import db, { Entity, Query } from './db'
+import db, { Model, Query } from './db'
 import { context, MockAdapter, mockJSONAPI } from './mock'
 
 describe("custom actions", () => {
 
   const jsonAPI = mockJSONAPI()
-  let handler: jest.Mock
+  let handler: Mock<AnyFunction>
 
   beforeEach(() => {
     db.seed()
 
-    handler = jest.fn()
+    handler = vi.fn()
 
     jsonAPI.registry.modify('parents', cfg => {
       cfg.collectionActions = {
@@ -32,12 +34,12 @@ describe("custom actions", () => {
 
   describe("overriding common actions", () => {
 
-    let handler: jest.Mock
+    let handler: Mock<AnyFunction>
     let requestPack: Pack<string>
     let responsePack: Pack<string>
     
     beforeEach(() => {
-      handler = jest.fn()
+      handler = vi.fn()
       jsonAPI.registry.modify('parents', cfg => {
         cfg.list = handler
         cfg.show = handler
@@ -50,7 +52,7 @@ describe("custom actions", () => {
       requestPack = new Pack<string>('request')
       responsePack = new Pack<string>('response')
       
-      handler.mockImplementation(function (this: Resource<Entity, Query, string>, ...args) {
+      handler.mockImplementation(function (this: Resource<Model, Query, string>, ...args) {
         if (isPlainObject(args[args.length - 1])) {
           args.pop()
         }
@@ -121,7 +123,7 @@ describe("custom actions", () => {
 
     it("should provide a function that can be used to get an adapter for the resource", async () => {
       const requestPack = new Pack('request')
-      handler.mockImplementation(function (this: Resource<Entity, Query, string>, pack, adapter) {
+      handler.mockImplementation(function (this: Resource<Model, Query, string>, pack, adapter) {
         expect(this).toBe(jsonAPI.registry.get('parents'))
         expect(adapter()).toBeInstanceOf(MockAdapter)
       })
@@ -157,7 +159,7 @@ describe("custom actions", () => {
 
     it("should provide a function that can be used to get an adapter for the resource", async () => {
       const requestPack = new Pack('request')
-      handler.mockImplementation(function (this: Resource<Entity, Query, string>, locator, pack, adapter) {
+      handler.mockImplementation(function (this: Resource<Model, Query, string>, locator, pack, adapter) {
         expect(this).toBe(jsonAPI.registry.get('parents'))
         expect(adapter()).toBeInstanceOf(MockAdapter)
       })

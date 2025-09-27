@@ -1,6 +1,7 @@
+import { afterEach, beforeEach, describe, expect, it, Mock, spyOn, vi } from 'bun:test'
 import express, { Application, NextFunction, Request, Response, Router } from 'express'
 import supertest from 'supertest'
-import { objectKeys } from 'ytil'
+import { AnyFunction, objectKeys } from 'ytil'
 
 import Document from '../Document'
 import { JSONAPIOptions } from '../JSONAPI'
@@ -8,7 +9,7 @@ import Pack from '../Pack'
 import RequestContext from '../RequestContext'
 import Resource from '../Resource'
 import { CustomCollectionActionConfig, CustomDocumentActionConfig } from '../ResourceConfig'
-import { Entity, Parent, Query } from './db'
+import { Model, Parent, Query } from './db'
 import { context, MockAdapter, MockJSONAPI } from './mock'
 
 describe("http", () => {
@@ -16,13 +17,13 @@ describe("http", () => {
   let jsonAPI: MockJSONAPI
 
   let parents: Resource<Parent, Query, string>
-  let spy: jest.SpyInstance
+  let spy: Mock<AnyFunction>
 
   let router: Router
   let app: Application
   let request: supertest.Agent
 
-  function setUp(options: JSONAPIOptions<Entity, Query, string> = {}) {
+  function setUp(options: JSONAPIOptions<Model, Query, string> = {}) {
     jsonAPI = new MockJSONAPI(options)
 
     parents = jsonAPI.registry.get<Parent, Query, string>('parents')
@@ -103,7 +104,7 @@ describe("http", () => {
 
     beforeEach(() => {
       setUp()
-      spy = jest.spyOn(parents, 'list')
+      spy = spyOn(parents, 'list')
       spy.mockReturnValue(Promise.resolve(mockPack()))
     })
 
@@ -157,7 +158,7 @@ describe("http", () => {
 
     beforeEach(() => {
       setUp()
-      spy = jest.spyOn(parents, 'list')
+      spy = spyOn(parents, 'list')
       spy.mockReturnValue(Promise.resolve(mockPack()))
     })
 
@@ -211,7 +212,7 @@ describe("http", () => {
 
     beforeEach(() => {
       setUp()
-      spy = jest.spyOn(parents, 'create')
+      spy = spyOn(parents, 'create')
       spy.mockReturnValue(Promise.resolve(mockPack()))
     })
 
@@ -244,7 +245,7 @@ describe("http", () => {
 
     beforeEach(() => {
       setUp()
-      spy = jest.spyOn(parents, 'show')
+      spy = spyOn(parents, 'show')
       spy.mockReturnValue(Promise.resolve(mockPack()))
     })
 
@@ -279,7 +280,7 @@ describe("http", () => {
 
     beforeEach(() => {
       setUp()
-      spy = jest.spyOn(parents, 'replace')
+      spy = spyOn(parents, 'replace')
       spy.mockReturnValue(Promise.resolve(mockPack()))
     })
 
@@ -314,7 +315,7 @@ describe("http", () => {
 
     beforeEach(() => {
       setUp()
-      spy = jest.spyOn(parents, 'update')
+      spy = spyOn(parents, 'update')
       spy.mockReturnValue(Promise.resolve(mockPack()))
     })
 
@@ -349,7 +350,7 @@ describe("http", () => {
 
     beforeEach(() => {
       setUp()
-      spy = jest.spyOn(parents, 'delete')
+      spy = spyOn(parents, 'delete')
       spy.mockReturnValue(Promise.resolve(mockPack()))
     })
 
@@ -373,16 +374,15 @@ describe("http", () => {
 
   })
 
-  describe.each`
-  method      | path                    | hasRequest
-  ${'get'}    | ${'/parents'}           | ${false}
-  ${'get'}    | ${'/parents/:family-a'} | ${false}
-  ${'get'}    | ${'/parents/alice'}     | ${false}
-  ${'post'}   | ${'/parents'}           | ${true}
-  ${'put'}    | ${'/parents/alice'}     | ${true}
-  ${'patch'}  | ${'/parents/alice'}     | ${true}
-  ${'delete'} | ${'/parents'}           | ${true}
-  `("request validation", ({method, path, hasRequest}) => {
+  describe.each([
+    {method: 'get', path: '/parents', hasRequest: false},
+    {method: 'get', path: '/parents/:family-a', hasRequest: false},
+    {method: 'get', path: '/parents/alice', hasRequest: false},
+    {method: 'post', path: '/parents', hasRequest: true},
+    {method: 'put', path: '/parents/alice', hasRequest: true},
+    {method: 'patch', path: '/parents/alice', hasRequest: true},
+    {method: 'delete', path: '/parents', hasRequest: true},
+  ])("request validation", ({method, path, hasRequest}) => {
 
     afterEach(() => {
       delete jsonAPI.options.router
@@ -494,12 +494,12 @@ describe("http", () => {
 
   describe("POST /parents/test-1", () => {
 
-    let spy: jest.Mock
+    let spy: Mock<AnyFunction>
 
     beforeEach(() => {
       setUp()
 
-      spy = jest.fn().mockReturnValue(Promise.resolve(mockPack()))
+      spy = vi.fn().mockReturnValue(Promise.resolve(mockPack()))
       jsonAPI.registry.modify('parents', cfg => {
         (cfg.collectionActions!['test-1'] as CustomCollectionActionConfig<any, any, any>).handler = spy
       })
@@ -525,12 +525,12 @@ describe("http", () => {
 
   describe("GET /parents/test-2", () => {
 
-    let spy: jest.Mock
+    let spy: Mock<AnyFunction>
 
     beforeEach(() => {
       setUp()
 
-      spy = jest.fn().mockReturnValue(Promise.resolve(mockPack()))
+      spy = vi.fn().mockReturnValue(Promise.resolve(mockPack()))
       jsonAPI.registry.modify('parents', cfg => {
         (cfg.collectionActions!['test-2'] as CustomCollectionActionConfig<any, any, any>).handler = spy
       })
@@ -561,12 +561,12 @@ describe("http", () => {
 
   describe("POST /parents/alice/test-1", () => {
 
-    let spy: jest.Mock
+    let spy: Mock<AnyFunction>
 
     beforeEach(() => {
       setUp()
 
-      spy = jest.fn().mockReturnValue(Promise.resolve(mockPack()))
+      spy = vi.fn().mockReturnValue(Promise.resolve(mockPack()))
       jsonAPI.registry.modify('parents', cfg => {
         (cfg.documentActions!['test-1'] as CustomDocumentActionConfig<any, any, any>).handler = spy
       })
@@ -593,12 +593,12 @@ describe("http", () => {
 
   describe("GET /parents/alice/test-2", () => {
 
-    let spy: jest.Mock
+    let spy: Mock<AnyFunction>
 
     beforeEach(() => {
       setUp()
 
-      spy = jest.fn().mockReturnValue(Promise.resolve(mockPack()))
+      spy = vi.fn().mockReturnValue(Promise.resolve(mockPack()))
       jsonAPI.registry.modify('parents', cfg => {
         (cfg.documentActions!['test-2'] as CustomDocumentActionConfig<any, any, any>).handler = spy
       })
