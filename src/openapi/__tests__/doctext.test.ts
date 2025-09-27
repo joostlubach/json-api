@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import stripAnsi from 'strip-ansi'
 
 import Pack from '../../Pack'
@@ -75,7 +75,7 @@ describe("doctext", () => {
     })
 
     it("should inject proper openapi metadata into the config", () => {
-      expect(parents.config.openapi).toEqual({
+      expect<any>(parents.config.openapi).toEqual({
         idType: 'integer', // The values are merged with existing openapi config.
   
         summary:     "Parents in the family.",

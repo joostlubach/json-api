@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { beforeEach, describe, expect, it, Mock, vi } from 'bun:test'
 import { isPlainObject } from 'lodash'
 import { expectAsyncError } from 'yest'
+import { AnyFunction } from 'ytil'
 
 import APIError from '../APIError'
 import Pack from '../Pack'
@@ -13,12 +14,12 @@ import { context, MockAdapter, mockJSONAPI } from './mock'
 describe("custom actions", () => {
 
   const jsonAPI = mockJSONAPI()
-  let handler: jest.Mock
+  let handler: Mock<AnyFunction>
 
   beforeEach(() => {
     db.seed()
 
-    handler = jest.fn()
+    handler = vi.fn()
 
     jsonAPI.registry.modify('parents', cfg => {
       cfg.collectionActions = {
@@ -33,12 +34,12 @@ describe("custom actions", () => {
 
   describe("overriding common actions", () => {
 
-    let handler: jest.Mock
+    let handler: Mock<AnyFunction>
     let requestPack: Pack<string>
     let responsePack: Pack<string>
     
     beforeEach(() => {
-      handler = jest.fn()
+      handler = vi.fn()
       jsonAPI.registry.modify('parents', cfg => {
         cfg.list = handler
         cfg.show = handler

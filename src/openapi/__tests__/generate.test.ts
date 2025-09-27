@@ -1,5 +1,5 @@
 import SwaggerParser from '@apidevtools/swagger-parser'
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, it, spyOn, vi } from 'bun:test'
 import { OpenAPIV3_1 } from 'openapi-types'
 
 import { context, MockAdapter, mockJSONAPI } from '../../__tests__/mock'
@@ -319,9 +319,9 @@ describe("openapi", () => {
           },
         })
   
-        expect(spec.paths?.['/parents']?.get?.responses['200']).toEqual(expected())
-        expect(spec.paths?.['/parents/:family-a']?.get?.responses['200']).toEqual(expected())
-        expect(spec.paths?.['/parents/:family-b']?.get?.responses['200']).toEqual(expected())
+        expect<any>(spec.paths?.['/parents']?.get?.responses['200']).toEqual(expected())
+        expect<any>(spec.paths?.['/parents/:family-a']?.get?.responses['200']).toEqual(expected())
+        expect<any>(spec.paths?.['/parents/:family-b']?.get?.responses['200']).toEqual(expected())
       })
   
     })
@@ -619,22 +619,21 @@ describe("openapi", () => {
 
     describe("all actions", () => {
   
-      describe.each`
-      action          | get
-      ${'list'}       | ${(spec: OpenAPIV3_1.Document) => spec.paths?.['/parents']?.get}
-      ${'list-label'} | ${(spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/:family-a']?.get}
-      ${'show'}       | ${(spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/{id}']?.get}
-      ${'create'}     | ${(spec: OpenAPIV3_1.Document) => spec.paths?.['/parents']?.post}
-      ${'replace'}    | ${(spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/{id}']?.put}
-      ${'update'}     | ${(spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/{id}']?.patch}
-      ${'delete'}     | ${(spec: OpenAPIV3_1.Document) => spec.paths?.['/parents']?.delete}
-      `("$action", ({action, get}) => {
+      describe.each([
+        {action: 'list', get: (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents']?.get},
+        {action: 'list-label', get: (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/:family-a']?.get},
+        {action: 'show', get: (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/{id}']?.get},
+        {action: 'create', get: (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents']?.post},
+        {action: 'replace', get: (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/{id}']?.put},
+        {action: 'update', get: (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/{id}']?.patch},
+        {action: 'delete', get: (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents']?.delete},
+      ])("$action", ({action, get}) => {
   
         it("should define all possible response codes", async () => {
           const spec = await jsonAPI.openAPISpec(context('__openapi__'))
           const okCode = action === 'create' ? '201' : '200'
   
-          expect(get(spec).responses).toEqual({
+          expect(get(spec)?.responses).toEqual({
             [okCode]: expect.any(Object),
             '400':    expect.any(Object),
             '401':    expect.any(Object),
@@ -833,15 +832,15 @@ describe("openapi", () => {
         nameRequired = true
         ageRequired = false
 
-        jest.spyOn(MockAdapter.prototype, 'openAPISchemaForAttribute')
+        spyOn(MockAdapter.prototype, 'openAPISchemaForAttribute')
           .mockImplementation(name => name === 'name' ? nameSchema : ageSchema)
 
-        jest.spyOn(MockAdapter.prototype, 'attributeRequired')
+        spyOn(MockAdapter.prototype, 'attributeRequired')
           .mockImplementation(name => name === 'name' ? nameRequired : ageRequired)
       })
 
       afterEach(() => {
-        jest.restoreAllMocks()
+        vi.restoreAllMocks()
       })
 
       it("should expose a ParentsAttributes with a property for each exposed attribute using openAPI reflection from the adapter", async () => {
@@ -872,10 +871,10 @@ describe("openapi", () => {
       })
 
       it("should allow the adapter to return the metadata asynchronously", async () => {
-        jest.spyOn(MockAdapter.prototype, 'openAPISchemaForAttribute')
+        spyOn(MockAdapter.prototype, 'openAPISchemaForAttribute')
           .mockImplementation(async name => name === 'name' ? nameSchema : ageSchema)
 
-        jest.spyOn(MockAdapter.prototype, 'attributeRequired')
+        spyOn(MockAdapter.prototype, 'attributeRequired')
           .mockImplementation(async name => name === 'name' ? nameRequired : ageRequired)
 
         expect(await getAttributesSchema()).toEqual({
