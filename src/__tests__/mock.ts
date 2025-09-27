@@ -13,7 +13,15 @@ import JSONAPI, { JSONAPIOptions } from '../JSONAPI'
 import Pack from '../Pack'
 import RequestContext from '../RequestContext'
 import Resource from '../Resource'
-import { ListActionOptions, ListParams, RetrievalActionOptions, Sort } from '../types'
+import { AttributeConfig, RelationshipConfig } from '../ResourceConfig'
+import {
+  ListActionOptions,
+  ListParams,
+  Relationship,
+  RelationshipDataLike,
+  RetrievalActionOptions,
+  Sort,
+} from '../types'
 import db, { Entity, Query } from './db'
 
 export function mockJSONAPI(options?: JSONAPIOptions<Entity, Query, string>) {
@@ -96,7 +104,7 @@ export class MockJSONAPI extends JSONAPI<Entity, Query, string> {
         'test-2': {
           handler: async () => new Pack<string>(null),
           router:  {
-            method: 'get',
+            method: 'post',
           },
         },
       },
@@ -108,7 +116,7 @@ export class MockJSONAPI extends JSONAPI<Entity, Query, string> {
         'test-2': {
           handler: async () => new Pack<string>(null),
           router:  {
-            method: 'get',
+            method: 'post',
           },
         },
       },
@@ -218,7 +226,7 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
       },
     }
   }
-  
+
   public clearSorts(query: Query): Query {
     return {
       ...query,
@@ -237,18 +245,32 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
  
   }
   
-  public applyOffset(query: Query, offset: number): Query | Promise<Query> {
-    return {
-      ...query,
-      offset,
-    }
-  }
-  
-  public applyLimit(query: Query, limit: number): Query | Promise<Query> {
+  public applyPagination(query: Query, limit: number, offset?: number): Query | Promise<Query> {
     return {
       ...query,
       limit,
+      offset: offset ?? null,
     }
+  }
+
+  public getAttribute(data: Entity, name: string, attribute: AttributeConfig<Entity, Query, string>) {
+    return (data as any)[name]
+  }
+
+  public setAttribute(data: Entity, name: string, value: any, attribute: AttributeConfig<Entity, Query, string>): void | Promise<void> {
+    Object.assign(data, {[name]: value})
+  }
+
+  public getRelationship(
+    data: Entity,
+    name: string,
+    relationship: RelationshipConfig<Entity, Query, string>,
+  ): Relationship<string> | RelationshipDataLike<string> | Promise<Relationship<string> | RelationshipDataLike<string>> {
+    return (data as any)[name]
+  }
+
+  public attributeExists(name: string): boolean | Promise<boolean> {
+    return true
   }
 
   public emptyModel(id: string | null): Entity | Promise<Entity> {

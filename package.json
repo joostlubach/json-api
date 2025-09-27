@@ -4,20 +4,10 @@
   "description": "JSON API endpoints based on json-api by Ethan Resnick",
   "author": "Joost Lubach",
   "license": "MIT",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/types/index.d.ts",
+  "main": "./src/index.ts",
   "exports": {
-    ".": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/esm/index.js",
-      "default": "./dist/cjs/index.js"
-    },
-    "./testing": {
-      "types": "./dist/types/testing/index.d.ts",
-      "import": "./dist/esm/testing/index.js",
-      "default": "./dist/cjs/testing/index.js"
-    }
+    ".": "./src/index.ts",
+    "./testing": "./src/testing/index.ts"
   },
   "scripts": {
     "build": "pnpm clean && pnpm build:tsc && pnpm build:copy",
