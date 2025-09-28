@@ -1,5 +1,4 @@
 import SwaggerParser from '@apidevtools/swagger-parser'
-import { afterEach, beforeEach, describe, expect, it, spyOn, vi } from 'bun:test'
 import { OpenAPIV3_1 } from 'openapi-types'
 
 import { context, MockAdapter, mockJSONAPI } from '../../__tests__/mock'
@@ -832,15 +831,15 @@ describe("openapi", () => {
         nameRequired = true
         ageRequired = false
 
-        spyOn(MockAdapter.prototype, 'openAPISchemaForAttribute')
+        jest.spyOn(MockAdapter.prototype, 'openAPISchemaForAttribute')
           .mockImplementation(name => name === 'name' ? nameSchema : ageSchema)
 
-        spyOn(MockAdapter.prototype, 'attributeRequired')
+        jest.spyOn(MockAdapter.prototype, 'attributeRequired')
           .mockImplementation(name => name === 'name' ? nameRequired : ageRequired)
       })
 
       afterEach(() => {
-        vi.restoreAllMocks()
+        jest.restoreAllMocks()
       })
 
       it("should expose a ParentsAttributes with a property for each exposed attribute using openAPI reflection from the adapter", async () => {
@@ -871,10 +870,10 @@ describe("openapi", () => {
       })
 
       it("should allow the adapter to return the metadata asynchronously", async () => {
-        spyOn(MockAdapter.prototype, 'openAPISchemaForAttribute')
+        jest.spyOn(MockAdapter.prototype, 'openAPISchemaForAttribute')
           .mockImplementation(async name => name === 'name' ? nameSchema : ageSchema)
 
-        spyOn(MockAdapter.prototype, 'attributeRequired')
+        jest.spyOn(MockAdapter.prototype, 'attributeRequired')
           .mockImplementation(async name => name === 'name' ? nameRequired : ageRequired)
 
         expect(await getAttributesSchema()).toEqual({

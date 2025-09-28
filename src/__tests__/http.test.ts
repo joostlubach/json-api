@@ -1,7 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, Mock, spyOn, vi } from 'bun:test'
 import express, { Application, NextFunction, Request, Response, Router } from 'express'
 import supertest from 'supertest'
-import { AnyFunction, objectKeys } from 'ytil'
+import { objectKeys } from 'ytil'
 
 import Document from '../Document'
 import { JSONAPIOptions } from '../JSONAPI'
@@ -17,7 +16,7 @@ describe("http", () => {
   let jsonAPI: MockJSONAPI
 
   let parents: Resource<Parent, Query, string>
-  let spy: Mock<AnyFunction>
+  let spy: jest.SpyInstance
 
   let router: Router
   let app: Application
@@ -104,7 +103,7 @@ describe("http", () => {
 
     beforeEach(() => {
       setUp()
-      spy = spyOn(parents, 'list')
+      spy = jest.spyOn(parents, 'list')
       spy.mockReturnValue(Promise.resolve(mockPack()))
     })
 
@@ -158,7 +157,7 @@ describe("http", () => {
 
     beforeEach(() => {
       setUp()
-      spy = spyOn(parents, 'list')
+      spy = jest.spyOn(parents, 'list')
       spy.mockReturnValue(Promise.resolve(mockPack()))
     })
 
@@ -212,7 +211,7 @@ describe("http", () => {
 
     beforeEach(() => {
       setUp()
-      spy = spyOn(parents, 'create')
+      spy = jest.spyOn(parents, 'create')
       spy.mockReturnValue(Promise.resolve(mockPack()))
     })
 
@@ -245,7 +244,7 @@ describe("http", () => {
 
     beforeEach(() => {
       setUp()
-      spy = spyOn(parents, 'show')
+      spy = jest.spyOn(parents, 'show')
       spy.mockReturnValue(Promise.resolve(mockPack()))
     })
 
@@ -280,7 +279,7 @@ describe("http", () => {
 
     beforeEach(() => {
       setUp()
-      spy = spyOn(parents, 'replace')
+      spy = jest.spyOn(parents, 'replace')
       spy.mockReturnValue(Promise.resolve(mockPack()))
     })
 
@@ -315,7 +314,7 @@ describe("http", () => {
 
     beforeEach(() => {
       setUp()
-      spy = spyOn(parents, 'update')
+      spy = jest.spyOn(parents, 'update')
       spy.mockReturnValue(Promise.resolve(mockPack()))
     })
 
@@ -350,7 +349,7 @@ describe("http", () => {
 
     beforeEach(() => {
       setUp()
-      spy = spyOn(parents, 'delete')
+      spy = jest.spyOn(parents, 'delete')
       spy.mockReturnValue(Promise.resolve(mockPack()))
     })
 
@@ -494,12 +493,12 @@ describe("http", () => {
 
   describe("POST /parents/test-1", () => {
 
-    let spy: Mock<AnyFunction>
+    let spy: jest.Mock
 
     beforeEach(() => {
       setUp()
 
-      spy = vi.fn().mockReturnValue(Promise.resolve(mockPack()))
+      spy = jest.fn().mockReturnValue(Promise.resolve(mockPack()))
       jsonAPI.registry.modify('parents', cfg => {
         (cfg.collectionActions!['test-1'] as CustomCollectionActionConfig<any, any, any>).handler = spy
       })
@@ -525,12 +524,12 @@ describe("http", () => {
 
   describe("GET /parents/test-2", () => {
 
-    let spy: Mock<AnyFunction>
+    let spy: jest.Mock
 
     beforeEach(() => {
       setUp()
 
-      spy = vi.fn().mockReturnValue(Promise.resolve(mockPack()))
+      spy = jest.fn().mockReturnValue(Promise.resolve(mockPack()))
       jsonAPI.registry.modify('parents', cfg => {
         (cfg.collectionActions!['test-2'] as CustomCollectionActionConfig<any, any, any>).handler = spy
       })
@@ -561,12 +560,12 @@ describe("http", () => {
 
   describe("POST /parents/alice/test-1", () => {
 
-    let spy: Mock<AnyFunction>
+    let spy: jest.Mock
 
     beforeEach(() => {
       setUp()
 
-      spy = vi.fn().mockReturnValue(Promise.resolve(mockPack()))
+      spy = jest.fn().mockReturnValue(Promise.resolve(mockPack()))
       jsonAPI.registry.modify('parents', cfg => {
         (cfg.documentActions!['test-1'] as CustomDocumentActionConfig<any, any, any>).handler = spy
       })
@@ -593,12 +592,12 @@ describe("http", () => {
 
   describe("GET /parents/alice/test-2", () => {
 
-    let spy: Mock<AnyFunction>
+    let spy: jest.Mock
 
     beforeEach(() => {
       setUp()
 
-      spy = vi.fn().mockReturnValue(Promise.resolve(mockPack()))
+      spy = jest.fn().mockReturnValue(Promise.resolve(mockPack()))
       jsonAPI.registry.modify('parents', cfg => {
         (cfg.documentActions!['test-2'] as CustomDocumentActionConfig<any, any, any>).handler = spy
       })

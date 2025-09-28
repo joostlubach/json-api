@@ -1,5 +1,3 @@
-import { beforeEach, describe, expect, it, spyOn, vi } from 'bun:test'
-
 import db, { Parent } from './db'
 import { context, MockAdapter, MockJSONAPI } from './mock'
 
@@ -87,8 +85,8 @@ describe("including", () => {
 
     it("should allow the adapter to load the includded models for performance reasons", async () => {
       const handler = action === 'list'
-        ? spyOn(MockAdapter.prototype, 'list')
-        : spyOn(MockAdapter.prototype, 'get')
+        ? jest.spyOn(MockAdapter.prototype, 'list')
+        : jest.spyOn(MockAdapter.prototype, 'get')
 
       handler.mockImplementation(async (): Promise<any> => {
         const alice = db('parents').get('alice')
@@ -123,7 +121,7 @@ describe("including", () => {
         }),
       ])
 
-      vi.restoreAllMocks()
+      jest.restoreAllMocks()
     })
   
   })
