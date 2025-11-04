@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { DependencyContainer } from 'ydeps'
+import { Deps } from 'ydeps'
 
 import APIError from './APIError'
 import JSONAPI from './JSONAPI'
@@ -26,7 +26,7 @@ export default class ResourceRegistry<Entity, Query, ID> {
 
   // #region Registering
 
-  public register<E extends Entity, Q extends Query, I extends ID>(type: string, resourceConfig: ResourceConfig<E, Q, I>, deps?: DependencyContainer) {
+  public register<E extends Entity, Q extends Query, I extends ID>(type: string, resourceConfig: ResourceConfig<E, Q, I>, deps?: Deps) {
     runMiddleware(this.middleware, resourceConfig)
 
     const resource = new Resource<E, Q, I>(this.jsonAPI, type, resourceConfig)

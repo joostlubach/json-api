@@ -1,5 +1,5 @@
 import { Request } from 'express'
-import { DependencyContainer } from 'ydeps'
+import { Deps } from 'ydeps'
 import { Constructor } from 'ytil'
 import { z } from 'zod'
 
@@ -11,12 +11,12 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
     public readonly action: string,
     private readonly params: P,
     public readonly request: Request | null,
-    deps?: DependencyContainer,
+    deps?: Deps,
   ) {
-    this.deps = new DependencyContainer({upstream: deps})
+    this.deps = new Deps({upstream: deps})
   }
 
-  public readonly deps: DependencyContainer
+  public readonly deps: Deps
 
   // #region Parameters
 
