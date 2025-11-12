@@ -11,7 +11,7 @@ import ResourceRegistry, { ResourceRegistryOptions } from './ResourceRegistry'
 import config from './config'
 import { Middleware } from './middleware'
 import { OpenAPIGenerator } from './openapi'
-import { createExpressRouter, defaultRoutes } from './router'
+import { defaultRoutes, router } from './router'
 import {
   CommonActions,
   CreateActionOptions,
@@ -219,7 +219,7 @@ export default abstract class JSONAPI<Entity, Query, ID> {
    * Builds a router, optionally configuring JSON API for the router.
    */
   public router() {
-    return createExpressRouter(this)
+    return router(this)
   }
 
   public routes(resource: Resource<Entity, Query, ID>, action: CommonActions) {    

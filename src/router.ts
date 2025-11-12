@@ -14,16 +14,16 @@ import { CustomCollectionAction, CustomDocumentAction } from './ResourceConfig'
 import {
   AnyResource,
   CreateActionOptions,
-  GetActionOptions,
   JSONAPIRoute,
   ListActionOptions,
   ReplaceActionOptions,
   RetrievalActionOptions,
   RouteMap,
+  ShowActionOptions,
   UpdateActionOptions,
 } from './types'
 
-export function createExpressRouter<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
+export function router<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
   const router = Router()
 
   // #region Set up
@@ -214,14 +214,14 @@ export function createExpressRouter<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router 
 
 // #region Action builders
 
-export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
+function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
   return {
     async list(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
       const params = resource.extractListParams(context)
       const adapter = () => resource.adapter(context)
 
-      const totals = context.param('totals', z.boolean())
       const options = extractListActionOptions(context)
+      options.totals = context.param('totals', z.boolean())
 
       const pack = await resource.list(params, adapter, context, options)
       response.json(pack.serialize())
@@ -231,7 +231,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
     async show(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
       const locator = resource.extractDocumentLocator(context)
       const adapter = () => resource.adapter(context)
-      const options = extractGetActionOptions(context)
+      const options = extractShowActionOptions(context)
 
       const pack = await resource.show(locator, adapter, context, options)
       response.json(pack.serialize())
@@ -325,7 +325,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
   }
 }
 
-function extractRetrievalActionOptions(context: RequestContext): RetrievalActionOptions {
+export function extractRetrievalActionOptions(context: RequestContext): RetrievalActionOptions {
   const include = context.param('include', z.string().default(''))
     .split(',')
     .map(it => it.trim())
@@ -336,31 +336,37 @@ function extractRetrievalActionOptions(context: RequestContext): RetrievalAction
   return {include, detail}
 }
 
-function extractListActionOptions(context: RequestContext): ListActionOptions {
+export function extractListActionOptions(context: RequestContext): ListActionOptions {
   const {include, detail} = extractRetrievalActionOptions(context)
-  const totals = context.param('totals', z.boolean().default(true))
+  const totals = context.param('totals', booleanQueryParam.default(true))
   return {include, totals, detail}
 }
 
-function extractGetActionOptions(context: RequestContext): GetActionOptions {
+export function extractShowActionOptions(context: RequestContext): ShowActionOptions {
   const {include, detail} = extractRetrievalActionOptions(context)
   return {include, detail}
 }
 
-function extractCreateActionOptions(context: RequestContext): CreateActionOptions {
-  const dryRun = context.param('dryrun', z.boolean().default(false))
+export function extractCreateActionOptions(context: RequestContext): CreateActionOptions {
+  const dryRun = context.param('dryrun', booleanQueryParam.default(false))
   return {dryRun}
 }
 
-function extractReplaceActionOptions(context: RequestContext): ReplaceActionOptions {
-  const dryRun = context.param('dryrun', z.boolean().default(false))
+export function extractReplaceActionOptions(context: RequestContext): ReplaceActionOptions {
+  const dryRun = context.param('dryrun', booleanQueryParam.default(false))
   return {dryRun}
 }
 
-function extractUpdateActionOptions(context: RequestContext): UpdateActionOptions {
-  const dryRun = context.param('dryrun', z.boolean().default(false))
+export function extractUpdateActionOptions(context: RequestContext): UpdateActionOptions {
+  const dryRun = context.param('dryrun', booleanQueryParam.default(false))
   return {dryRun}
 }
+
+const booleanQueryParam = z.union([z.string(), z.boolean()]).transform(val => {
+  if (val === true || val === false) { return val }
+  if (val === '0' || val === 'false' || val === 'no' || val === '') { return false }
+  return true
+})
 
 // #endregion
 

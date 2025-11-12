@@ -19,7 +19,6 @@ import {
   BulkSelector,
   CreateActionOptions,
   DocumentLocator,
-  GetActionOptions,
   Linkage,
   ListActionOptions,
   ListParams,
@@ -29,6 +28,7 @@ import {
   RelationshipDataLike,
   ReplaceActionOptions,
   RetrievalActionOptions,
+  ShowActionOptions,
   Sort,
   UpdateActionOptions,
 } from './types'
@@ -471,7 +471,7 @@ export default class Resource<Entity, Query, ID> {
     )
   }
 
-  public async show(locator: DocumentLocator<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: GetActionOptions = {}): Promise<Pack<ID>> {
+  public async show(locator: DocumentLocator<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: ShowActionOptions = {}): Promise<Pack<ID>> {
     if (this.config.show === false) {
       throw new APIError(405, `Action \`show\` not available`)
     }

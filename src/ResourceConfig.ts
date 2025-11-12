@@ -8,7 +8,6 @@ import {
   ConfigExtra,
   CreateActionOptions,
   DocumentLocator,
-  GetActionOptions,
   Linkage,
   ListActionOptions,
   ListParams,
@@ -16,6 +15,7 @@ import {
   OpenAPIResourceMeta,
   Relationship,
   ReplaceActionOptions,
+  ShowActionOptions,
   UpdateActionOptions,
 } from './types'
 
@@ -246,7 +246,7 @@ export type GetAction<E, Q, I> = (
   locator: DocumentLocator<I>,
   adapter: () => Adapter<E, Q, I>,
   context: RequestContext,
-  options: GetActionOptions
+  options: ShowActionOptions
 ) => Promise<Pack<I>>
 
 export type CreateAction<E, Q, I> = (

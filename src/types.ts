@@ -80,7 +80,7 @@ export interface ListActionOptions extends RetrievalActionOptions {
   totals?:  boolean
 }
 
-export interface GetActionOptions extends RetrievalActionOptions {
+export interface ShowActionOptions extends RetrievalActionOptions {
 }
 
 export interface CreateActionOptions {
