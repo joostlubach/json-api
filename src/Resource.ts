@@ -15,10 +15,11 @@ import { AttributeConfig, RelationshipConfig, ResourceConfig } from './ResourceC
 import config from './config'
 import { relationship } from './openapi/objects'
 import {
-  ActionOptions,
   AnyResource,
   BulkSelector,
+  CreateActionOptions,
   DocumentLocator,
+  GetActionOptions,
   Linkage,
   ListActionOptions,
   ListParams,
@@ -26,8 +27,10 @@ import {
   ModelToDocumentOptions,
   Relationship,
   RelationshipDataLike,
+  ReplaceActionOptions,
   RetrievalActionOptions,
   Sort,
+  UpdateActionOptions,
 } from './types'
 
 export default class Resource<Entity, Query, ID> {
@@ -455,7 +458,7 @@ export default class Resource<Entity, Query, ID> {
 
     const adapter = getAdapter()
     const query = await this.listQuery(adapter, params, context)
-    const response = await adapter.list(query, params, {totals, include, detail})
+    const response = await adapter.list(query, params, {totals})
 
     return await this.collectionPack(
       response.data,
@@ -468,7 +471,7 @@ export default class Resource<Entity, Query, ID> {
     )
   }
 
-  public async show(locator: DocumentLocator<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}): Promise<Pack<ID>> {
+  public async show(locator: DocumentLocator<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: GetActionOptions = {}): Promise<Pack<ID>> {
     if (this.config.show === false) {
       throw new APIError(405, `Action \`show\` not available`)
     }
@@ -482,7 +485,7 @@ export default class Resource<Entity, Query, ID> {
     } = options
 
     const adapter = getAdapter()
-    const response = await this.load(locator, adapter, context, {include, detail})
+    const response = await this.load(locator, adapter, context)
     
     return await this.documentPack(
       response.data,
@@ -493,7 +496,7 @@ export default class Resource<Entity, Query, ID> {
     )
   }
 
-  public async create(requestPack: Pack<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
+  public async create(requestPack: Pack<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: CreateActionOptions = {}): Promise<Pack<ID>> {
     if (this.config.create === false) {
       throw new APIError(405, `Action \`show\` not available`)
     }
@@ -507,11 +510,11 @@ export default class Resource<Entity, Query, ID> {
     const response = await adapter.create(async entity => {
       await this.setAttributes(entity, document, true, adapter, context)
       await this.config.scope?.ensure.call(this, entity, context)
-    })
+    }, options)
     return await this.documentPack(response.data, undefined, adapter, context, options)
   }
 
-  public async replace(id: ID, requestPack: Pack<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
+  public async replace(id: ID, requestPack: Pack<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: ReplaceActionOptions = {}): Promise<Pack<ID>> {
     if (this.config.replace === false) {
       throw new APIError(405, `Action \`replace\` not available`)
     }
@@ -529,11 +532,11 @@ export default class Resource<Entity, Query, ID> {
     const response = await adapter.replace(id, async entity => {
       await this.setAttributes(entity, document, false, adapter, context)
       await this.config.scope?.ensure.call(this, entity, context)
-    })
+    }, options)
     return await this.documentPack(response.data, undefined, adapter, context, options)
   }
 
-  public async update(id: ID, requestPack: Pack<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
+  public async update(id: ID, requestPack: Pack<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: UpdateActionOptions = {}): Promise<Pack<ID>> {
     if (this.config.update === false) {
       throw new APIError(405, `Action \`update\` not available`)
     }
@@ -546,7 +549,7 @@ export default class Resource<Entity, Query, ID> {
     const response = await adapter.update(id, async entity => {
       await this.setAttributes(entity, document, false, adapter, context)
       await this.config.scope?.ensure.call(this, entity, context)
-    })
+    }, options)
     return await this.documentPack(response.data, undefined, adapter, context, options)
   }
 
@@ -561,7 +564,7 @@ export default class Resource<Entity, Query, ID> {
     const adapter = getAdapter()
     const selector = this.extractBulkSelector(requestPack, context)
     const query = await this.bulkSelectorQuery(adapter, selector, context)
-    const entitiesOrIDs = await adapter.delete(query)
+    const entitiesOrIDs = await adapter.delete(query, {})
 
     const linkages = entitiesOrIDs.map(it => this.jsonAPI.toLinkage(it, this.type))
     const pack = new Pack<ID>(linkages, undefined, {
@@ -617,7 +620,7 @@ export default class Resource<Entity, Query, ID> {
     return new Collection(documents)
   }
 
-  public async load(locator: DocumentLocator<ID>, adapter: Adapter<Entity, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}): Promise<LoadResponse<Entity>> {
+  public async load(locator: DocumentLocator<ID>, adapter: Adapter<Entity, Query, ID>, context: RequestContext): Promise<LoadResponse<Entity>> {
     const query = await this.listQuery(adapter, {}, context)
     if ('singleton' in locator) {
       const singleton = this.config.singletons?.[locator.singleton]
@@ -625,14 +628,14 @@ export default class Resource<Entity, Query, ID> {
         throw new APIError(404, `Singleton \`${locator.singleton}\` (of ${this.type}) not found`)
       }
   
-      const response = await singleton.call(this, query, context, options)
+      const response = await singleton.call(this, query, context)
       if (response.data == null) {
         throw new APIError(404, `Singleton \`${locator.singleton}\` (of ${this.type}) not found`)
       }
   
       return response as GetResponse<Entity> & {data: Entity}
     } else {
-      const response = await adapter.get(query, locator.id, options)
+      const response = await adapter.get(query, locator.id)
       if (response.data == null) {
         throw new APIError(404, `Resource \`${this.type}\` with ID \`${locator.id}\` not found`)
       }
@@ -645,34 +648,24 @@ export default class Resource<Entity, Query, ID> {
 
   // #region Custom actions
 
-  public async callCollectionAction(name: string, requestPack: Pack<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}) {
+  public async callCollectionAction(name: string, requestPack: Pack<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext) {
     const action = this.config.collectionActions?.[name]
     if (action == null) {
       throw new APIError(404, `Collection action \`${this.type}::${name}\` not found`)
     }
 
-    const {
-      include = [],
-      detail = false,
-    } = options
-
     const handler = isFunction(action) ? action : action.handler
-    return await handler.call(this, requestPack, getAdapter, context, options)
+    return await handler.call(this, requestPack, getAdapter, context)
   }
 
-  public async callDocumentAction(name: string, locator: DocumentLocator<ID>, requestPack: Pack<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: RetrievalActionOptions = {}) {
+  public async callDocumentAction(name: string, locator: DocumentLocator<ID>, requestPack: Pack<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext) {
     const action = this.config.documentActions?.[name]
     if (action == null) {
       throw new APIError(404, `Document action \`${this.type}::${name}\` not found`)
     }
 
-    const {
-      include = [],
-      detail = true,
-    } = options
-
     const handler = isFunction(action) ? action : action.handler
-    return await handler.call(this, locator, requestPack, getAdapter, context, {include, detail})
+    return await handler.call(this, locator, requestPack, getAdapter, context)
   }
 
   public get collectionActions() {
@@ -740,25 +733,6 @@ export default class Resource<Entity, Query, ID> {
     }
 
     return document
-  }
-
-  public extractActionOptions(context: RequestContext): ActionOptions {
-    return {}
-  }
-
-  public extractRetrievalActionOptions(context: RequestContext): RetrievalActionOptions {
-    const include = context.param('include', z.string().default(''))
-      .split(',')
-      .map(it => it.trim())
-      .filter(it => it !== '')
-
-    const detail = context.param('detail', z.boolean().default(false))
-
-    return {
-      ...this.extractActionOptions(context),
-      include,
-      detail,
-    }
   }
 
   public extractListParams(context: RequestContext): ListParams {

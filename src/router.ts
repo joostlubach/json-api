@@ -3,6 +3,7 @@ import { parse as parseContentType } from 'content-type'
 import { NextFunction, Request, Response, Router } from 'express'
 import { isFunction, kebabCase } from 'lodash'
 import { isPlainObject, objectEntries, objectKeys } from 'ytil'
+import { z } from 'zod'
 
 import APIError from './APIError'
 import JSONAPI from './JSONAPI'
@@ -10,7 +11,17 @@ import Pack from './Pack'
 import RequestContext from './RequestContext'
 import Resource from './Resource'
 import { CustomCollectionAction, CustomDocumentAction } from './ResourceConfig'
-import { AnyResource, JSONAPIRoute, RouteMap } from './types'
+import {
+  AnyResource,
+  CreateActionOptions,
+  GetActionOptions,
+  JSONAPIRoute,
+  ListActionOptions,
+  ReplaceActionOptions,
+  RetrievalActionOptions,
+  RouteMap,
+  UpdateActionOptions,
+} from './types'
 
 export function createExpressRouter<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
   const router = Router()
@@ -208,7 +219,9 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
     async list(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
       const params = resource.extractListParams(context)
       const adapter = () => resource.adapter(context)
-      const options = resource.extractRetrievalActionOptions(context)
+
+      const totals = context.param('totals', z.boolean())
+      const options = extractListActionOptions(context)
 
       const pack = await resource.list(params, adapter, context, options)
       response.json(pack.serialize())
@@ -218,7 +231,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
     async show(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
       const locator = resource.extractDocumentLocator(context)
       const adapter = () => resource.adapter(context)
-      const options = resource.extractRetrievalActionOptions(context)
+      const options = extractGetActionOptions(context)
 
       const pack = await resource.show(locator, adapter, context, options)
       response.json(pack.serialize())
@@ -228,7 +241,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
     async create(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
       const requestPack = Pack.deserialize(jsonAPI.registry, request.body)
       const adapter = () => resource.adapter(context)
-      const options = resource.extractActionOptions(context)
+      const options = extractCreateActionOptions(context)
 
       const responsePack = await resource.create(requestPack, adapter, context, options)
 
@@ -241,7 +254,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
       const locator = resource.extractDocumentLocator(context, false)
       const requestPack = Pack.deserialize(jsonAPI.registry, request.body)
       const adapter = () => resource.adapter(context)
-      const options = resource.extractActionOptions(context)
+      const options = extractReplaceActionOptions(context)
 
       const responsePack = await resource.replace(locator.id, requestPack, adapter, context, options)
     
@@ -253,7 +266,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
       const locator = resource.extractDocumentLocator(context, false)
       const requestPack = Pack.deserialize(jsonAPI.registry, request.body)
       const adapter = () => resource.adapter(context)
-      const options = resource.extractActionOptions(context)
+      const options = extractUpdateActionOptions(context)
 
       const responsePack = await resource.update(locator.id, requestPack, adapter, context, options)
 
@@ -282,8 +295,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
           : request.body
 
         const adapter = () => resource.adapter(context)
-        const options = resource.extractActionOptions(context)
-        const pack = await handler.call(resource, requestPack, adapter, context, options)
+        const pack = await handler.call(resource, requestPack, adapter, context)
 
         response.contentType(jsonAPI.allowedContentTypes[0])
         response.json(pack.serialize())
@@ -302,9 +314,7 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
 
         const locator = resource.extractDocumentLocator(context)
         const adapter = () => resource.adapter(context)
-        const options = resource.extractActionOptions(context)
-
-        const pack = await handler.call(resource, locator, requestPack, adapter, context, options)
+        const pack = await handler.call(resource, locator, requestPack, adapter, context)
 
         response.contentType(jsonAPI.allowedContentTypes[0])
         response.json(pack.serialize())
@@ -313,6 +323,43 @@ export function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
     },
 
   }
+}
+
+function extractRetrievalActionOptions(context: RequestContext): RetrievalActionOptions {
+  const include = context.param('include', z.string().default(''))
+    .split(',')
+    .map(it => it.trim())
+    .filter(it => it !== '')
+
+  const detail = context.param('detail', z.boolean().default(false))
+
+  return {include, detail}
+}
+
+function extractListActionOptions(context: RequestContext): ListActionOptions {
+  const {include, detail} = extractRetrievalActionOptions(context)
+  const totals = context.param('totals', z.boolean().default(true))
+  return {include, totals, detail}
+}
+
+function extractGetActionOptions(context: RequestContext): GetActionOptions {
+  const {include, detail} = extractRetrievalActionOptions(context)
+  return {include, detail}
+}
+
+function extractCreateActionOptions(context: RequestContext): CreateActionOptions {
+  const dryRun = context.param('dryrun', z.boolean().default(false))
+  return {dryRun}
+}
+
+function extractReplaceActionOptions(context: RequestContext): ReplaceActionOptions {
+  const dryRun = context.param('dryrun', z.boolean().default(false))
+  return {dryRun}
+}
+
+function extractUpdateActionOptions(context: RequestContext): UpdateActionOptions {
+  const dryRun = context.param('dryrun', z.boolean().default(false))
+  return {dryRun}
 }
 
 // #endregion

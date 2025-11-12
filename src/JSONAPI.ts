@@ -13,17 +13,19 @@ import { Middleware } from './middleware'
 import { OpenAPIGenerator } from './openapi'
 import { createExpressRouter, defaultRoutes } from './router'
 import {
-  ActionOptions,
   CommonActions,
+  CreateActionOptions,
   DocumentLocator,
   Linkage,
   ListParams,
   ModelsToCollectionOptions,
   ModelToDocumentOptions,
   OpenAPIGeneratorOptions,
+  ReplaceActionOptions,
   RetrievalActionOptions,
   RouteMap,
   RouterOptions,
+  UpdateActionOptions,
 } from './types'
 
 /**
@@ -84,7 +86,7 @@ export default abstract class JSONAPI<Entity, Query, ID> {
     return await resource.list(params, adapter, context, options)
   }
 
-  public async create(resourceType: string, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
+  public async create(resourceType: string, requestPack: Pack<ID>, context: RequestContext, options: CreateActionOptions = {}) {
     const resource = this.registry.get(resourceType)
     const adapter = () => resource.adapter(context)
 
@@ -92,7 +94,7 @@ export default abstract class JSONAPI<Entity, Query, ID> {
     return await resource.create(requestPack, adapter, context, options)
   }
 
-  public async replace(resourceType: string, id: ID, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
+  public async replace(resourceType: string, id: ID, requestPack: Pack<ID>, context: RequestContext, options: ReplaceActionOptions = {}) {
     const resource = this.registry.get(resourceType)
     const adapter = () => resource.adapter(context)
 
@@ -100,7 +102,7 @@ export default abstract class JSONAPI<Entity, Query, ID> {
     return await resource.replace(id,requestPack, adapter, context, options)
   }
 
-  public async update(resourceType: string, id: ID, requestPack: Pack<ID>, context: RequestContext, options: ActionOptions = {}) {
+  public async update(resourceType: string, id: ID, requestPack: Pack<ID>, context: RequestContext, options: UpdateActionOptions = {}) {
     const resource = this.registry.get(resourceType)
     const adapter = () => resource.adapter(context)
 
@@ -120,32 +122,32 @@ export default abstract class JSONAPI<Entity, Query, ID> {
 
   // #region Custom actions
 
-  public async collectionAction(resourceType: string, action: string, requestPack: Pack<any>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<any>> {
+  public async collectionAction(resourceType: string, action: string, requestPack: Pack<any>, context: RequestContext): Promise<Pack<any>> {
     const resource = this.registry.get(resourceType)
     const adapter = () => resource.adapter(context)
 
     await resource.runBeforeHandlers(context)
-    return await resource.callCollectionAction(action, requestPack, adapter, context, options)
+    return await resource.callCollectionAction(action, requestPack, adapter, context)
   }
 
-  public async documentAction(resourceType: string, locator: DocumentLocator<ID>, action: string, requestPack: Pack<any>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<any>> {
+  public async documentAction(resourceType: string, locator: DocumentLocator<ID>, action: string, requestPack: Pack<any>, context: RequestContext): Promise<Pack<any>> {
     const resource = this.registry.get(resourceType)
     const adapter = () => resource.adapter(context)
 
     await resource.runBeforeHandlers(context)
-    return await resource.callDocumentAction(action, locator, requestPack, adapter, context, options)
+    return await resource.callDocumentAction(action, locator, requestPack, adapter, context)
   }
 
   // #endregion
 
   // #region Other interface
 
-  public async load(linkage: Linkage<any>, context: RequestContext, options: ActionOptions = {}): Promise<Pack<ID>> {
+  public async load(linkage: Linkage<any>, context: RequestContext): Promise<Pack<ID>> {
     const resource = this.registry.get(linkage.type)
     const adapter = resource.adapter(context)
 
-    const {data} = await resource.load({id: linkage.id}, adapter, context, {detail: true, ...options})
-    return await resource.documentPack(data, undefined, adapter, context, {detail: true, ...options})
+    const {data} = await resource.load({id: linkage.id}, adapter, context)
+    return await resource.documentPack(data, undefined, adapter, context)
   }
 
   // #endregion

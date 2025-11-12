@@ -2,27 +2,19 @@
 import { OpenAPIV3_1 } from 'openapi-types'
 
 import { AttributeConfig, RelationshipConfig } from './ResourceConfig'
-import {
-  ListActionOptions,
-  ListParams,
-  Meta,
-  Relationship,
-  RelationshipDataLike,
-  RetrievalActionOptions,
-  Sort,
-} from './types'
+import { ListParams, Meta, Relationship, RelationshipDataLike, Sort } from './types'
 
 export default interface Adapter<Entity, Query, ID> {
 
   // #region Actions
 
-  list(query: Query, params: ListParams, options: ListActionOptions): Promise<ListResponse<Entity>>
-  get(query: Query, id: ID, options: RetrievalActionOptions): Promise<GetResponse<Entity>>
+  list(query: Query, params: ListParams, options: ListOptions): Promise<ListResponse<Entity>>
+  get(query: Query, id: ID): Promise<GetResponse<Entity>>
 
-  create(cb: (entity: Entity) => Promise<void>): Promise<CreateResponse<Entity>>
-  update(id: ID, cb: (entity: Entity) => Promise<void>): Promise<UpdateResponse<Entity>>
-  replace(id: ID, cb: (entity: Entity) => Promise<void>): Promise<ReplaceResponse<Entity>>
-  delete(query: Query): Promise<Array<Entity | ID>>
+  create(cb: (entity: Entity) => Promise<void>, options: MutationOptions): Promise<CreateResponse<Entity>>
+  update(id: ID, cb: (entity: Entity) => Promise<void>, options: MutationOptions): Promise<UpdateResponse<Entity>>
+  replace(id: ID, cb: (entity: Entity) => Promise<void>, options: MutationOptions): Promise<ReplaceResponse<Entity>>
+  delete(query: Query, options: MutationOptions): Promise<Array<Entity | ID>>
 
   // #endregion
 
@@ -65,6 +57,14 @@ export type OpenAPIDocumentation = Pick<OpenAPIV3_1.SchemaObject,
   | 'examples'
   | 'externalDocs'
 >
+
+export interface ListOptions {
+  totals?: boolean
+}
+
+export interface MutationOptions {
+  dryRun?: boolean
+}
 
 export interface ListResponse<E> {
   data:      E[]

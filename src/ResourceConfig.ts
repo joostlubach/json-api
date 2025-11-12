@@ -5,15 +5,18 @@ import Pack from './Pack'
 import RequestContext from './RequestContext'
 import Resource from './Resource'
 import {
-  ActionOptions,
   ConfigExtra,
+  CreateActionOptions,
   DocumentLocator,
+  GetActionOptions,
   Linkage,
+  ListActionOptions,
   ListParams,
   Meta,
   OpenAPIResourceMeta,
   Relationship,
-  RetrievalActionOptions,
+  ReplaceActionOptions,
+  UpdateActionOptions,
 } from './types'
 
 export type ResourceConfigMap = Record<string, ResourceConfig<any, any, any>>
@@ -216,7 +219,7 @@ export type LabelModifier<E, Q, I> = (this: Resource<E, Q, I>, query: Q, context
 export type WildcardLabelModifier<E, Q, I> = (this: Resource<E, Q, I>, label: string, query: Q, context: RequestContext) => Q
 
 export type SingletonMap<E, Q, I> = Record<string, Singleton<E, Q, I>>
-export type Singleton<E, Q, I> = (this: Resource<E, Q, I>, query: Q, context: RequestContext, options: RetrievalActionOptions) => Promise<GetResponse<E>>
+export type Singleton<E, Q, I> = (this: Resource<E, Q, I>, query: Q, context: RequestContext) => Promise<GetResponse<E>>
 
 export type SortMap<Q> = Record<string, SortModifier<Q>>
 export type SortModifier<Q> = (query: Q, direction: 1 | -1, context: RequestContext) => Q
@@ -235,7 +238,7 @@ export type ListAction<E, Q, I> = (
   params:  ListParams,
   adapter: () => Adapter<E, Q, I>,
   context: RequestContext,
-  options: ActionOptions
+  options: ListActionOptions
 ) => Promise<Pack<I>>
 
 export type GetAction<E, Q, I> = (
@@ -243,7 +246,7 @@ export type GetAction<E, Q, I> = (
   locator: DocumentLocator<I>,
   adapter: () => Adapter<E, Q, I>,
   context: RequestContext,
-  options: ActionOptions
+  options: GetActionOptions
 ) => Promise<Pack<I>>
 
 export type CreateAction<E, Q, I> = (
@@ -251,7 +254,7 @@ export type CreateAction<E, Q, I> = (
   pack:     Pack<I>,
   adapter:  () => Adapter<E, Q, I>,
   context:  RequestContext,
-  options:  ActionOptions
+  options:  CreateActionOptions
 ) => Promise<Pack<I>>
 
 export type ReplaceAction<E, Q, I> = (
@@ -260,7 +263,7 @@ export type ReplaceAction<E, Q, I> = (
   requestPack: Pack<I>,
   adapter:     () => Adapter<E, Q, I>,
   context:     RequestContext,
-  options:     ActionOptions
+  options:     ReplaceActionOptions
 ) => Promise<Pack<I>>
 
 export type UpdateAction<E, Q, I> = (
@@ -269,7 +272,7 @@ export type UpdateAction<E, Q, I> = (
   requestPack: Pack<I>,
   adapter:     () => Adapter<E, Q, I>,
   context:     RequestContext,
-  options:     ActionOptions
+  options:     UpdateActionOptions
 ) => Promise<Pack<I>>
 
 export type DeleteAction<E, Q, I> = (
@@ -285,7 +288,7 @@ export type DeleteAction<E, Q, I> = (
 // #region Custom actions
 
 export type CustomCollectionAction<E, Q, I> = CustomCollectionActionConfig<E, Q, I> | CustomCollectionActionHandler<E, Q, I>
-export type CustomCollectionActionHandler<E, Q, I> = (this: Resource<E, Q, I>, pack: Pack<I>, adapter: () => Adapter<E, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
+export type CustomCollectionActionHandler<E, Q, I> = (this: Resource<E, Q, I>, pack: Pack<I>, adapter: () => Adapter<E, Q, I>, context: RequestContext) => Promise<Pack<I>>
 
 export interface CustomCollectionActionConfig<E, Q, I> {
   handler: CustomCollectionActionHandler<E, Q, I>
@@ -294,7 +297,7 @@ export interface CustomCollectionActionConfig<E, Q, I> {
 
 
 export type CustomDocumentAction<E, Q, I> = CustomDocumentActionConfig<E, Q, I> | CustomDocumentActionHandler<E, Q, I>
-export type CustomDocumentActionHandler<E, Q, I> = (this: Resource<E, Q, I>, locator: DocumentLocator<I>, pack: Pack<I>, adapter: () => Adapter<E, Q, I>, context: RequestContext, options: ActionOptions) => Promise<Pack<I>>
+export type CustomDocumentActionHandler<E, Q, I> = (this: Resource<E, Q, I>, locator: DocumentLocator<I>, pack: Pack<I>, adapter: () => Adapter<E, Q, I>, context: RequestContext) => Promise<Pack<I>>
 
 export interface CustomDocumentActionConfig<E, Q, I> {
   handler: CustomDocumentActionHandler<E, Q, I>

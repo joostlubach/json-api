@@ -71,16 +71,31 @@ export interface Sort {
   direction: -1 | 1
 }
 
-// Reserved for future use.
-export interface ActionOptions {}
-
-export interface RetrievalActionOptions extends ActionOptions {
+export interface RetrievalActionOptions {
   include?: Include[]
   detail?:  boolean
 }
 
 export interface ListActionOptions extends RetrievalActionOptions {
-  totals?: boolean
+  totals?:  boolean
+}
+
+export interface GetActionOptions extends RetrievalActionOptions {
+}
+
+export interface CreateActionOptions {
+  detail?:  boolean
+  dryRun?:  boolean
+}
+
+export interface ReplaceActionOptions {
+  detail?:  boolean
+  dryRun?:  boolean
+}
+
+export interface UpdateActionOptions {
+  detail?:  boolean
+  dryRun?:  boolean
 }
 
 export interface ModelToDocumentOptions {
