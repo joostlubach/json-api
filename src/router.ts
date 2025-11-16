@@ -325,25 +325,25 @@ function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
   }
 }
 
-export function extractRetrievalActionOptions(context: RequestContext): RetrievalActionOptions {
+export function extractRetrievalActionOptions(context: RequestContext, defaultDetail: boolean): RetrievalActionOptions {
   const include = context.param('include', z.string().default(''))
     .split(',')
     .map(it => it.trim())
     .filter(it => it !== '')
 
-  const detail = context.param('detail', z.boolean().default(false))
+  const detail = context.param('detail', z.boolean().default(defaultDetail))
 
   return {include, detail}
 }
 
 export function extractListActionOptions(context: RequestContext): ListActionOptions {
-  const {include, detail} = extractRetrievalActionOptions(context)
+  const {include, detail} = extractRetrievalActionOptions(context, false)
   const totals = context.param('totals', booleanQueryParam.default(true))
   return {include, totals, detail}
 }
 
 export function extractShowActionOptions(context: RequestContext): ShowActionOptions {
-  const {include, detail} = extractRetrievalActionOptions(context)
+  const {include, detail} = extractRetrievalActionOptions(context, true)
   return {include, detail}
 }
 
