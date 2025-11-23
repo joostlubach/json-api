@@ -27,7 +27,8 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
    * @param type Optionally a type to validate against.
    */
   public param<T extends z.ZodType<any>>(name: string & keyof P, schema: T): z.infer<T>
-  public param(name: string & keyof P, schema: z.Schema) {
+  public param(name: string & keyof P): unknown
+  public param(name: string & keyof P, schema?: z.Schema) {
     let value = this.params[name]
     if (schema == null) { return value }
 
@@ -37,6 +38,10 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
     }
 
     return result.data
+  }
+
+  public hasParam(name: string) {
+    return this.param(name) != null    
   }
 
   public setParams(params: Partial<P>) {
