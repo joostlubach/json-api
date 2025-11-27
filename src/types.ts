@@ -100,6 +100,7 @@ export interface UpdateActionOptions {
 
 export interface ModelToDocumentOptions {
   detail?: boolean
+  meta?: Record<string, any>
 }
 
 export interface ModelsToCollectionOptions {

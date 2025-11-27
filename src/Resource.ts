@@ -703,6 +703,7 @@ export default class Resource<Entity, Query, ID> {
 
     const document = new Document(this, id, attributes, relationships)
     await this.injectDocumentMeta(document, entity, context)
+    Object.assign(document.meta, options.meta ?? {})
     return document
   }
   
