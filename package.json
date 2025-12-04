@@ -19,11 +19,11 @@
     }
   },
   "scripts": {
-    "build": "pnpm clean && pnpm build:tsc && pnpm build:copy",
-    "build:tsc": "pnpm build:tsc:esm && pnpm build:tsc:cjs",
+    "build": "npm run clean && npm run build:tsc && npm run build:copy",
+    "build:tsc": "npm run build:tsc:esm && npm run build:tsc:cjs",
     "build:tsc:esm": "tsc -p tsconfig.prod.json --module es2022 --outDir dist/esm --declarationDir dist/types",
     "build:tsc:cjs": "tsc -p tsconfig.prod.json --module commonjs --outDir dist/cjs --declaration false --declarationMap false",
-    "build:copy": "pnpm build:copy:esm && pnpm build:copy:cjs",
+    "build:copy": "npm run build:copy:esm && npm run build:copy:cjs",
     "build:copy:esm": "copyfiles -u 1 src/**/*.yml dist/esm",
     "build:copy:cjs": "copyfiles -u 1 src/**/*.yml dist/cjs",
     "clean": "rimraf dist tsconfig.tsbuildinfo",
@@ -72,5 +72,5 @@
     "typescript": "^5.8.3",
     "yest": "workspace:^"
   },
-  "packageManager": "pnpm@9.9.0"
+  "packageManager": "bun@1.3.3"
 }
