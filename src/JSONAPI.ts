@@ -16,10 +16,10 @@ import {
   CommonActions,
   CreateActionOptions,
   DocumentLocator,
+  EntitiesToCollectionOptions,
+  EntityToDocumentOptions,
   Linkage,
   ListParams,
-  ModelsToCollectionOptions,
-  ModelToDocumentOptions,
   OpenAPIGeneratorOptions,
   ReplaceActionOptions,
   RetrievalActionOptions,
@@ -54,8 +54,8 @@ export default abstract class JSONAPI<Entity, Query, ID> {
     }
   }
 
-  public resourceForModel(entity: Entity): Resource<Entity, Query, ID> {
-    return this.registry.resourceForEntity(this.nameForModel(entity))
+  public resourceForEntity(entity: Entity): Resource<Entity, Query, ID> {
+    return this.registry.resourceForEntity(this.nameForEntity(entity))
   }
 
   // #endregion
@@ -63,7 +63,7 @@ export default abstract class JSONAPI<Entity, Query, ID> {
   // #region Abstract interface
     
   public abstract adapter(resource: Resource<Entity, Query, ID>, context: RequestContext): Adapter<Entity, Query, ID> | undefined
-  public abstract nameForModel(entity: Entity): string
+  public abstract nameForEntity(entity: Entity): string
   public abstract parseID(id: string | number): ID
 
   // #endregion
@@ -155,7 +155,7 @@ export default abstract class JSONAPI<Entity, Query, ID> {
   // #region Serialization
 
   public async documentPack(entity: Entity, context: RequestContext, options: DocumentPackOptions<Entity, any> = {}) {
-    const resource = this.resourceForModel(entity)
+    const resource = this.resourceForEntity(entity)
     const adapter = resource.maybeAdapter(context)
     return await resource.documentPack(entity, options.included, adapter, context, options)
   }
@@ -163,26 +163,26 @@ export default abstract class JSONAPI<Entity, Query, ID> {
   public async collectionPack(entities: Entity[], context: RequestContext, options: CollectionPackOptions<Entity, any> = {}) {
     if (entities.length === 0) { return new Pack(new Collection()) }
 
-    const resource = this.resourceForModel(entities[0])
+    const resource = this.resourceForEntity(entities[0])
     const adapter = resource.maybeAdapter(context)
     return await resource.collectionPack(entities, options.included, undefined, undefined, adapter, context, options)
   }
 
-  public async entitiesToCollection(resourceType: string, entities: Entity[], context: RequestContext, options: ModelsToCollectionOptions = {}) {
+  public async entitiesToCollection<E extends Entity>(resourceType: string, entities: E[], context: RequestContext, options: EntitiesToCollectionOptions<E> = {}) {
     const resource = this.registry.get(resourceType)
     const adapter = resource.maybeAdapter(context)
 
     return await resource.entitiesToCollection(entities, adapter, context, options)
   }
 
-  public async entityToDocument(resourceType: string, entity: Entity, context: RequestContext, options: ModelToDocumentOptions = {}) {
+  public async entityToDocument(resourceType: string, entity: Entity, context: RequestContext, options: EntityToDocumentOptions = {}) {
     const resource = this.registry.get(resourceType)
     const adapter = resource.maybeAdapter(context)
 
     return await resource.entityToDocument(entity, adapter, context, options)
   }
 
-  public async buildIncluded(entities: Entity[], context: RequestContext, options: ModelToDocumentOptions = {}): Promise<Collection<ID> | undefined> {
+  public async buildIncluded(entities: Entity[], context: RequestContext, options: EntityToDocumentOptions = {}): Promise<Collection<ID> | undefined> {
     const collector = new IncludeCollector(this, context)
     const documents = await collector.wrap(entities, options)
     

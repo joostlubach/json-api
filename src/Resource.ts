@@ -19,11 +19,11 @@ import {
   BulkSelector,
   CreateActionOptions,
   DocumentLocator,
+  EntitiesToCollectionOptions,
+  EntityToDocumentOptions,
   Linkage,
   ListActionOptions,
   ListParams,
-  ModelsToCollectionOptions,
-  ModelToDocumentOptions,
   Relationship,
   RelationshipDataLike,
   ReplaceActionOptions,
@@ -680,18 +680,21 @@ export default class Resource<Entity, Query, ID> {
 
   // #region Serialization
   
-  public async entitiesToCollection(entities: Entity[], adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: ModelsToCollectionOptions = {}): Promise<Collection<ID>> {
+  public async entitiesToCollection<E extends Entity>(entities: E[], adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: EntitiesToCollectionOptions<E> = {}): Promise<Collection<ID>> {
     const {
       detail = false,
     } = options
 
-    const documents = await Promise.all(entities.map(entity => {
-      return this.entityToDocument(entity, adapter, context, {detail})
+    const documents = await Promise.all(entities.map((entity, index) => {
+      return this.entityToDocument(entity, adapter, context, {
+        detail,
+        meta: options.meta?.(entity, index)
+      })
     }))
     return new Collection(documents)
   }
 
-  public async entityToDocument(entity: Entity, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: ModelToDocumentOptions = {}): Promise<Document<ID>> {
+  public async entityToDocument(entity: Entity, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: EntityToDocumentOptions = {}): Promise<Document<ID>> {
     const {
       detail = true,
     } = options

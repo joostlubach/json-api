@@ -15,7 +15,7 @@ export type ResourceID = string | number
 export type Serialized = Record<string, any>
 export type Primitive = string | number | boolean
 
-export type ModelOf<R extends Resource<any, any, any>> = R extends Resource<infer M, any, any> ? M : never
+export type EntityOf<R extends Resource<any, any, any>> = R extends Resource<infer M, any, any> ? M : never
 export type QueryOf<R extends Resource<any, any, any>> = R extends Resource<any, infer Q, any> ? Q : never
 export type IDOf<R extends Resource<any, any, any>> = R extends Resource<any, any, infer I> ? I : never
 
@@ -98,13 +98,14 @@ export interface UpdateActionOptions {
   dryRun?:  boolean
 }
 
-export interface ModelToDocumentOptions {
+export interface EntityToDocumentOptions {
   detail?: boolean
   meta?: Record<string, any>
 }
 
-export interface ModelsToCollectionOptions {
+export interface EntitiesToCollectionOptions<E> {
   detail?: boolean
+  meta?:   (entity: E, index: number) => Record<string, any>
 }
 
 // #endregion

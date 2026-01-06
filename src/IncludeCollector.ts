@@ -3,7 +3,7 @@ import { MapBuilder, sparse } from 'ytil'
 import Document from './Document'
 import JSONAPI from './JSONAPI'
 import RequestContext from './RequestContext'
-import { Linkage, ModelToDocumentOptions, Relationship } from './types'
+import { EntityToDocumentOptions, Linkage, Relationship } from './types'
 
 export default class IncludeCollector<Entity, Query, ID> {
 
@@ -17,9 +17,9 @@ export default class IncludeCollector<Entity, Query, ID> {
   /**
    * Wraps a bunch of models of different resource types and converts them to a list of documents.
    */
-  public async wrap(models: Entity[], options: ModelToDocumentOptions = {}) {
+  public async wrap(models: Entity[], options: EntityToDocumentOptions = {}) {
     const byResource = MapBuilder.groupBy(models, entity => {
-      const name = this.jsonAPI.nameForModel(entity)
+      const name = this.jsonAPI.nameForEntity(entity)
       return this.jsonAPI.registry.resourceForEntity(name)
     })
 
