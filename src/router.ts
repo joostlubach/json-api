@@ -380,7 +380,7 @@ export const defaultRoutes: RouteMap = {
     path:   `/${resource.plural}`,
   }, ...objectKeys(resource.config.labels ?? {}).map((label): JSONAPIRoute => ({
     method: 'get',
-    path:   `/${resource.plural}/::${label}`,
+    path:   `/${resource.plural}/${label}`,
     params: {label},
   }))],
   show: resource => [{

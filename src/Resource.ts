@@ -92,14 +92,14 @@ export default class Resource<Entity, Query, ID> {
     query = await this.applyQueryDefaults(query, context)
     query = await this.applyScope(query, context)
 
+    if (params.label != null) {
+      query = await this.applyLabel(query, params.label, context)
+    }
     if (params.filters != null) {
       query = await this.applyFilters(query, params.filters, adapter, context)
     }
     if (params.search != null) {
       query = await this.applySearch(query, params.search, context)
-    }
-    if (params.label != null) {
-      query = await this.applyLabel(query, params.label, context)
     }
     if (params.sorts != null) {
       query = adapter.clearSorts(query)
@@ -688,7 +688,7 @@ export default class Resource<Entity, Query, ID> {
     const documents = await Promise.all(entities.map((entity, index) => {
       return this.entityToDocument(entity, adapter, context, {
         detail,
-        meta: options.meta?.(entity, index)
+        meta: options.meta?.(entity, index),
       })
     }))
     return new Collection(documents)
