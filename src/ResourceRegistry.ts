@@ -30,13 +30,14 @@ export default class ResourceRegistry<Entity, Query, ID> {
     runMiddleware(this.middleware, resourceConfig)
 
     const resource = new Resource<E, Q, I>(this.jsonAPI, type, resourceConfig)
+
     if (this.options.validate !== false) {
       const adapter = this.jsonAPI.adapter(resource, new RequestContext('validate', {}, null, deps))
       resource.validate(adapter)
     }
     this.resources.set(type, resource)
 
-    config.logger.debug(chalk`-> Registered resource {yellow ${resource.plural}}\n`)
+    config.logger.info(chalk`{green ✓} Registered resource {yellow ${resource.plural}}`)
     return resource
   }
 
