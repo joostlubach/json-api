@@ -1,9 +1,9 @@
 import * as FS from 'fs-extra'
 import { singularize } from 'inflected'
-import * as YAML from 'js-yaml'
 import { camelCase, cloneDeep, get, isPlainObject, mapValues, merge, upperFirst } from 'lodash'
 import { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types'
 import * as Path from 'path'
+import yaml from 'yaml'
 import { deepMapValues, objectKeys, sparse } from 'ytil'
 
 import Adapter from '../Adapter'
@@ -370,7 +370,7 @@ export default class OpenAPIGenerator {
 
 }
 
-const metaDefaults = YAML.load(FS.readFileSync(Path.join(__dirname, 'defaults.yml'), 'utf-8')) as OpenAPIMeta
+const metaDefaults = yaml.parse(FS.readFileSync(Path.join(__dirname, 'defaults.yml'), 'utf-8')) as OpenAPIMeta
 const builtInErrorCodes = ['400', '401', '403', '404', '405', '406', '409', '415', '500']
 
 const baseDocument: OpenAPIV3_1.Document = {
