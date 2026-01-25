@@ -62,12 +62,12 @@ export default class ResourceRegistry<Entity, Query, ID> {
     return this.resources.has(name)
   }
 
-  public get<E extends Entity, Q extends Query, I extends ID>(name: string): Resource<E, Q, I> {
+  public get<R extends Resource<any, any, any>>(name: string): R {
     const resource = this.resources.get(name)
     if (resource == null) {
       throw new APIError(404, `No resource found for name '${name}'`)
     }
-    return resource
+    return resource as R
   }
 
   public all(): Resource<Entity, Query, ID>[] {
