@@ -2,7 +2,6 @@ import { Request } from 'express'
 import { Deps } from 'ydeps'
 import { Constructor } from 'ytil'
 import { z } from 'zod'
-
 import APIError from './APIError'
 
 export default class RequestContext<P extends Record<string, any> = Record<string, any>> {
@@ -34,7 +33,7 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
 
     const result = schema.safeParse(value)
     if (result.error != null) {
-      throw new APIError(400, `Parameter \`${name}\`: ${result.error.message}`)
+      throw new APIError(500, `Parameter \`${name}\`: ${result.error.message}`)
     }
 
     return result.data
