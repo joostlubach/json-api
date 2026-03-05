@@ -1,18 +1,17 @@
 import { MapBuilder, sparse } from 'ytil'
-
 import Document from './Document'
 import JSONAPI from './JSONAPI'
 import RequestContext from './RequestContext'
 import { EntityToDocumentOptions, Linkage, Relationship } from './types'
 
-export default class IncludeCollector<Entity, Query, ID> {
+export default class IncludeCollector<Entity, Query> {
 
   constructor(
-    private readonly jsonAPI: JSONAPI<Entity, Query, ID>,
+    private readonly jsonAPI: JSONAPI<Entity, Query, any>,
     private readonly context: RequestContext,
   ) {}
 
-  private readonly collected = new Map<string, Document<ID>[]>()
+  private readonly collected = new Map<string, Document<unknown>[]>()
 
   /**
    * Wraps a bunch of models of different resource types and converts them to a list of documents.
@@ -23,7 +22,7 @@ export default class IncludeCollector<Entity, Query, ID> {
       return this.jsonAPI.registry.resourceForEntity(name)
     })
 
-    const collected: Document<ID>[] = []
+    const collected: Document<unknown>[] = []
     for (const [resource, models] of byResource) {
       const adapter = this.jsonAPI.adapter(resource, this.context)
       const documents = await Promise.all(models.map(entity => (
@@ -40,8 +39,8 @@ export default class IncludeCollector<Entity, Query, ID> {
    * @param base The base documents to start from.
    * @param expressions The include expression.
    */
-  public async collect(base: Document<ID>[], expressions: string[]) {
-    const collected: Document<ID>[] = []
+  public async collect(base: Document<unknown>[], expressions: string[]) {
+    const collected: Document<unknown>[] = []
 
     // Mark all of these as collected.
     this.markCollected(base)
@@ -53,7 +52,7 @@ export default class IncludeCollector<Entity, Query, ID> {
     return collected
   }
 
-  private async collectOne(base: Document<ID>[], expression: string, collected: Document<ID>[]) {
+  private async collectOne(base: Document<unknown>[], expression: string, collected: Document<unknown>[]) {
     const [head, ...tail] = expression.split('+')
 
     // Find the relationships in the document and flatten to all linkages.
@@ -75,8 +74,8 @@ export default class IncludeCollector<Entity, Query, ID> {
     }
   }
 
-  private collectRelationships(documents: Document<ID>[], name: string): Relationship<ID>[] {
-    const relationships: Relationship<ID>[] = []
+  private collectRelationships(documents: Document<unknown>[], name: string): Relationship<unknown>[] {
+    const relationships: Relationship<unknown>[] = []
     for (const document of documents) {
       if (document.relationships[name] != null) {
         relationships.push(document.relationships[name])
@@ -85,9 +84,9 @@ export default class IncludeCollector<Entity, Query, ID> {
     return relationships
   }
 
-  private async collectDocuments(linkages: Linkage<ID>[]) {
+  private async collectDocuments(linkages: Linkage<unknown>[]) {
     const byType = MapBuilder.groupBy(linkages, it => it.type)
-    const documents: Document<ID>[] = []
+    const documents: Document<unknown>[] = []
 
     for (const [type, linkages] of byType) {
       const resource = this.jsonAPI.registry.get(type)
@@ -113,7 +112,7 @@ export default class IncludeCollector<Entity, Query, ID> {
     return documents
   }
 
-  private markCollected(documents: Document<ID>[]) {
+  private markCollected(documents: Document<unknown>[]) {
     for (const doc of documents) {
       if (doc.id == null) { continue }
 

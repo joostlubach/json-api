@@ -1,6 +1,5 @@
 import { isPlainObject, mapValues } from 'lodash'
 import { objectEntries, objectKeys } from 'ytil'
-
 import APIError from './APIError'
 import ResourceRegistry from './ResourceRegistry'
 import { AnyResource, Linkage, Meta, Relationship } from './types'
@@ -11,7 +10,7 @@ export default class Document<ID> {
     public readonly resource:      AnyResource,
     public readonly id:            ID | null,
     public readonly attributes:    Record<string, any> = {},
-    public readonly relationships: Record<string, Relationship<ID>> = {},
+    public readonly relationships: Record<string, Relationship<unknown>> = {},
     public meta: Meta = {},
   ) {}
 

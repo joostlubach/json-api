@@ -1,6 +1,5 @@
 import { isObject } from 'lodash'
 import { wrapArray } from 'ytil'
-
 import Adapter from './Adapter'
 import Collection from './Collection'
 import IncludeCollector from './IncludeCollector'
@@ -182,7 +181,7 @@ export default abstract class JSONAPI<Entity, Query, ID> {
     return await resource.entityToDocument(entity, adapter, context, options)
   }
 
-  public async buildIncluded(entities: Entity[], context: RequestContext, options: EntityToDocumentOptions = {}): Promise<Collection<ID> | undefined> {
+  public async buildIncluded(entities: Entity[], context: RequestContext, options: EntityToDocumentOptions = {}): Promise<Collection<unknown> | undefined> {
     const collector = new IncludeCollector(this, context)
     const documents = await collector.wrap(entities, options)
     

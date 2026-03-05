@@ -1,5 +1,4 @@
 import { Request } from 'express'
-
 import Adapter, { GetResponse } from './Adapter'
 import Pack from './Pack'
 import RequestContext from './RequestContext'
@@ -188,8 +187,8 @@ export interface RelationshipIncludeConfig {
 export type SingularRelationshipConfig<E, Q, I> = RelationshipConfigCommon<E, Q, I> & {
   plural: false
 
-  get?: (this: Resource<E, Q, I>, entity: E, context: RequestContext) => Promise<Relationship<I> | I | Linkage<I> | null>
-  set?: (this: Resource<E, Q, I>, entity: E, value: I | null, context: RequestContext) => any | Promise<any>
+  get?: (this: Resource<E, Q, I>, entity: E, context: RequestContext) => Promise<Relationship<unknown> | unknown | Linkage<unknown> | null>
+  set?: (this: Resource<E, Q, I>, entity: E, value: unknown | null, context: RequestContext) => any | Promise<any>
 }
 
 export type PluralRelationshipConfig<E, Q, I> = RelationshipConfigCommon<E, Q, I> & {

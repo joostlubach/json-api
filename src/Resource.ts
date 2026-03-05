@@ -2,7 +2,6 @@ import { singularize } from 'inflected'
 import { isArray, isFunction, mapValues } from 'lodash'
 import { isPlainObject, objectEntries } from 'ytil'
 import { z } from 'zod'
-
 import APIError from './APIError'
 import Adapter, { GetResponse } from './Adapter'
 import Collection from './Collection'
@@ -282,7 +281,7 @@ export default class Resource<Entity, Query, ID> {
   }
 
   private async getRelationships(entity: Entity, detail: boolean, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext) {
-    const relationships: Record<string, Relationship<ID>> = {}
+    const relationships: Record<string, Relationship<unknown>> = {}
     for (const [name, relationship] of Object.entries(this.relationships)) {
       if (!await this.relationshipAvailable(relationship, entity, detail, context)) { continue }
       relationships[name] = await this.getRelationshipValue(entity, name, relationship, adapter, context)
@@ -322,15 +321,15 @@ export default class Resource<Entity, Query, ID> {
     })
   }
 
-  private async getRelationshipValue(entity: Entity, name: string, relationship: RelationshipConfig<Entity, Query, ID>, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext): Promise<Relationship<ID>> {
-    const coerce = (value: Relationship<ID> | RelationshipDataLike<ID>): Relationship<ID> => {
-      if (Relationship.isRelationship<ID>(value)) {
+  private async getRelationshipValue(entity: Entity, name: string, relationship: RelationshipConfig<Entity, Query, ID>, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext): Promise<Relationship<unknown>> {
+    const coerce = <I>(value: Relationship<I> | RelationshipDataLike<I>): Relationship<I> => {
+      if (Relationship.isRelationship<I>(value)) {
         return value
       }
 
       const {type} = relationship
-      const toLinkage = (value: ID | Linkage<ID>): Linkage<ID> => {
-        if (Linkage.is<ID>(value)) {
+      const toLinkage = <I>(value: I | Linkage<I>): Linkage<I> => {
+        if (Linkage.is<I>(value)) {
           return value
         } else if (type != null) {
           return this.jsonAPI.toLinkage(value, type)
@@ -610,7 +609,7 @@ export default class Resource<Entity, Query, ID> {
     return pack
   }
 
-  private async resolveIncluded(base: Document<ID>[], includedModels: Entity[] | undefined, context: RequestContext, options: RetrievalActionOptions): Promise<Collection<ID> | undefined> {
+  private async resolveIncluded(base: Document<ID>[], includedModels: Entity[] | undefined, context: RequestContext, options: RetrievalActionOptions): Promise<Collection<unknown> | undefined> {
     const collector = new IncludeCollector(this.jsonAPI, context)
     const documents =
       includedModels != null ? await collector.wrap(includedModels) :

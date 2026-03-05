@@ -1,7 +1,6 @@
 import express, { Application, NextFunction, Request, Response, Router } from 'express'
 import supertest from 'supertest'
 import { objectKeys } from 'ytil'
-
 import Document from '../Document'
 import { JSONAPIOptions } from '../JSONAPI'
 import Pack from '../Pack'
@@ -25,7 +24,7 @@ describe("http", () => {
   function setUp(options: JSONAPIOptions<Entity, Query, string> = {}) {
     jsonAPI = new MockJSONAPI(options)
 
-    parents = jsonAPI.registry.get<Parent, Query, string>('parents')
+    parents = jsonAPI.registry.get('parents')
     router = jsonAPI.router()
 
     app = express()

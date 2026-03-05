@@ -1,7 +1,6 @@
 import { isArray, isPlainObject } from 'lodash'
 import { OpenAPIV3_1 } from 'openapi-types'
 import { dynamicProxy } from 'yest'
-
 import Adapter, {
   CreateResponse,
   GetResponse,
@@ -14,14 +13,7 @@ import Pack from '../Pack'
 import RequestContext from '../RequestContext'
 import Resource from '../Resource'
 import { AttributeConfig, RelationshipConfig } from '../ResourceConfig'
-import {
-  ListActionOptions,
-  ListParams,
-  Relationship,
-  RelationshipDataLike,
-  RetrievalActionOptions,
-  Sort,
-} from '../types'
+import { ListActionOptions, ListParams, Relationship, RelationshipDataLike, Sort } from '../types'
 import db, { Entity, Query } from './db'
 
 export function mockJSONAPI(options?: JSONAPIOptions<Entity, Query, string>) {
@@ -41,6 +33,10 @@ export class MockJSONAPI extends JSONAPI<Entity, Query, string> {
 
   public adapter(resource: Resource<Entity, Query, string>, context: RequestContext<Record<string, any>>): MockAdapter {
     return new MockAdapter(resource, context)
+  }
+
+  public nameForEntity(entity: Entity): string {
+    return 'children' in entity ? 'Parent' : 'Child'
   }
 
   public nameForModel(entity: Entity): string {
@@ -167,7 +163,7 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
     return {data: models, total}
   }
   
-  public async get(query: Query, id: string, options: RetrievalActionOptions): Promise<GetResponse<Entity>> {
+  public async get(query: Query, id: string): Promise<GetResponse<Entity>> {
     return {
       data: db(this.resource.type).get(id, query),
     }

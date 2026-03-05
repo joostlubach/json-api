@@ -1,5 +1,4 @@
 import { isArray, isPlainObject } from 'lodash'
-
 import APIError from './APIError'
 import Collection from './Collection'
 import Document from './Document'
@@ -10,7 +9,7 @@ export default class Pack<ID> {
 
   constructor(
     public data:     Document<ID> | Collection<ID> | any | null,
-    public included: Collection<ID> = new Collection(),
+    public included: Collection<unknown> = new Collection(),
     public meta:     Meta = {},
   ) {}
 
