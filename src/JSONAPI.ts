@@ -73,6 +73,8 @@ export default abstract class JSONAPI<Entity, Query, ID> {
     const resource = this.registry.get(resourceType)
     const adapter = () => resource.adapter(context)
 
+    context.setParams({$type: resourceType, locator})
+
     await resource.runBeforeHandlers(context)
     return await resource.show(locator, adapter, context, options)
   }
@@ -80,6 +82,8 @@ export default abstract class JSONAPI<Entity, Query, ID> {
   public async list(resourceType: string, params: ListParams, context: RequestContext, options: RetrievalActionOptions = {}) {
     const resource = this.registry.get(resourceType)
     const adapter = () => resource.adapter(context)
+
+    context.setParams({$type: resourceType, ...params})
 
     await resource.runBeforeHandlers(context)
     return await resource.list(params, adapter, context, options)
@@ -89,6 +93,8 @@ export default abstract class JSONAPI<Entity, Query, ID> {
     const resource = this.registry.get(resourceType)
     const adapter = () => resource.adapter(context)
 
+    context.setParams({$type: resourceType})
+
     await resource.runBeforeHandlers(context)
     return await resource.create(requestPack, adapter, context, options)
   }
@@ -96,6 +102,8 @@ export default abstract class JSONAPI<Entity, Query, ID> {
   public async replace(resourceType: string, id: ID, requestPack: Pack<ID>, context: RequestContext, options: ReplaceActionOptions = {}) {
     const resource = this.registry.get(resourceType)
     const adapter = () => resource.adapter(context)
+
+    context.setParams({$type: resourceType, id})
 
     await resource.runBeforeHandlers(context)
     return await resource.replace(id,requestPack, adapter, context, options)
@@ -105,6 +113,8 @@ export default abstract class JSONAPI<Entity, Query, ID> {
     const resource = this.registry.get(resourceType)
     const adapter = () => resource.adapter(context)
 
+    context.setParams({$type: resourceType, id})
+
     await resource.runBeforeHandlers(context)
     return await resource.update(id, requestPack, adapter, context, options)
   }
@@ -112,6 +122,8 @@ export default abstract class JSONAPI<Entity, Query, ID> {
   public async delete(resourceType: string, requestPack: Pack<ID>, context: RequestContext) {
     const resource = this.registry.get(resourceType)
     const adapter = () => resource.adapter(context)
+
+    context.setParams({$type: resourceType})
 
     await resource.runBeforeHandlers(context)
     return await resource.delete(requestPack, adapter, context)

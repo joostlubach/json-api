@@ -1,6 +1,6 @@
 
 import { OpenAPIV3_1 } from 'openapi-types'
-
+import RequestContext from './RequestContext'
 import { AttributeConfig, RelationshipConfig } from './ResourceConfig'
 import { ListParams, Meta, Relationship, RelationshipDataLike, Sort } from './types'
 
@@ -11,10 +11,10 @@ export default interface Adapter<Entity, Query, ID> {
   list(query: Query, params: ListParams, options: ListOptions): Promise<ListResponse<Entity>>
   get(query: Query, id: ID): Promise<GetResponse<Entity>>
 
-  create(cb: (entity: Entity) => Promise<void>, options: MutationOptions): Promise<CreateResponse<Entity>>
-  update(id: ID, cb: (entity: Entity) => Promise<void>, options: MutationOptions): Promise<UpdateResponse<Entity>>
-  replace(id: ID, cb: (entity: Entity) => Promise<void>, options: MutationOptions): Promise<ReplaceResponse<Entity>>
-  delete(query: Query, options: MutationOptions): Promise<Array<Entity | ID>>
+  create(cb: (entity: Entity) => Promise<void>, context: RequestContext, options: MutationOptions): Promise<CreateResponse<Entity>>
+  update(id: ID, cb: (entity: Entity) => Promise<void>, context: RequestContext, options: MutationOptions): Promise<UpdateResponse<Entity>>
+  replace(id: ID, cb: (entity: Entity) => Promise<void>, context: RequestContext, options: MutationOptions): Promise<ReplaceResponse<Entity>>
+  delete(query: Query, context: RequestContext, options: MutationOptions): Promise<Array<Entity | ID>>
 
   // #endregion
 

@@ -12,7 +12,6 @@ import Pack from './Pack'
 import RequestContext from './RequestContext'
 import { AttributeConfig, RelationshipConfig, ResourceConfig } from './ResourceConfig'
 import config from './config'
-import { relationship } from './openapi/objects'
 import {
   AnyResource,
   BulkSelector,
@@ -509,7 +508,7 @@ export default class Resource<Entity, Query, ID> {
     const response = await adapter.create(async entity => {
       await this.setAttributes(entity, document, true, adapter, context)
       await this.config.scope?.ensure.call(this, entity, context)
-    }, options)
+    }, context, options)
     return await this.documentPack(response.data, undefined, adapter, context, options)
   }
 
@@ -531,7 +530,7 @@ export default class Resource<Entity, Query, ID> {
     const response = await adapter.replace(id, async entity => {
       await this.setAttributes(entity, document, false, adapter, context)
       await this.config.scope?.ensure.call(this, entity, context)
-    }, options)
+    }, context, options)
     return await this.documentPack(response.data, undefined, adapter, context, options)
   }
 
@@ -548,7 +547,7 @@ export default class Resource<Entity, Query, ID> {
     const response = await adapter.update(id, async entity => {
       await this.setAttributes(entity, document, false, adapter, context)
       await this.config.scope?.ensure.call(this, entity, context)
-    }, options)
+    }, context, options)
     return await this.documentPack(response.data, undefined, adapter, context, options)
   }
 
@@ -563,7 +562,7 @@ export default class Resource<Entity, Query, ID> {
     const adapter = getAdapter()
     const selector = this.extractBulkSelector(requestPack, context)
     const query = await this.bulkSelectorQuery(adapter, selector, context)
-    const entitiesOrIDs = await adapter.delete(query, {})
+    const entitiesOrIDs = await adapter.delete(query, context, {})
 
     const linkages = entitiesOrIDs.map(it => this.jsonAPI.toLinkage(it, this.type))
     const pack = new Pack<ID>(linkages, undefined, {
