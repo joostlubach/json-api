@@ -1,5 +1,4 @@
 import { Constructor, objectEntries } from 'ytil'
-
 import { Filters, Sort } from './types'
 
 export class SimpleQuery<T> {
@@ -7,8 +6,8 @@ export class SimpleQuery<T> {
   constructor(
     private readonly _filters: Filters = {},
     private readonly _sorts: Sort[] = [],
-    private readonly _offset: number | undefined = undefined,
-    private readonly _limit: number | undefined = undefined,
+    private readonly _skip: number | undefined = undefined,
+    private readonly _take: number | undefined = undefined,
   ) {}
 
   public clone<Q extends SimpleQuery<any>>(this: Q, update: Partial<QueryData>): Q {
@@ -16,8 +15,8 @@ export class SimpleQuery<T> {
     return new Self(
       update.filters ?? this._filters,
       update.sorts ?? this._sorts,
-      update.offset ?? this._offset,
-      update.limit ?? this._limit,
+      update.skip ?? this._skip,
+      update.take ?? this._take,
     )
   }
 
@@ -65,19 +64,19 @@ export class SimpleQuery<T> {
 
   // #region Pagination
 
-  public pagination(limit: number, offset?: number) {
+  public pagination(take: number, skip?: number) {
     return this.clone({
-      limit,
-      offset,
+      take,
+      skip,
     })
   }
 
-  public offset(): number | undefined {
-    return this._offset
+  public skip(): number | undefined {
+    return this._skip
   }
 
-  public limit(): number | undefined {
-    return this._limit
+  public take(): number | undefined {
+    return this._take
   }
 
   // #endregion
@@ -87,6 +86,6 @@ export class SimpleQuery<T> {
 export interface QueryData {
   filters: Filters
   sorts:   Sort[]
-  offset:  number
-  limit:   number
+  skip:  number
+  take:   number
 }

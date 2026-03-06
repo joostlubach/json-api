@@ -1,6 +1,5 @@
 import { isArray, isFunction } from 'lodash'
 import { slugify } from 'ytil'
-
 import { Filters, Sort } from '../types'
 
 export interface Parent {
@@ -25,8 +24,8 @@ export type Entity = Parent | Child
 export interface Query {
   filters: Filters
   sorts:   Sort[]
-  offset:  number | null
-  limit:   number | null
+  skip:  number | null
+  take:   number | null
 }
 
 export class Db {
@@ -35,11 +34,11 @@ export class Db {
 
   public list(query: Query) {
     let models = this.models.filter(it => this.match(query, it))
-    if (query.offset != null) {
-      models = models.slice(query.offset)
+    if (query.skip != null) {
+      models = models.slice(query.skip)
     }
-    if (query.limit != null) {
-      models = models.slice(0, query.limit)
+    if (query.take != null) {
+      models = models.slice(0, query.take)
     }
     for (const {field, direction} of [...query.sorts].reverse()) {
       models.sort((a, b) => {

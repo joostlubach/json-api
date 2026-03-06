@@ -1,7 +1,6 @@
 import { omit } from 'lodash'
 import { delay } from 'yest'
 import { slugify } from 'ytil'
-
 import db from './db'
 import { context, mockJSONAPI } from './mock'
 
@@ -16,7 +15,7 @@ describe("list", () => {
   describe("without parameters", () => {
 
     it("should list documents of a specific resource type", async () => {
-      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const pack = await jsonAPI.list('parents', context('parents', 'list'))
       const out = pack.serialize()
       expect(out).toEqual({
         data: [
@@ -38,7 +37,7 @@ describe("list", () => {
     })
   
     it("should include relationships", async () => {
-      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const pack = await jsonAPI.list('parents', context('parents', 'list'))
       const out = pack.serialize()
 
       expect(out.data[0].relationships).toEqual({
@@ -71,7 +70,7 @@ describe("list", () => {
         })
       })
 
-      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const pack = await jsonAPI.list('parents', context('parents', 'list'))
       expect(pack.serialize().data.map((it: any) => it.id)).toEqual(['eve', 'frank'])
     })
 
@@ -82,7 +81,7 @@ describe("list", () => {
         }
       })
 
-      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const pack = await jsonAPI.list('parents', context('parents', 'list'))
       const out = pack.serialize()
       expect(out.data[0].attributes).toEqual({name: "Alice"})
     })
@@ -96,7 +95,7 @@ describe("list", () => {
         }
       })
 
-      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const pack = await jsonAPI.list('parents', context('parents', 'list'))
       const out = pack.serialize()
       expect(out.data[0].relationships).toEqual({
         spouse:   expect.any(Object),
@@ -111,7 +110,7 @@ describe("list", () => {
         }
       })
 
-      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const pack = await jsonAPI.list('parents', context('parents', 'list'))
       const out = pack.serialize()
       expect(out.data[0].attributes).toEqual({name: "Alice"})
       expect(out.data[1].attributes).toEqual({name: "Bob", age: 40})
@@ -126,7 +125,7 @@ describe("list", () => {
         }
       })
 
-      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const pack = await jsonAPI.list('parents', context('parents', 'list'))
       const out = pack.serialize()
       expect(out.data[0].relationships).toEqual({
         spouse: expect.any(Object),
@@ -144,7 +143,7 @@ describe("list", () => {
         }
       })
 
-      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const pack = await jsonAPI.list('parents', context('parents', 'list'))
       const out = pack.serialize()
       expect(out.data[0].attributes).toEqual({name: "Alice", foo: "ALICE", age: 30})    
       expect(out.data[1].attributes).toEqual({name: "Bob", foo: "BOB", age: 40})    
@@ -159,7 +158,7 @@ describe("list", () => {
         }
       })
 
-      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const pack = await jsonAPI.list('parents', context('parents', 'list'))
       const out = pack.serialize()
       expect(out.data[0].relationships).toEqual({
         children: expect.any(Object),
@@ -169,25 +168,27 @@ describe("list", () => {
     })
 
     it("should include pagination info in the meta", async () => {
-      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const pack = await jsonAPI.list('parents', context('parents', 'list'))
       const out = pack.serialize()
       expect(out.meta).toEqual({
         total:      4,
         count:      4,
-        offset:     0,
+        skip:     0,
         nextOffset: null,
         isFirst:    true,
         isLast:     true,
       })
     })
 
-    it("should reflect proper pagination info if offset and limit are given", async () => {
-      const pack = await jsonAPI.list('parents', {offset: 3, limit: 2}, context('list'))
+    it("should reflect proper pagination info if skip and take are given", async () => {
+      const ctx = context('parents', 'list')
+      ctx.setParams({skip: 3, take: 2})
+      const pack = await jsonAPI.list('parents', ctx)
       const out = pack.serialize()
       expect(out.meta).toEqual({
         total:      4,
         count:      1,
-        offset:     3,
+        skip:     3,
         nextOffset: null,
         isFirst:    false,
         isLast:     true,
@@ -201,7 +202,7 @@ describe("list", () => {
         }
       })
 
-      const pack = await jsonAPI.list('parents', {}, context('list'))
+      const pack = await jsonAPI.list('parents', context('parents', 'list'))
       const out = pack.serialize()
       expect(out.meta).toEqual(expect.objectContaining({
         foo: 'bar',
@@ -219,13 +220,13 @@ describe("list", () => {
         }
       })
 
-      const pack = await jsonAPI.list('parents', {}, context('my-list-action'))
+      const pack = await jsonAPI.list('parents', context('parents', 'my-list-action'))
       const out = pack.serialize()
       expect(out.meta).toEqual({
         action: 'my-list-action',
         total:  4,
         count:  4,
-        offset: 0,
+        skip: 0,
       })
     })
 
@@ -240,7 +241,7 @@ describe("list", () => {
         }
       })
 
-      const pack = await jsonAPI.list('parents', {}, context('my-list-action'))
+      const pack = await jsonAPI.list('parents', context('parents', 'my-list-action'))
       const out = pack.serialize()
       expect(out.data.map((it: any) => it.meta)).toEqual([
         {action: 'my-list-action', slug: 'alice'},
@@ -258,11 +259,13 @@ describe("list", () => {
     let out: any
 
     beforeEach(async () => {
-      const pack = await jsonAPI.list('parents', {
+      const ctx = context('parents', 'list')
+      ctx.setParams({
         filters: {
           age: (age: number) => age >= 40 && age < 60, // Our mock DB allows filter functions.
         },
-      }, context('list'))
+      })
+      const pack = await jsonAPI.list('parents', ctx)
       out = pack.serialize()
     })
 
@@ -283,14 +286,14 @@ describe("list", () => {
         isFirst:    true,
         isLast:     true,
         nextOffset: null,
-        offset:     0,
+        skip:     0,
         total:      2,
       })
     })
 
   })
 
-  describe("labels", () => {
+  describe("scopes", () => {
 
     beforeEach(() => {
       jsonAPI.registry.modify('parents', cfg => {
@@ -303,7 +306,7 @@ describe("list", () => {
             },
           }
         }
-        cfg.labels = {
+        cfg.scopes = {
           old: query => ({
             ...query,
             filters: {
@@ -315,27 +318,36 @@ describe("list", () => {
       })
     })
 
-    it("should allow pre-defined filters through labels", async () => {
-      const pack = await jsonAPI.list('parents', {label: 'old'}, context('list'))
+    it("should allow pre-defined filters through scopes", async () => {
+      const ctx = context('parents', 'list')
+      ctx.setParams({scope: 'old'}) 
+
+      const pack = await jsonAPI.list('parents', ctx)
       expect(pack.serialize().data.map((it: any) => it.id)).toEqual(['eve', 'frank'])
     })
 
     it("can be combined with filters or search", async () => {
-      const pack1 = await jsonAPI.list('parents', {label: 'old', search: 'e'}, context('list'))
+      const ctx = context('parents', 'list')
+      ctx.setParams({scope: 'old', search: 'e'})
+      const pack1 = await jsonAPI.list('parents', ctx)
       expect(pack1.serialize().data.map((it: any) => it.id)).toEqual(['eve'])
 
-      const pack2 = await jsonAPI.list('parents', {label: 'old', filters: {name: "Frank"}}, context('list'))
+      const ctx2 = context('parents', 'list')
+      ctx2.setParams({scope: 'old', filters: {name: "Frank"}})
+      const pack2 = await jsonAPI.list('parents', ctx2)
       expect(pack2.serialize().data.map((it: any) => it.id)).toEqual(['frank'])
     })
 
     it("should update pagination accordingly", async () => {
-      const pack = await jsonAPI.list('parents', {label: 'old'}, context('list'))
+      const ctx = context('parents', 'list')
+      ctx.setParams({scope: 'old'})
+      const pack = await jsonAPI.list('parents', ctx)
       expect(pack.serialize().meta).toEqual({
         count:      2,
         isFirst:    true,
         isLast:     true,
         nextOffset: null,
-        offset:     0,
+        skip:     0,
         total:      2,
       })
     })
@@ -359,9 +371,11 @@ describe("list", () => {
     })
 
     it("should only return matching documents", async () => {
-      const pack = await jsonAPI.list('parents', {
+      const ctx = context('parents', 'list')
+      ctx.setParams({
         search: "e",
-      }, context('list'))
+      })
+      const pack = await jsonAPI.list('parents', ctx)
 
       expect(pack.serialize()).toEqual({
         data: [
@@ -374,16 +388,18 @@ describe("list", () => {
     })
 
     it("should reflect changes in pagination meta appropriately", async () => {
-      const pack = await jsonAPI.list('parents', {
+      const ctx = context('parents', 'list')
+      ctx.setParams({
         search: "e",
-      }, context('list'))
+      })
+      const pack = await jsonAPI.list('parents', ctx)
 
       expect(pack.serialize().meta).toEqual({
         count:      2,
         isFirst:    true,
         isLast:     true,
         nextOffset: null,
-        offset:     0,
+        skip:     0,
         total:      2,
       })
     })
@@ -393,9 +409,10 @@ describe("list", () => {
   describe("sorting", () => {
 
     it("should allow sorting", async () => {
-      const pack = await jsonAPI.list('parents', {
-        sorts: [{field: 'name', direction: -1}],
-      }, context('list'))
+      const ctx = context('parents', 'list')
+      ctx.setParams({sorts: '-name'})
+
+      const pack = await jsonAPI.list('parents', ctx)
       const out = pack.serialize()
 
       expect(out.data.map((it: any) => it.id)).toEqual([
@@ -410,12 +427,14 @@ describe("list", () => {
       db('parents').get('bob')!.name = "Alice"
       db('parents').get('frank')!.name = "Eve"
 
-      const pack = await jsonAPI.list('parents', {
+      const ctx = context('parents', 'list')
+      ctx.setParams({
         sorts: [
           {field: 'name', direction: -1},
           {field: 'age', direction: 1},
         ],
-      }, context('list'))
+      })
+      const pack = await jsonAPI.list('parents', ctx)
       const out = pack.serialize()
 
       expect(out.data.map((it: any) => it.id)).toEqual([

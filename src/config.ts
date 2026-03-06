@@ -1,9 +1,11 @@
+import { WellKnownParam } from './RequestContext'
 /* eslint-disable no-console */
 import { DoctextOptions } from './openapi'
 
 export interface Config {
   defaultPageSize:     number
   allowedContentTypes: string[]
+  wellKnownParams:     Record<WellKnownParam, string>
 
   openapi: {
     enabled: boolean,
@@ -23,6 +25,15 @@ export interface Logger {
 const config: Config = {
   defaultPageSize:     50,
   allowedContentTypes: ['application/vnd.api+json', 'application/json'],
+
+  wellKnownParams: {
+    'scope': 'scope',
+    'search': 'search',
+    'filters': 'filters',
+    'sorts': 'sorts',
+    'skip': 'skip',
+    'take': 'take',
+  },
 
   openapi: {
     enabled: true,

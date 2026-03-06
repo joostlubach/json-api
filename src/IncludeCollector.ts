@@ -92,7 +92,7 @@ export default class IncludeCollector<Entity, Query> {
       const resource = this.jsonAPI.registry.get(type)
       if (resource == null) { continue }
 
-      const adapter = resource.adapter(this.context)
+      const adapter = resource.adapter(this.context.clone(true))
       const allIDs = linkages.map(it => it.id)
 
       // Check if we have already collected some.
@@ -102,7 +102,7 @@ export default class IncludeCollector<Entity, Query> {
       documents.push(...existingDocuments)
 
       const query = await resource.applyFilters(adapter.query(), {id: newIDs}, adapter, this.context)
-      const response = await adapter.list(query, {}, {totals: false})
+      const response = await adapter.list(query, {totals: false})
       for (const entity of response.data) {
         const document = await resource.entityToDocument(entity, adapter, this.context)
         documents.push(document)

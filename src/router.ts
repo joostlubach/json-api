@@ -4,7 +4,6 @@ import { NextFunction, Request, Response, Router } from 'express'
 import { isFunction, kebabCase } from 'lodash'
 import { isPlainObject, objectEntries, objectKeys } from 'ytil'
 import { z } from 'zod'
-
 import APIError from './APIError'
 import JSONAPI from './JSONAPI'
 import Pack from './Pack'
@@ -217,13 +216,12 @@ export function router<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
 function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
   return {
     async list(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
-      const params = resource.extractListParams(context)
       const adapter = () => resource.adapter(context)
 
       const options = extractListActionOptions(context)
       options.totals = context.param('totals', z.boolean())
 
-      const pack = await resource.list(params, adapter, context, options)
+      const pack = await resource.list(adapter, context, options)
       response.json(pack.serialize())
       response.end()
     },
@@ -378,10 +376,10 @@ export const defaultRoutes: RouteMap = {
   list: resource => [{
     method: 'get',
     path:   `/${resource.plural}`,
-  }, ...objectKeys(resource.config.labels ?? {}).map((label): JSONAPIRoute => ({
+  }, ...objectKeys(resource.config.scopes ?? {}).map((scope): JSONAPIRoute => ({
     method: 'get',
-    path:   `/${resource.plural}/${label}`,
-    params: {label},
+    path:   `/${resource.plural}/${scope}`,
+    params: {scope},
   }))],
   show: resource => [{
     method: 'get',

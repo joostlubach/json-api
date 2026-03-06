@@ -5,7 +5,6 @@ import { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types'
 import * as Path from 'path'
 import yaml from 'yaml'
 import { deepMapValues, objectKeys, sparse } from 'ytil'
-
 import Adapter from '../Adapter'
 import JSONAPI from '../JSONAPI'
 import RequestContext from '../RequestContext'
@@ -230,8 +229,8 @@ export default class OpenAPIGenerator {
     const requestBody = requestBodies[action].call(this, resource, route)
     const responseBody = responseBodies[action].call(this, resource, route)
 
-    // Special case if there is a label parameter: use its meta-info.
-    const metaKey = route.params?.label != null ? `label.${route.params.label}` : `actions.${action}`
+    // Special case if there is a scope parameter: use its meta-info.
+    const metaKey = route.params?.scope != null ? `scope.${route.params.scope}` : `actions.${action}`
 
     return merge(
       {},

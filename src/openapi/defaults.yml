@@ -10,9 +10,9 @@ actions:
         description: "Search through the list of {{plural}}."
       sorts:
         description: "Sorts to apply to the list of {{plural}}. See the [Sorts](#sorts) section below for available sort fields."
-      limit:
+      take:
         description: "The maximum number of {{plural}} to return."
-      offset:
+      skip:
         description: "The number of {{plural}} to skip before starting to return results."
   
   show:

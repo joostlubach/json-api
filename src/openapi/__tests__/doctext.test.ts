@@ -1,5 +1,4 @@
 import stripAnsi from 'strip-ansi'
-
 import Pack from '../../Pack'
 import Resource from '../../Resource'
 import { Parent, Query } from '../../__tests__/db'
@@ -41,7 +40,7 @@ describe("doctext", () => {
           idType: 'integer',
         },
   
-        labels: {
+        scopes: {
           /// Lists only members from family A.
           'family-a': query => ({...query, filters: {...query.filters, family: 'a'}}),
           /// Lists only members from family B.
@@ -80,7 +79,7 @@ describe("doctext", () => {
         summary:     "Parents in the family.",
         description: "Parents in the family. There are two nuclear families, A & B. Each have two parents and two children. Relationships show spouses and children, and children's parents reciprocally.",
   
-        labels: {
+        scopes: {
           'family-a': {
             title:       "Lists only members from family A.",
             description: "Lists only members from family A.",
@@ -114,7 +113,7 @@ describe("doctext", () => {
       parents = jsonAPI.registry.register('parents', doctext<Parent, Query, string>({
         entity: 'Parent',
 
-        labels: {
+        scopes: {
           one: query => query,
         },
 
@@ -146,7 +145,7 @@ describe("doctext", () => {
       }))
 
       expect(warnings.map(stripAnsi)).toEqual([
-        "doctext.test.ts: Missing doctext for `labels.one`",
+        "doctext.test.ts: Missing doctext for `scopes.one`",
         "doctext.test.ts: Missing doctext for `filters.one`",
         "doctext.test.ts: Missing doctext for `singletons.one`",
         "doctext.test.ts: Missing doctext for `collectionActions.one`",

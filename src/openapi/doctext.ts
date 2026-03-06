@@ -3,7 +3,6 @@ import { DoctextReader } from 'doctext'
 import { get, set } from 'lodash'
 import * as Path from 'path'
 import { objectEntries } from 'ytil'
-
 import { OpenAPIDocumentation } from '../Adapter'
 import { ResourceConfig } from '../ResourceConfig'
 import jsonapi_config from '../config'
@@ -11,7 +10,7 @@ import jsonapi_config from '../config'
 const reader = DoctextReader.create(doctext, {
   ...jsonapi_config.openapi.doctext,
   whitelist: [
-    /^labels\.[^.]+$/,
+    /^scopes\.[^.]+$/,
     /^filters\.[^.]+$/,
     /^singletons.[^.]+$/,
     /^attributes\.[^.]+$/,

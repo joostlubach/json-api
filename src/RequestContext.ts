@@ -1,8 +1,10 @@
 import { Request } from 'express'
+import { omit } from 'lodash'
 import { Deps } from 'ydeps'
-import { Constructor } from 'ytil'
+import { Constructor, objectKeys } from 'ytil'
 import { z } from 'zod'
 import APIError from './APIError'
+import config from './config'
 
 export default class RequestContext<P extends Record<string, any> = Record<string, any>> {
 
@@ -16,6 +18,11 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
   }
 
   public readonly deps: Deps
+
+  public clone(resetWellKnownParams: boolean = false) {
+    const params = resetWellKnownParams ? omit(this.params, objectKeys($wellKnownParams)) : this.params
+    return new RequestContext(this.action, params, this.request, this.deps)
+  }
 
   // #region Parameters
 
@@ -49,6 +56,38 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
 
   // #endregion
 
+  // #region Well known params
+
+  public get type() {
+    return this.param('$type') as string
+  }
+
+  public get scope() {
+    return this.param(config.wellKnownParams.scope, $wellKnownParams.scope)
+  }
+
+  public get search() {
+    return this.param(config.wellKnownParams.search, $wellKnownParams.search)
+  }
+
+  public get filters() {
+    return this.param(config.wellKnownParams.filters, $wellKnownParams.filters)
+  }
+
+  public get sorts() {
+    return this.param(config.wellKnownParams.sorts, $wellKnownParams.sorts)
+  }
+
+  public get skip() {
+    return this.param(config.wellKnownParams.skip, $wellKnownParams.skip)
+  }
+
+  public get take() {
+    return this.param(config.wellKnownParams.take, $wellKnownParams.take)
+  }
+
+  // #endregion
+
   // #region Dependencies
 
   // Expose these to the context as direct methods, as they are used a lot, and the context is in
@@ -74,4 +113,25 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
 
   // #endregion
 
+}
+
+export const $wellKnownParams = {
+  scope: z.string().optional(),
+  filters: z.record(z.string(), z.unknown()).default(() => ({})),
+  search: z.string().optional(),
+  sorts: z.array(sort()).default(() => []),
+  skip: z.number().int().default(0),
+  take: z.number().int().optional(),
+}
+
+function sort() {
+  return z.object({
+    field: z.string(),
+    direction: z.number().int().refine(n => n === 1 || n === -1, {message: 'Must be 1 (ascending) or -1 (descending)'}) as z.ZodType<-1 | 1>,
+  })
+}
+
+export type WellKnownParam = keyof typeof $wellKnownParams
+export type WellKnownParamTypeMap = {
+  [P in keyof typeof $wellKnownParams]: z.output<typeof $wellKnownParams[P]>
 }

@@ -1,5 +1,4 @@
 import { expectAsyncError } from 'yest'
-
 import APIError from '../APIError'
 import Pack from '../Pack'
 import db from './db'
@@ -15,7 +14,7 @@ describe("update", () => {
 
   it("should allow updating a document", async () => {
     const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {age: 40})
-    const pack = await jsonAPI.update('parents', 'alice', requestPack, context('update'))
+    const pack = await jsonAPI.update('parents', 'alice', requestPack, context('parents', 'update'))
     expect(pack.serialize()).toEqual({
       data: {
         type: 'parents',
@@ -47,7 +46,7 @@ describe("update", () => {
   it("should require an ID", async () => {
     const requestPack = jsonAPI.documentRequestPack('parents', null, {})
     await expectAsyncError(() => (
-      jsonAPI.update('parents', 'alice', requestPack, context('update'))
+      jsonAPI.update('parents', 'alice', requestPack, context('parents', 'update'))
     ), APIError, error => {
       expect(error.status).toEqual(400)
     })
@@ -56,7 +55,7 @@ describe("update", () => {
   it("should not accept a mismatch between pack type and document", async () => {
     const requestPack = jsonAPI.documentRequestPack('children', 'alice', {})
     await expectAsyncError(() => (
-      jsonAPI.update('parents', 'alice', requestPack, context('update'))
+      jsonAPI.update('parents', 'alice', requestPack, context('parents', 'update'))
     ), APIError, error => {
       expect(error.status).toEqual(409)
     })
@@ -65,7 +64,7 @@ describe("update", () => {
   it("should not accept a mismatch between locator and document", async () => {
     const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {})
     await expectAsyncError(() => (
-      jsonAPI.update('parents', 'bob', requestPack, context('update'))
+      jsonAPI.update('parents', 'bob', requestPack, context('parents', 'update'))
     ), APIError, error => {
       expect(error.status).toEqual(409)
     })
@@ -74,7 +73,7 @@ describe("update", () => {
   it("should not allow replacing a document that does not exist", async () => {
     const requestPack = jsonAPI.documentRequestPack('parents', 'zachary', {})
     await expectAsyncError(() => (
-      jsonAPI.update('parents', 'zachary', requestPack, context('update'))
+      jsonAPI.update('parents', 'zachary', requestPack, context('parents', 'update'))
     ), APIError, error => {
       expect(error.status).toEqual(404)
     })
@@ -84,7 +83,7 @@ describe("update", () => {
     await expectAsyncError(() => (
       jsonAPI.update('parents', 'alice', Pack.deserialize(jsonAPI.registry, {
         data: [],
-      }), context('update'))
+      }), context('parents', 'update'))
     ), APIError, error => {
       expect(error.status).toEqual(400)
     })
@@ -97,7 +96,7 @@ describe("update", () => {
     })
 
     await expectAsyncError(() => (
-      jsonAPI.update('parents', 'alice', requestPack, context('update'))
+      jsonAPI.update('parents', 'alice', requestPack, context('parents', 'update'))
     ), APIError, error => {
       expect(error.status).toEqual(403)
     })
@@ -116,7 +115,7 @@ describe("update", () => {
     })
 
     await expectAsyncError(() => (
-      jsonAPI.update('parents', 'alice', requestPack, context('update'))
+      jsonAPI.update('parents', 'alice', requestPack, context('parents', 'update'))
     ), APIError, error => {
       expect(error.status).toEqual(403)
     })
@@ -135,7 +134,7 @@ describe("update", () => {
     })
 
     await expectAsyncError(() => (
-      jsonAPI.update('parents', 'alice', requestPack, context('update'))
+      jsonAPI.update('parents', 'alice', requestPack, context('parents', 'update'))
     ), APIError, error => {
       expect(error.status).toEqual(403)
     })
@@ -154,7 +153,7 @@ describe("update", () => {
     })
 
     await expectAsyncError(() => (
-      jsonAPI.update('parents', 'alice', requestPack, context('update'))
+      jsonAPI.update('parents', 'alice', requestPack, context('parents', 'update'))
     ), APIError, error => {
       expect(error.status).toEqual(403)
     })

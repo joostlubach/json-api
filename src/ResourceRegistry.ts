@@ -1,6 +1,5 @@
 import chalk from 'chalk'
 import { Deps } from 'ydeps'
-
 import APIError from './APIError'
 import JSONAPI from './JSONAPI'
 import RequestContext from './RequestContext'
@@ -32,7 +31,8 @@ export default class ResourceRegistry<Entity, Query, ID> {
     const resource = new Resource<E, Q, I>(this.jsonAPI, type, resourceConfig)
 
     if (this.options.validate !== false) {
-      const adapter = this.jsonAPI.adapter(resource, new RequestContext('validate', {}, null, deps))
+      const context = new RequestContext('validate', {}, null, deps)
+      const adapter = this.jsonAPI.adapter(resource, context)
       resource.validate(adapter)
     }
     this.resources.set(type, resource)

@@ -2,13 +2,13 @@
 import { OpenAPIV3_1 } from 'openapi-types'
 import RequestContext from './RequestContext'
 import { AttributeConfig, RelationshipConfig } from './ResourceConfig'
-import { ListParams, Meta, Relationship, RelationshipDataLike, Sort } from './types'
+import { Meta, Relationship, RelationshipDataLike, Sort } from './types'
 
 export default interface Adapter<Entity, Query, ID> {
 
   // #region Actions
 
-  list(query: Query, params: ListParams, options: ListOptions): Promise<ListResponse<Entity>>
+  list(query: Query, options: ListOptions): Promise<ListResponse<Entity>>
   get(query: Query, id: ID): Promise<GetResponse<Entity>>
 
   create(cb: (entity: Entity) => Promise<void>, context: RequestContext, options: MutationOptions): Promise<CreateResponse<Entity>>
@@ -25,7 +25,7 @@ export default interface Adapter<Entity, Query, ID> {
   applyFilter(query: Query, field: string, value: any): Query | Promise<Query>
   clearSorts(query: Query): Query
   applySort(query: Query, sort: Sort): Query | Promise<Query>
-  applyPagination(query: Query, limit: number, offset?: number): Query | Promise<Query>
+  applyPagination(query: Query, take: number, skip?: number): Query | Promise<Query>
 
   // #endregion
   

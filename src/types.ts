@@ -1,7 +1,6 @@
 import { Request } from 'express'
 import { isArray, isPlainObject } from 'lodash'
 import { objectKeys, objectValues } from 'ytil'
-
 import RequestContext from './RequestContext'
 import Resource from './Resource'
 
@@ -52,15 +51,6 @@ export const DocumentLocator: {
 // #endregion
 
 // #region Params & action options
-
-export interface ListParams {
-  filters?: Filters
-  label?:   string | null
-  search?:  string | null
-  sorts?:   Sort[]
-  offset?:  number
-  limit?:   number | null
-}
 
 export interface Filters {
   [path: string]: any

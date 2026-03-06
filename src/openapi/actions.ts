@@ -1,7 +1,6 @@
 import { camelCase, upperFirst } from 'lodash'
 import { OpenAPIV3_1 } from 'openapi-types'
 import { sparse } from 'ytil'
-
 import Resource from '../Resource'
 import { JSONAPIRoute } from '../types'
 import { pathParam, queryParam } from './objects'
@@ -11,8 +10,8 @@ export const actionParameters = {
     queryParam('filters', {type: 'object'}, false),
     queryParam('search', {type: 'string'}, false),
     queryParam('sort', {type: 'string', format: 'x-jsonapi-sort'}, false),
-    queryParam('limit', {type: 'integer'}, false),
-    queryParam('offset', {type: 'integer'}, false),
+    queryParam('take', {type: 'integer'}, false),
+    queryParam('skip', {type: 'integer'}, false),
   ]),
   show: (resource: Resource<any, any, any>, route: JSONAPIRoute) => [
     pathParam('id', 'string'),

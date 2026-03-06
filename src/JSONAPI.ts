@@ -18,7 +18,6 @@ import {
   EntitiesToCollectionOptions,
   EntityToDocumentOptions,
   Linkage,
-  ListParams,
   OpenAPIGeneratorOptions,
   ReplaceActionOptions,
   RetrievalActionOptions,
@@ -79,14 +78,12 @@ export default abstract class JSONAPI<Entity, Query, ID> {
     return await resource.show(locator, adapter, context, options)
   }
 
-  public async list(resourceType: string, params: ListParams, context: RequestContext, options: RetrievalActionOptions = {}) {
+  public async list(resourceType: string, context: RequestContext, options: RetrievalActionOptions = {}) {
     const resource = this.registry.get(resourceType)
     const adapter = () => resource.adapter(context)
 
-    context.setParams({$type: resourceType, ...params})
-
     await resource.runBeforeHandlers(context)
-    return await resource.list(params, adapter, context, options)
+    return await resource.list(adapter, context, options)
   }
 
   public async create(resourceType: string, requestPack: Pack<ID>, context: RequestContext, options: CreateActionOptions = {}) {

@@ -1,11 +1,9 @@
 import { isPlainObject } from 'lodash'
 import { expectAsyncError } from 'yest'
-
 import APIError from '../APIError'
 import Pack from '../Pack'
 import RequestContext from '../RequestContext'
 import Resource from '../Resource'
-import { ListParams } from '../types'
 import db, { Entity, Query } from './db'
 import { context, MockAdapter, mockJSONAPI } from './mock'
 
@@ -66,39 +64,43 @@ describe("custom actions", () => {
     })
 
     it("should override list", async () => {
-      const params: ListParams = {}
-      const pack = await jsonAPI.list('parents', params, context('custom:list'))
+      const ctx = context('parents', 'custom:list')
+      const pack = await jsonAPI.list('parents', ctx)
       expect(handler).toHaveBeenCalledTimes(1)
-      expect(handler).toHaveBeenCalledWith(params, expect.any(Function), context('custom:list'), {})
+      expect(handler).toHaveBeenCalledWith(expect.any(Pack), expect.any(Function), ctx, {})
       expect(pack).toBe(responsePack)
     })
 
     it("should override show", async () => {
-      const pack = await jsonAPI.show('parents', {id: 'alice'}, context('custom:show'))
+      const ctx = context('parents', 'custom:show')
+      const pack = await jsonAPI.show('parents', {id: 'alice'}, ctx)
       expect(handler).toHaveBeenCalledTimes(1)
-      expect(handler).toHaveBeenCalledWith({id: 'alice'}, expect.any(Function), context('custom:show'), {})
+      expect(handler).toHaveBeenCalledWith({id: 'alice'}, expect.any(Function), ctx, {})
       expect(pack).toBe(responsePack)
     })
 
     it("should override replace", async () => {
-      const pack = await jsonAPI.replace('parents', 'alice', requestPack, context('custom:replace'))
+      const ctx = context('parents', 'custom:replace')
+      const pack = await jsonAPI.replace('parents', 'alice', requestPack, ctx)
       expect(handler).toHaveBeenCalledTimes(1)
-      expect(handler).toHaveBeenCalledWith('alice', requestPack, expect.any(Function), context('custom:replace'), {})
+      expect(handler).toHaveBeenCalledWith('alice', requestPack, expect.any(Function), ctx, {})
       expect(pack).toBe(responsePack)
     })
 
     it("should override update", async () => {
-      const pack = await jsonAPI.update('parents', 'alice', requestPack, context('custom:update'))
+      const ctx = context('parents', 'custom:update')
+      const pack = await jsonAPI.update('parents', 'alice', requestPack, ctx)
       expect(handler).toHaveBeenCalledTimes(1)
-      expect(handler).toHaveBeenCalledWith('alice', requestPack, expect.any(Function), context('custom:update'), {})
+      expect(handler).toHaveBeenCalledWith('alice', requestPack, expect.any(Function), ctx, {})
       expect(pack).toBe(responsePack)
     })
 
     it("should override delete", async () => {
+      const ctx = context('parents', 'custom:delete')
       const requestPack = jsonAPI.bulkSelectorPack('parents', ['alice'])
-      const pack = await jsonAPI.delete('parents', requestPack, context('custom:delete'))
+      const pack = await jsonAPI.delete('parents', requestPack, ctx)
       expect(handler).toHaveBeenCalledTimes(1)
-      expect(handler).toHaveBeenCalledWith(requestPack, expect.any(Function), context('custom:delete'))
+      expect(handler).toHaveBeenCalledWith(requestPack, expect.any(Function), ctx, {})
       expect(pack).toBe(responsePack)
     })
 
@@ -111,7 +113,7 @@ describe("custom actions", () => {
       const responsePack = new Pack('response')
       handler.mockReturnValue(responsePack)
 
-      const testContext = context('custom:test')
+      const testContext = context('parents', 'custom:test')
       const response = await jsonAPI.collectionAction('parents', 'test', requestPack, testContext)
 
       expect(handler).toHaveBeenCalledTimes(1)
@@ -126,13 +128,13 @@ describe("custom actions", () => {
         expect(adapter()).toBeInstanceOf(MockAdapter)
       })
 
-      const testContext = context('custom:test')
+      const testContext = context('parents', 'custom:test')
       await jsonAPI.collectionAction('parents', 'test', requestPack, testContext)
     })
 
     it("should not allow calling an undefined action", async () => {
       await expectAsyncError(() => (
-        jsonAPI.collectionAction('parents', 'doesnotexist', jsonAPI.nullPack(), context('custom:doesnotexist'))
+        jsonAPI.collectionAction('parents', 'doesnotexist', jsonAPI.nullPack(), context('parents', 'custom:doesnotexist'))
       ), APIError, error => {
         expect(error.status).toEqual(405)
       })
@@ -147,7 +149,7 @@ describe("custom actions", () => {
       const responsePack = new Pack('response')
       handler.mockReturnValue(responsePack)
 
-      const testContext = context('custom:test')
+      const testContext = context('parents', 'custom:test')
       const response = await jsonAPI.documentAction('parents', {id: 'alice'}, 'test', requestPack, testContext)
 
       expect(handler).toHaveBeenCalledTimes(1)
@@ -162,13 +164,13 @@ describe("custom actions", () => {
         expect(adapter()).toBeInstanceOf(MockAdapter)
       })
 
-      const testContext = context('custom:test')
+      const testContext = context('parents', 'custom:test')
       await jsonAPI.documentAction('parents', {id: 'alice'}, 'test', requestPack, testContext)
     })
 
     it("should not allow calling an undefined action", async () => {
       await expectAsyncError(() => (
-        jsonAPI.documentAction('parents', {id: 'alice'}, 'doesnotexist', jsonAPI.nullPack(), context('custom:doesnotexist'))
+        jsonAPI.documentAction('parents', {id: 'alice'}, 'doesnotexist', jsonAPI.nullPack(), context('parents', 'custom:doesnotexist'))
       ), APIError, error => {
         expect(error.status).toEqual(405)
       })

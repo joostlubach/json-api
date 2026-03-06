@@ -13,15 +13,15 @@ import Pack from '../Pack'
 import RequestContext from '../RequestContext'
 import Resource from '../Resource'
 import { AttributeConfig, RelationshipConfig } from '../ResourceConfig'
-import { ListActionOptions, ListParams, Relationship, RelationshipDataLike, Sort } from '../types'
+import { ListActionOptions, Relationship, RelationshipDataLike, Sort } from '../types'
 import db, { Entity, Query } from './db'
 
 export function mockJSONAPI(options?: JSONAPIOptions<Entity, Query, string>) {
   return dynamicProxy(() => new MockJSONAPI(options))
 }
 
-export function context(action: string, params: Record<string, any> = {}) {
-  return new RequestContext(action, params, null)
+export function context(resourceType: string | null, action: string, params: Record<string, any> = {}) {
+  return new RequestContext(resourceType, action, params, null)
 }
 
 export class MockJSONAPI extends JSONAPI<Entity, Query, string> {
@@ -88,7 +88,7 @@ export class MockJSONAPI extends JSONAPI<Entity, Query, string> {
     this.registry.register('parents', {
       entity: 'Parent',
 
-      labels: {
+      scopes: {
         'family-a': query => ({...query, filters: {...query.filters, family: 'a'}}),
         'family-b': query => ({...query, filters: {...query.filters, family: 'b'}}),
       },
@@ -155,11 +155,11 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
     private readonly context: RequestContext,
   ) {}
 
-  public async list(query: Query, params: ListParams, options: ListActionOptions): Promise<ListResponse<Entity>> {
+  public async list(query: Query, options: ListActionOptions): Promise<ListResponse<Entity>> {
     const models = db(this.resource.type).list(query)
     if (options.totals === false) { return {data: models} }
 
-    const total = db(this.resource.type).count({...query, offset: 0, limit: null})
+    const total = db(this.resource.type).count({...query, skip: 0, take: null})
     return {data: models, total}
   }
   
@@ -201,8 +201,8 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
     return {
       filters: {},
       sorts:   [],
-      offset:  null,
-      limit:   null,
+      skip:  null,
+      take:   null,
     }
   }
   
@@ -241,11 +241,11 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
  
   }
   
-  public applyPagination(query: Query, limit: number, offset?: number): Query | Promise<Query> {
+  public applyPagination(query: Query, take: number, skip?: number): Query | Promise<Query> {
     return {
       ...query,
-      limit,
-      offset: offset ?? null,
+      take,
+      skip: skip ?? null,
     }
   }
 

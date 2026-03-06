@@ -21,7 +21,6 @@ import {
   EntityToDocumentOptions,
   Linkage,
   ListActionOptions,
-  ListParams,
   Relationship,
   RelationshipDataLike,
   ReplaceActionOptions,
@@ -85,33 +84,30 @@ export default class Resource<Entity, Query, ID> {
 
   // #region Queries
 
-  public async listQuery(adapter: Adapter<Entity, Query, ID>, params: Partial<ListParams> = {}, context: RequestContext) {
+  public async listQuery(adapter: Adapter<Entity, Query, ID>, context: RequestContext) {
     let query = adapter.query()
     query = await this.applyQueryDefaults(query, context)
-    query = await this.applyScope(query, context)
+    query = await this.applyScopeQuery(query, context.scope, context)
 
-    if (params.label != null) {
-      query = await this.applyLabel(query, params.label, context)
+    if (context.filters != null) {
+      query = await this.applyFilters(query, context.filters, adapter, context)
     }
-    if (params.filters != null) {
-      query = await this.applyFilters(query, params.filters, adapter, context)
+    if (context.search != null) {
+      query = await this.applySearch(query, context.search, context)
     }
-    if (params.search != null) {
-      query = await this.applySearch(query, params.search, context)
-    }
-    if (params.sorts != null) {
+    if (context.sorts != null) {
       query = adapter.clearSorts(query)
-      query = await this.applySorts(query, params.sorts, adapter, context)
+      query = await this.applySorts(query, context.sorts, adapter, context)
     }
-    if (params.limit != null) {
-      query = await adapter.applyPagination(query, params.limit, params.offset)
+    if (context.take != null) {
+      query = await adapter.applyPagination(query, context.take, context.skip)
     }
 
     return query
   }
 
   public async bulkSelectorQuery(adapter: Adapter<Entity, Query, ID>, selector: BulkSelector<ID>, context: RequestContext) {
-    let query = await this.listQuery(adapter, {}, context)
+    let query = await this.listQuery(adapter, context)
 
     if (selector.filters != null) {
       query = await this.applyFilters(query, selector.filters, adapter, context)
@@ -129,11 +125,6 @@ export default class Resource<Entity, Query, ID> {
   public async applyQueryDefaults(query: Query, context: RequestContext): Promise<Query> {
     if (this.config.query == null) { return query }
     return await this.config.query.call(this, query, context)
-  }
-
-  public async applyScope(query: Query, context: RequestContext): Promise<Query> {
-    if (this.config.scope == null) { return query }
-    return await this.config.scope.query.call(this, query, context)
   }
 
   public async applyFilters(query: Query, filters: Record<string, any>, adapter: Adapter<Entity, Query, ID>, context: RequestContext): Promise<Query> {
@@ -155,15 +146,6 @@ export default class Resource<Entity, Query, ID> {
     }
 
     return await this.config.search.call(this, query, term, context)
-  }
-
-  public async applyLabel(query: Query, label: string, context: RequestContext): Promise<Query> {
-    const labelModifier = this.config.labels?.[label]
-    if (labelModifier == null) {
-      throw new APIError(404, `Label \`${label}\` not found`)
-    }
-
-    return await labelModifier.call(this, query, context)
   }
 
   public async applySorts(query: Query, sorts: Sort[], adapter: Adapter<Entity, Query, ID>, context: RequestContext): Promise<Query> {
@@ -402,25 +384,25 @@ export default class Resource<Entity, Query, ID> {
    * @param context The request context.
    * @param pagination Supplied pagination parameters.
    */
-  private async injectPaginationMeta(pack: Pack<ID>, offset: number | undefined, total: number | undefined, context: RequestContext) {
+  private async injectPaginationMeta(pack: Pack<ID>, skip: number | undefined, total: number | undefined, context: RequestContext) {
     const count = pack.data instanceof Collection ? pack.data.length : 1
 
-    offset ??= 0
+    skip ??= 0
 
     if (total == null) {
       Object.assign(pack.meta, {
-        offset,
+        skip,
         count,
-        nextOffset: offset + count,
+        nextOffset: skip + count,
       })
     } else {
-      const nextOffset = offset + count >= total ? null : offset + count
+      const nextOffset = skip + count >= total ? null : skip + count
       Object.assign(pack.meta, {
-        offset,
+        skip,
         count,
         total,
         nextOffset,
-        isFirst: offset === 0,
+        isFirst: skip === 0,
         isLast:  nextOffset == null,
       })
     }
@@ -436,16 +418,16 @@ export default class Resource<Entity, Query, ID> {
     }
   }
 
-  public async list(params: ListParams, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: ListActionOptions = {}): Promise<Pack<ID>> {
+  public async list(getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: ListActionOptions = {}): Promise<Pack<ID>> {
     if (this.config.list === false) {
       throw new APIError(405, `Action \`list\` not available`)
     }
     if (this.config.list != null) {
-      return await this.config.list.call(this, params, getAdapter, context, options)
+      return await this.config.list.call(this, getAdapter, context, options)
     }
 
-    if (params.limit == null && this.config.forcePagination) {
-      params.limit = this.pageSize
+    if (context.take == null && this.config.forcePagination) {
+      context.setParams({[config.wellKnownParams.take]: this.pageSize})
     }
 
     const {
@@ -455,13 +437,13 @@ export default class Resource<Entity, Query, ID> {
     } = options
 
     const adapter = getAdapter()
-    const query = await this.listQuery(adapter, params, context)
-    const response = await adapter.list(query, params, {totals})
+    const query = await this.listQuery(adapter, context)
+    const response = await adapter.list(query, {totals})
 
     return await this.collectionPack(
       response.data,
       response.included,
-      params.offset,
+      context.skip,
       response.total,
       adapter,
       context,
@@ -507,7 +489,7 @@ export default class Resource<Entity, Query, ID> {
 
     const response = await adapter.create(async entity => {
       await this.setAttributes(entity, document, true, adapter, context)
-      await this.config.scope?.ensure.call(this, entity, context)
+      await this.callScopeEnsure(entity, context.scope, context)
     }, context, options)
     return await this.documentPack(response.data, undefined, adapter, context, options)
   }
@@ -529,7 +511,7 @@ export default class Resource<Entity, Query, ID> {
     // Continue with a fresh entity.
     const response = await adapter.replace(id, async entity => {
       await this.setAttributes(entity, document, false, adapter, context)
-      await this.config.scope?.ensure.call(this, entity, context)
+      await this.callScopeEnsure(entity, context.scope, context)
     }, context, options)
     return await this.documentPack(response.data, undefined, adapter, context, options)
   }
@@ -546,7 +528,7 @@ export default class Resource<Entity, Query, ID> {
     const document = this.extractRequestDocument(requestPack, id)
     const response = await adapter.update(id, async entity => {
       await this.setAttributes(entity, document, false, adapter, context)
-      await this.config.scope?.ensure.call(this, entity, context)
+      await this.callScopeEnsure(entity, context.scope, context)
     }, context, options)
     return await this.documentPack(response.data, undefined, adapter, context, options)
   }
@@ -571,7 +553,7 @@ export default class Resource<Entity, Query, ID> {
     return pack
   }
 
-  public async collectionPack(entities: Entity[], includedModels: Entity[] | undefined, offset: number | undefined, total: number | undefined, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: CollectionPackOptions<Entity, any> = {}) {
+  public async collectionPack(entities: Entity[], includedModels: Entity[] | undefined, skip: number | undefined, total: number | undefined, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: CollectionPackOptions<Entity, any> = {}) {
     const {
       include = [],
       detail = true,
@@ -583,7 +565,7 @@ export default class Resource<Entity, Query, ID> {
 
     const included = await this.resolveIncluded(collection.documents, includedModels, context, {include, detail})
     const pack = new Pack<ID>(collection, included, meta)
-    await this.injectPaginationMeta(pack, offset, total, context)
+    await this.injectPaginationMeta(pack, skip, total, context)
     await this.injectPackMeta(pack, null, context)
 
     return pack
@@ -619,7 +601,7 @@ export default class Resource<Entity, Query, ID> {
   }
 
   public async load(locator: DocumentLocator<ID>, adapter: Adapter<Entity, Query, ID>, context: RequestContext): Promise<LoadResponse<Entity>> {
-    const query = await this.listQuery(adapter, {}, context)
+    const query = await this.listQuery(adapter, context)
     if ('singleton' in locator) {
       const singleton = this.config.singletons?.[locator.singleton]
       if (singleton == null) {
@@ -640,6 +622,42 @@ export default class Resource<Entity, Query, ID> {
 
       return response as GetResponse<Entity> & {data: Entity}
     }
+  }
+
+  // #endregion
+
+  // #region Scoping
+
+  public async applyScopeQuery(query: Query, name: string | undefined, context: RequestContext): Promise<Query> {
+    const scope = this.config.scopes?.[name ?? '$default']
+    if (scope == null && name == null) { return query }
+    if (scope == null) {
+      throw new APIError(404, `Scope \`${name}\` not found`)
+    }
+
+    const skipDefault = isFunction(scope) ? false : scope.skipDefault
+    if (!skipDefault && name != null) {
+      query = await this.applyScopeQuery(query, '$default', context)
+    }
+
+    const apply = isFunction(scope) ? scope : scope.query
+    return await apply.call(this, query, context)
+  }
+
+  private callScopeEnsure(entity: Entity, name: string | undefined, context: RequestContext) {
+    const scope = this.config.scopes?.[name ?? '$default']
+    if (scope == null && name == null) { return }
+    if (scope == null) {
+      throw new APIError(404, `Scope \`${name}\` not found`)
+    }
+
+    const skipDefault = isFunction(scope) ? false : scope.skipDefault
+    if (!skipDefault && name != null) {
+      this.callScopeEnsure(entity, '$default', context)
+    }
+    
+    const ensure = isFunction(scope) ? undefined : scope.ensure
+    return ensure?.call(this, entity, context)
   }
 
   // #endregion
@@ -737,49 +755,6 @@ export default class Resource<Entity, Query, ID> {
     return document
   }
 
-  public extractListParams(context: RequestContext): ListParams {
-    const label = context.param('label', labelParam)
-    const filters = this.extractFilters(context)
-    const search = this.extractSearch(context)
-    const sorts = this.extractSorts(context)
-    const {limit, offset} = this.extractPagination(context)
-
-    return {filters, label, search, sorts, limit, offset}
-  }
-
-  public extractFilters(context: RequestContext) {
-    return context.param('filter', filterParam)
-  }
-
-  public extractSearch(context: RequestContext) {
-    return context.param('search', searchParam)
-  }
-
-  public extractSorts(context: RequestContext) {
-    const sort = context.param('sort', sortParam)
-    if (sort == null) { return [] }
-
-    const parts = sort.split(',')
-    const sorts: Sort[] = []
-
-    for (const part of parts) {
-      if (part.charAt(0) === '-') {
-        sorts.push({field: part.slice(1), direction: -1})
-      } else {
-        sorts.push({field: part, direction: 1})
-      }
-    }
-
-    return sorts
-  }
-
-  public extractPagination(context: RequestContext): {offset: number, limit: number | null} {
-    const offset = context.param('offset', offsetParam)
-    const limit = context.param('limit', limitParam)
-
-    return {offset, limit: limit ?? null}
-  }
-
   public extractDocumentLocator(context: RequestContext, singleton: false): {id: ID}
   public extractDocumentLocator(context: RequestContext, singleton?: boolean): DocumentLocator<ID>
   public extractDocumentLocator(context: RequestContext, singleton: boolean = true): DocumentLocator<ID> {
@@ -844,12 +819,6 @@ export default class Resource<Entity, Query, ID> {
 
 }
 
-const labelParam = z.string().optional()
-const filterParam = z.record(z.string(), z.any()).default(() => ({}))
-const searchParam = z.string().optional()
-const sortParam = z.string().optional()
-const offsetParam = z.number().int().default(0)
-const limitParam = z.number().int().optional()
 
 export interface LoadResponse<M> {
   data:      M

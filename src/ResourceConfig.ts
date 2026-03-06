@@ -9,7 +9,6 @@ import {
   DocumentLocator,
   Linkage,
   ListActionOptions,
-  ListParams,
   Meta,
   OpenAPIResourceMeta,
   Relationship,
@@ -63,17 +62,14 @@ export interface ResourceConfig<Entity, Query, ID> {
 
   // #region Data retrieval
 
-  /** A scope configuration. */
-  scope?: ScopeConfig<Entity, Query, ID>
-
   /** Query defaults. */
   query?: QueryModifier<Entity, Query, ID>
 
   /** A search configuration. */
   search?: SearchModifier<Entity, Query, ID>
 
-  /** Label configuration. */
-  labels?: LabelMap<Entity, Query, ID>
+  /** Scope configuration. */
+  scopes?: ScopeMap<Entity, Query, ID>
 
   /** Singleton configuration. */
   singletons?: SingletonMap<Entity, Query, ID>
@@ -202,20 +198,19 @@ export type PluralRelationshipConfig<E, Q, I> = RelationshipConfigCommon<E, Q, I
 
 // #region Scope & search
 
-export interface ScopeConfig<E, Q, I> {
-  query:  QueryModifier<E, Q, I>
-  ensure: EnsureFunction<E, Q, I>
+export type ScopeOption<E, Q, I> = (this: Resource<E, Q, I>, request: Request) => any
+export type SearchModifier<E, Q, I> = (this: Resource<E, Q, I>, query: Q, term: string, context: RequestContext) => Q | Promise<Q>
+
+export type ScopeMap<E, Q, I> = Record<string, ScopeConfig<E, Q, I>>
+
+export type ScopeConfig<E, Q, I> = QueryModifier<E, Q, I> | {
+  query: QueryModifier<E, Q, I>
+  ensure?: EnsureFunction<E, Q, I>
+  skipDefault?: true
 }
 
 export type QueryModifier<E, Q, I> = (this: Resource<E, Q, I>, query: Q, context: RequestContext) => Q | Promise<Q>
 export type EnsureFunction<E, Q, I> = (this: Resource<E, Q, I>, entity: E, context: RequestContext) => void | Promise<void>
-
-export type ScopeOption<E, Q, I> = (this: Resource<E, Q, I>, request: Request) => any
-export type SearchModifier<E, Q, I> = (this: Resource<E, Q, I>, query: Q, term: string, context: RequestContext) => Q | Promise<Q>
-
-export type LabelMap<E, Q, I> = Record<string, LabelModifier<E, Q, I>>
-export type LabelModifier<E, Q, I> = (this: Resource<E, Q, I>, query: Q, context: RequestContext) => Q | Promise<Q>
-export type WildcardLabelModifier<E, Q, I> = (this: Resource<E, Q, I>, label: string, query: Q, context: RequestContext) => Q
 
 export type SingletonMap<E, Q, I> = Record<string, Singleton<E, Q, I>>
 export type Singleton<E, Q, I> = (this: Resource<E, Q, I>, query: Q, context: RequestContext) => Promise<GetResponse<E>>
@@ -234,7 +229,6 @@ export type BeforeHandler = (context: RequestContext) => void | Promise<void>
 
 export type ListAction<E, Q, I> = (
   this:    Resource<E, Q, I>,
-  params:  ListParams,
   adapter: () => Adapter<E, Q, I>,
   context: RequestContext,
   options: ListActionOptions

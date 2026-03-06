@@ -90,7 +90,7 @@ describe("http", () => {
         openAPI: {},
       })
 
-      const spec = await jsonAPI.openAPISpec(context('__openapi__'))
+      const spec = await jsonAPI.openAPISpec(context(null, '__openapi__'))
       const response = await request.get('/openapi.json')
       expect(response.statusCode).toEqual(200)
       expect(JSON.parse(response.text)).toEqual(spec)
@@ -113,12 +113,12 @@ describe("http", () => {
 
       expect(spy).toHaveBeenCalledTimes(1)
       expect(spy.mock.calls[0][0]).toEqual({
-        label:   null,
+        scope:   null,
         filters: {},
         search:  null,
         sorts:   [],
-        offset:  0,
-        limit:   null,
+        skip:  0,
+        take:   null,
       })
 
       expect(spy.mock.calls[0][1]).toEqual(expect.any(Function))
@@ -134,19 +134,19 @@ describe("http", () => {
         .query('filter[age]=>42')
         .query('search=foo')
         .query('sort=name,-age')
-        .query('offset=10')
-        .query('limit=20')
+        .query('skip=10')
+        .query('take=20')
 
       expect(spy).toHaveBeenCalledTimes(1)
 
       const args = spy.mock.calls[0]
       expect(args[0]).toEqual({
-        label:   null,
+        scope:   null,
         filters: {name: "Alice", age: '>42'},
         search:  'foo',
         sorts:   [{field: 'name', direction: 1}, {field: 'age', direction: -1}],
-        offset:  10,
-        limit:   20,
+        skip:  10,
+        take:   20,
       })
     })
 
@@ -160,19 +160,19 @@ describe("http", () => {
       spy.mockReturnValue(Promise.resolve(mockPack()))
     })
 
-    it("should call list() for parents with the label param filled out, and serialize its output", async () => {
+    it("should call list() for parents with the scope param filled out, and serialize its output", async () => {
       const response = await request.get('/parents/:family-a')
       expect(response.status).toEqual(200)
       expect(response.text).toEqual('"🗿"')
 
       expect(spy).toHaveBeenCalledTimes(1)
       expect(spy.mock.calls[0][0]).toEqual({
-        label:   'family-a',
+        scope:   'family-a',
         filters: {},
         search:  null,
         sorts:   [],
-        offset:  0,
-        limit:   null,
+        skip:  0,
+        take:   null,
       })
 
       expect(spy.mock.calls[0][1]).toEqual(expect.any(Function))
@@ -188,19 +188,19 @@ describe("http", () => {
         .query('filter[age]=>42')
         .query('search=foo')
         .query('sort=name,-age')
-        .query('offset=10')
-        .query('limit=20')
+        .query('skip=10')
+        .query('take=20')
 
       expect(spy).toHaveBeenCalledTimes(1)
 
       const args = spy.mock.calls[0]
       expect(args[0]).toEqual({
-        label:   'family-a',
+        scope:   'family-a',
         filters: {name: "Alice", age: '>42'},
         search:  'foo',
         sorts:   [{field: 'name', direction: 1}, {field: 'age', direction: -1}],
-        offset:  10,
-        limit:   20,
+        skip:  10,
+        take:   20,
       })
     })
 
