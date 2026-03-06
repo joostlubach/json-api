@@ -14,7 +14,7 @@ describe("delete", () => {
   it("should allow deleting a document", async () => {
     const requestPack = jsonAPI.bulkSelectorPack('parents', ['alice'])
 
-    const pack = await jsonAPI.delete('parents', requestPack, context('parents', 'delete'))
+    const pack = await jsonAPI.delete('parents', requestPack, context('delete'))
     expect(pack.serialize()).toEqual({
       data: [
         {type: 'parents', id: 'alice'},
@@ -31,7 +31,7 @@ describe("delete", () => {
   it("should allow deleting multiple documents by ID", async () => {
     const requestPack = jsonAPI.bulkSelectorPack('parents', ['alice', 'bob'])
 
-    const pack = await jsonAPI.delete('parents', requestPack, context('parents', 'delete'))
+    const pack = await jsonAPI.delete('parents', requestPack, context('delete'))
     expect(pack.serialize()).toEqual({
       data: [
         {type: 'parents', id: 'alice'},
@@ -51,7 +51,7 @@ describe("delete", () => {
       age: (age: number) => age > 40,
     })
 
-    const pack = await jsonAPI.delete('parents', requestPack, context('parents', 'delete'))
+    const pack = await jsonAPI.delete('parents', requestPack, context('delete'))
     expect(pack.serialize()).toEqual({
       data: [
         {type: 'parents', id: 'eve'},
@@ -79,7 +79,7 @@ describe("delete", () => {
 
     const requestPack = jsonAPI.bulkSelectorPack('parents', 'e')
 
-    const pack = await jsonAPI.delete('parents', requestPack, context('parents', 'delete'))
+    const pack = await jsonAPI.delete('parents', requestPack, context('delete'))
     expect(pack.serialize()).toEqual({
       data: [
         {type: 'parents', id: 'alice'},
@@ -96,7 +96,7 @@ describe("delete", () => {
 
   it("should silently allow deleting documents that does not exist, but not report them as deleted", async () => {
     const requestPack = jsonAPI.bulkSelectorPack('parents', ['yves', 'zachary'])
-    const pack = await jsonAPI.delete('parents', requestPack, context('parents', 'delete'))
+    const pack = await jsonAPI.delete('parents', requestPack, context('delete'))
     expect(pack.data).toEqual([])
     expect(pack.meta).toEqual({deletedCount: 0})
     expect(db('parents').ids()).toEqual(['alice', 'bob', 'eve', 'frank'])
@@ -105,7 +105,7 @@ describe("delete", () => {
   it("should not accept a mismatch between pack type and document", async () => {
     const requestPack = jsonAPI.bulkSelectorPack('children', ['alice'])
     await expectAsyncError(() => (
-      jsonAPI.delete('parents', requestPack, context('parents', 'delete'))
+      jsonAPI.delete('parents', requestPack, context('delete'))
     ), APIError, error => {
       expect(error.status).toEqual(409)
     })

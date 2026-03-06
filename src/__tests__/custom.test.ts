@@ -64,7 +64,7 @@ describe("custom actions", () => {
     })
 
     it("should override list", async () => {
-      const ctx = context('parents', 'custom:list')
+      const ctx = context('custom:list')
       const pack = await jsonAPI.list('parents', ctx)
       expect(handler).toHaveBeenCalledTimes(1)
       expect(handler).toHaveBeenCalledWith(expect.any(Pack), expect.any(Function), ctx, {})
@@ -72,7 +72,7 @@ describe("custom actions", () => {
     })
 
     it("should override show", async () => {
-      const ctx = context('parents', 'custom:show')
+      const ctx = context('custom:show')
       const pack = await jsonAPI.show('parents', {id: 'alice'}, ctx)
       expect(handler).toHaveBeenCalledTimes(1)
       expect(handler).toHaveBeenCalledWith({id: 'alice'}, expect.any(Function), ctx, {})
@@ -80,7 +80,7 @@ describe("custom actions", () => {
     })
 
     it("should override replace", async () => {
-      const ctx = context('parents', 'custom:replace')
+      const ctx = context('custom:replace')
       const pack = await jsonAPI.replace('parents', 'alice', requestPack, ctx)
       expect(handler).toHaveBeenCalledTimes(1)
       expect(handler).toHaveBeenCalledWith('alice', requestPack, expect.any(Function), ctx, {})
@@ -88,7 +88,7 @@ describe("custom actions", () => {
     })
 
     it("should override update", async () => {
-      const ctx = context('parents', 'custom:update')
+      const ctx = context('custom:update')
       const pack = await jsonAPI.update('parents', 'alice', requestPack, ctx)
       expect(handler).toHaveBeenCalledTimes(1)
       expect(handler).toHaveBeenCalledWith('alice', requestPack, expect.any(Function), ctx, {})
@@ -96,7 +96,7 @@ describe("custom actions", () => {
     })
 
     it("should override delete", async () => {
-      const ctx = context('parents', 'custom:delete')
+      const ctx = context('custom:delete')
       const requestPack = jsonAPI.bulkSelectorPack('parents', ['alice'])
       const pack = await jsonAPI.delete('parents', requestPack, ctx)
       expect(handler).toHaveBeenCalledTimes(1)
@@ -113,7 +113,7 @@ describe("custom actions", () => {
       const responsePack = new Pack('response')
       handler.mockReturnValue(responsePack)
 
-      const testContext = context('parents', 'custom:test')
+      const testContext = context('custom:test')
       const response = await jsonAPI.collectionAction('parents', 'test', requestPack, testContext)
 
       expect(handler).toHaveBeenCalledTimes(1)
@@ -128,13 +128,13 @@ describe("custom actions", () => {
         expect(adapter()).toBeInstanceOf(MockAdapter)
       })
 
-      const testContext = context('parents', 'custom:test')
+      const testContext = context('custom:test')
       await jsonAPI.collectionAction('parents', 'test', requestPack, testContext)
     })
 
     it("should not allow calling an undefined action", async () => {
       await expectAsyncError(() => (
-        jsonAPI.collectionAction('parents', 'doesnotexist', jsonAPI.nullPack(), context('parents', 'custom:doesnotexist'))
+        jsonAPI.collectionAction('parents', 'doesnotexist', jsonAPI.nullPack(), context('custom:doesnotexist'))
       ), APIError, error => {
         expect(error.status).toEqual(405)
       })
@@ -149,7 +149,7 @@ describe("custom actions", () => {
       const responsePack = new Pack('response')
       handler.mockReturnValue(responsePack)
 
-      const testContext = context('parents', 'custom:test')
+      const testContext = context('custom:test')
       const response = await jsonAPI.documentAction('parents', {id: 'alice'}, 'test', requestPack, testContext)
 
       expect(handler).toHaveBeenCalledTimes(1)
@@ -164,13 +164,13 @@ describe("custom actions", () => {
         expect(adapter()).toBeInstanceOf(MockAdapter)
       })
 
-      const testContext = context('parents', 'custom:test')
+      const testContext = context('custom:test')
       await jsonAPI.documentAction('parents', {id: 'alice'}, 'test', requestPack, testContext)
     })
 
     it("should not allow calling an undefined action", async () => {
       await expectAsyncError(() => (
-        jsonAPI.documentAction('parents', {id: 'alice'}, 'doesnotexist', jsonAPI.nullPack(), context('parents', 'custom:doesnotexist'))
+        jsonAPI.documentAction('parents', {id: 'alice'}, 'doesnotexist', jsonAPI.nullPack(), context('custom:doesnotexist'))
       ), APIError, error => {
         expect(error.status).toEqual(405)
       })

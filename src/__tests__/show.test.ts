@@ -16,7 +16,7 @@ describe("show", () => {
     {id: 'alice', name: "Alice", age: 30},
     {id: 'bob', name: "Bob", age: 40},
   ])("should show a document of a specific resource type", async ({id, name, age}) => {
-    const pack = await jsonAPI.show('parents', {id}, context('parents', 'show'))
+    const pack = await jsonAPI.show('parents', {id}, context('show'))
     const out = pack.serialize()
     expect(out).toEqual({
       data:     expect.objectContaining({type: 'parents', id}),
@@ -33,7 +33,7 @@ describe("show", () => {
   })
 
   it("should include relationships", async () => {
-    const pack = await jsonAPI.show('parents', {id: 'alice'}, context('parents', 'show'))
+    const pack = await jsonAPI.show('parents', {id: 'alice'}, context('show'))
     const out = pack.serialize()
 
     expect(out.data.relationships).toEqual({
@@ -49,7 +49,7 @@ describe("show", () => {
       }
     })
 
-    const pack = await jsonAPI.show('parents', {id: 'alice'}, context('parents', 'show'))
+    const pack = await jsonAPI.show('parents', {id: 'alice'}, context('show'))
     const out = pack.serialize()
     expect(out.data.attributes).toEqual({name: "Alice", age: 30})
   })
@@ -63,7 +63,7 @@ describe("show", () => {
       }
     })
 
-    const pack = await jsonAPI.show('parents', {id: 'alice'}, context('parents', 'show'))
+    const pack = await jsonAPI.show('parents', {id: 'alice'}, context('show'))
     const out = pack.serialize()
     expect(out.data.relationships).toEqual({
       spouse:   expect.any(Object),
@@ -78,11 +78,11 @@ describe("show", () => {
       }
     })
 
-    const pack1 = await jsonAPI.show('parents', {id: 'alice'}, context('parents', 'show'))
+    const pack1 = await jsonAPI.show('parents', {id: 'alice'}, context('show'))
     const out1 = pack1.serialize()
     expect(out1.data.attributes).toEqual({name: "Alice"})
 
-    const pack2 = await jsonAPI.show('parents', {id: 'bob'}, context('parents', 'show'))
+    const pack2 = await jsonAPI.show('parents', {id: 'bob'}, context('show'))
     const out2 = pack2.serialize()
     expect(out2.data.attributes).toEqual({name: "Bob", age: 40})
   })
@@ -96,13 +96,13 @@ describe("show", () => {
       }
     })
 
-    const pack1 = await jsonAPI.show('parents', {id: 'alice'}, context('parents', 'show'))
+    const pack1 = await jsonAPI.show('parents', {id: 'alice'}, context('show'))
     const out1 = pack1.serialize()
     expect(out1.data.relationships).toEqual({
       spouse: expect.any(Object),
     })
 
-    const pack2 = await jsonAPI.show('parents', {id: 'bob'}, context('parents', 'show'))
+    const pack2 = await jsonAPI.show('parents', {id: 'bob'}, context('show'))
     const out2 = pack2.serialize()
     expect(out2.data.relationships).toEqual({
       spouse:   expect.any(Object),
@@ -117,7 +117,7 @@ describe("show", () => {
       }
     })
 
-    const pack = await jsonAPI.show('parents', {id: 'bob'}, context('parents', 'show'))
+    const pack = await jsonAPI.show('parents', {id: 'bob'}, context('show'))
     const out = pack.serialize()
     expect(out.data.attributes).toEqual({name: "Bob", foo: "BOB", age: 40})    
   })
@@ -131,7 +131,7 @@ describe("show", () => {
       }
     })
 
-    const pack = await jsonAPI.show('parents', {id: 'bob'}, context('parents', 'show'))
+    const pack = await jsonAPI.show('parents', {id: 'bob'}, context('show'))
     const out = pack.serialize()
     expect(out.data.relationships).toEqual({
       children: expect.any(Object),
@@ -147,7 +147,7 @@ describe("show", () => {
       }
     })
 
-    const pack = await jsonAPI.show('parents', {id: 'bob'}, context('parents', 'show'))
+    const pack = await jsonAPI.show('parents', {id: 'bob'}, context('show'))
     const out = pack.serialize()
     expect(out.meta).toEqual(expect.objectContaining({
       foo: 'bar',
@@ -164,7 +164,7 @@ describe("show", () => {
       }
     })
 
-    const pack = await jsonAPI.show('parents', {id: 'bob'}, context('parents', 'my-show-action'))
+    const pack = await jsonAPI.show('parents', {id: 'bob'}, context('my-show-action'))
     const out = pack.serialize()
     expect(out.meta).toEqual({
       action: 'my-show-action',
@@ -182,7 +182,7 @@ describe("show", () => {
       }
     })
 
-    const pack = await jsonAPI.show('parents', {id: 'bob'}, context('parents', 'my-show-action'))
+    const pack = await jsonAPI.show('parents', {id: 'bob'}, context('my-show-action'))
     const out = pack.serialize()
     expect(out.data.meta).toEqual(
       {action: 'my-show-action', slug: 'bob'},
@@ -191,7 +191,7 @@ describe("show", () => {
 
   it("should raise 404 if the document was not found", async () => {
     await expectAsyncError(() => (
-      jsonAPI.show('parents', {id: 'unknown'}, context('parents', 'show'))
+      jsonAPI.show('parents', {id: 'unknown'}, context('show'))
     ), APIError, error => {
       expect(error.status).toEqual(404)
     })
@@ -210,7 +210,7 @@ describe("show", () => {
         }
       })
 
-      const pack = await jsonAPI.show('children', {singleton: 'firstborn'}, context('parents', 'show'))
+      const pack = await jsonAPI.show('children', {singleton: 'firstborn'}, context('show'))
       expect(pack.serialize().data).toEqual({
         type:          'children',
         id:            'henry',
@@ -221,7 +221,7 @@ describe("show", () => {
 
     it("should raise 404 if the singleton was not configured", async () => {
       await expectAsyncError(() => (
-        jsonAPI.show('children', {singleton: 'firstborn'}, context('parents', 'show'))
+        jsonAPI.show('children', {singleton: 'firstborn'}, context('show'))
       ), APIError, error => {
         expect(error.status).toEqual(404)
       })
@@ -235,7 +235,7 @@ describe("show", () => {
       })
 
       await expectAsyncError(() => (
-        jsonAPI.show('children', {singleton: 'firstborn'}, context('parents', 'show'))
+        jsonAPI.show('children', {singleton: 'firstborn'}, context('show'))
       ), APIError, error => {
         expect(error.status).toEqual(404)
       })

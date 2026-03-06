@@ -90,7 +90,7 @@ describe("http", () => {
         openAPI: {},
       })
 
-      const spec = await jsonAPI.openAPISpec(context(null, '__openapi__'))
+      const spec = await jsonAPI.openAPISpec(context('__openapi__'))
       const response = await request.get('/openapi.json')
       expect(response.statusCode).toEqual(200)
       expect(JSON.parse(response.text)).toEqual(spec)

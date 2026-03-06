@@ -14,8 +14,8 @@ describe("including", () => {
   })
 
   describe.each([
-    {action: 'list', call: (include: string[]) => jsonAPI.list('parents', context('parents', 'list', {filters: {id: 'alice'}}), {include})},
-    {action: 'show', call: (include: string[]) => jsonAPI.show('parents', {id: 'alice'}, context('parents', 'show'), {include})},
+    {action: 'list', call: (include: string[]) => jsonAPI.list('parents', context('list', {filters: {id: 'alice'}}), {include})},
+    {action: 'show', call: (include: string[]) => jsonAPI.show('parents', {id: 'alice'}, context('show'), {include})},
   ])("$action", ({action, call}) => {
 
     it("should by default not include related models", async () => {
@@ -129,7 +129,7 @@ describe("including", () => {
   describe("duplicates", () => {
 
     it("should never include the same entity twice, nor get caught on cycles", async () => {
-      const ctx = context('parents', 'show')
+      const ctx = context('show')
       const pack = await jsonAPI.show('parents', {id: 'alice'}, ctx, {
         include: [
           'spouse',
@@ -151,7 +151,7 @@ describe("including", () => {
 
 
     it("should never include models that are already present in the main data set", async () => {
-      const ctx = context('parents', 'list')
+      const ctx = context('list')
       const pack = await jsonAPI.list('parents', ctx, {
         include: [
           'spouse',

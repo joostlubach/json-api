@@ -20,8 +20,8 @@ export function mockJSONAPI(options?: JSONAPIOptions<Entity, Query, string>) {
   return dynamicProxy(() => new MockJSONAPI(options))
 }
 
-export function context(resourceType: string | null, action: string, params: Record<string, any> = {}) {
-  return new RequestContext(resourceType, action, params, null)
+export function context(action: string, params: Record<string, any> = {}) {
+  return new RequestContext(action, params, null)
 }
 
 export class MockJSONAPI extends JSONAPI<Entity, Query, string> {

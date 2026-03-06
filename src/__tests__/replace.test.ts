@@ -18,7 +18,7 @@ describe("replace", () => {
       age:  40,
     })
 
-    const pack = await jsonAPI.replace('parents', 'alice', requestPack, context('parents', 'replace'))
+    const pack = await jsonAPI.replace('parents', 'alice', requestPack, context('replace'))
     expect(pack.serialize()).toEqual({
       data: {
         type: 'parents',
@@ -46,7 +46,7 @@ describe("replace", () => {
 
   it("should not update, but replace fully", async () => {
     const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {name: "Alice"})
-    await jsonAPI.replace('parents', 'alice', requestPack, context('parents', 'replace'))
+    await jsonAPI.replace('parents', 'alice', requestPack, context('replace'))
 
     expect(db('parents').get('alice')).toEqual(expect.objectContaining({
       id:   'alice',
@@ -58,7 +58,7 @@ describe("replace", () => {
   it("should not allow replacing a document that does not exist", async () => {
     const requestPack = jsonAPI.documentRequestPack('parents', 'zachary', {})
     await expectAsyncError(() => (
-      jsonAPI.replace('parents', 'zachary', requestPack, context('parents', 'replace'))
+      jsonAPI.replace('parents', 'zachary', requestPack, context('replace'))
     ), APIError, error => {
       expect(error.status).toEqual(404)
     })
@@ -67,7 +67,7 @@ describe("replace", () => {
   it("should not accept a mismatch between pack type and document", async () => {
     const requestPack = jsonAPI.documentRequestPack('children', 'alice', {})
     await expectAsyncError(() => (
-      jsonAPI.replace('parents', 'alice', requestPack, context('parents', 'replace'))
+      jsonAPI.replace('parents', 'alice', requestPack, context('replace'))
     ), APIError, error => {
       expect(error.status).toEqual(409)
     })
@@ -76,7 +76,7 @@ describe("replace", () => {
   it("should not accept a mismatch between locator and document", async () => {
     const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {})
     await expectAsyncError(() => (
-      jsonAPI.update('parents', 'bob', requestPack, context('parents', 'update'))
+      jsonAPI.update('parents', 'bob', requestPack, context('update'))
     ), APIError, error => {
       expect(error.status).toEqual(409)
     })
@@ -86,7 +86,7 @@ describe("replace", () => {
     await expectAsyncError(() => (
       jsonAPI.replace('parents', 'alice', Pack.deserialize(jsonAPI.registry, {
         data: [],
-      }), context('parents', 'replace'))
+      }), context('replace'))
     ), APIError, error => {
       expect(error.status).toEqual(400)
     })
@@ -99,7 +99,7 @@ describe("replace", () => {
     })
 
     await expectAsyncError(() => (
-      jsonAPI.replace('parents', 'alice', requestPack, context('parents', 'replace'))
+      jsonAPI.replace('parents', 'alice', requestPack, context('replace'))
     ), APIError, error => {
       expect(error.status).toEqual(403)
     })
@@ -118,7 +118,7 @@ describe("replace", () => {
     })
 
     await expectAsyncError(() => (
-      jsonAPI.replace('parents', 'alice', requestPack, context('parents', 'replace'))
+      jsonAPI.replace('parents', 'alice', requestPack, context('replace'))
     ), APIError, error => {
       expect(error.status).toEqual(403)
     })
@@ -137,7 +137,7 @@ describe("replace", () => {
     })
 
     await expectAsyncError(() => (
-      jsonAPI.replace('parents', 'alice', requestPack, context('parents', 'replace'))
+      jsonAPI.replace('parents', 'alice', requestPack, context('replace'))
     ), APIError, error => {
       expect(error.status).toEqual(403)
     })
@@ -156,7 +156,7 @@ describe("replace", () => {
     })
 
     await expectAsyncError(() => (
-      jsonAPI.replace('parents', 'alice', requestPack, context('parents', 'replace'))
+      jsonAPI.replace('parents', 'alice', requestPack, context('replace'))
     ), APIError, error => {
       expect(error.status).toEqual(403)
     })

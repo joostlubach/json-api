@@ -20,7 +20,7 @@ describe("create", () => {
       age:  30,
     })
 
-    const pack = await jsonAPI.create('parents', requestPack, context('parents', 'create'))
+    const pack = await jsonAPI.create('parents', requestPack, context('create'))
     expect(pack.serialize()).toEqual({
       data: {
         type: 'parents',
@@ -53,7 +53,7 @@ describe("create", () => {
     })
 
     await expectAsyncError(() => (
-      jsonAPI.create('parents', requestPack, context('parents', 'create'))
+      jsonAPI.create('parents', requestPack, context('create'))
     ), APIError, error => {
       expect(error.status).toEqual(409)
     })
@@ -66,7 +66,7 @@ describe("create", () => {
     await expectAsyncError(() => (
       jsonAPI.create('parents', Pack.deserialize(jsonAPI.registry, {
         data: [],
-      }), context('parents', 'create'))
+      }), context('create'))
     ), APIError, error => {
       expect(error.status).toEqual(400)
     })
@@ -79,7 +79,7 @@ describe("create", () => {
     })
 
     await expectAsyncError(() => (
-      jsonAPI.create('parents', requestPack, context('parents', 'create'))
+      jsonAPI.create('parents', requestPack, context('create'))
     ), APIError, error => {
       expect(error.status).toEqual(403)
     })
@@ -98,7 +98,7 @@ describe("create", () => {
     })
 
     await expectAsyncError(() => (
-      jsonAPI.create('parents', requestPack, context('parents', 'create'))
+      jsonAPI.create('parents', requestPack, context('create'))
     ), APIError, error => {
       expect(error.status).toEqual(403)
     })
@@ -117,7 +117,7 @@ describe("create", () => {
     })
 
     await expectAsyncError(() => (
-      jsonAPI.create('parents', requestPack, context('parents', 'create'))
+      jsonAPI.create('parents', requestPack, context('create'))
     ), APIError, error => {
       expect(error.status).toEqual(403)
     })
@@ -135,7 +135,7 @@ describe("create", () => {
       age:  40,
     })
 
-    await jsonAPI.create('parents', requestPack, context('parents', 'create'))
+    await jsonAPI.create('parents', requestPack, context('create'))
     expect(db('parents').get('alice')).toEqual(expect.objectContaining({
       id:   'alice',
       name: "Alice",
@@ -153,7 +153,7 @@ describe("create", () => {
       age:  40,
     })
 
-    await jsonAPI.create('parents', requestPack, context('parents', 'create'))
+    await jsonAPI.create('parents', requestPack, context('create'))
     expect(db('parents').get('ALICE')).toEqual(expect.objectContaining({
       id:   "ALICE",
       name: "Alice",

@@ -40,7 +40,7 @@ describe("scoping", () => {
   describe("list", () => {
     
     it("should only consider data from the current scope", async () => {
-      const ctx = context('children', 'list', {parent: 'alice'})
+      const ctx = context('list', {parent: 'alice'})
       const pack = await jsonAPI.list('children', ctx)
       expect(pack.serialize().data.map((it: any) => it.id)).toEqual([
         'charlie',
