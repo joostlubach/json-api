@@ -628,15 +628,15 @@ export default class Resource<Entity, Query, ID> {
 
   // #region Scoping
 
-  public async applyScopeQuery(query: Query, name: string | undefined, context: RequestContext): Promise<Query> {
-    const scope = this.config.scopes?.[name ?? '$default']
-    if (scope == null && name == null) { return query }
+  public async applyScopeQuery(query: Query, name: string = '$default', context: RequestContext): Promise<Query> {
+    const scope = this.config.scopes?.[name]
+    if (scope == null && name === '$default') { return query }
     if (scope == null) {
       throw new APIError(404, `Scope \`${name}\` not found`)
     }
 
     const skipDefault = isFunction(scope) ? false : scope.skipDefault
-    if (!skipDefault && name != null) {
+    if (!skipDefault && name != null && name !== '$default') {
       query = await this.applyScopeQuery(query, '$default', context)
     }
 
@@ -644,15 +644,15 @@ export default class Resource<Entity, Query, ID> {
     return await apply.call(this, query, context)
   }
 
-  private callScopeEnsure(entity: Entity, name: string | undefined, context: RequestContext) {
-    const scope = this.config.scopes?.[name ?? '$default']
-    if (scope == null && name == null) { return }
+  private callScopeEnsure(entity: Entity, name: string = '$default', context: RequestContext) {
+    const scope = this.config.scopes?.[name]
+    if (scope == null && name === '$default') { return }
     if (scope == null) {
       throw new APIError(404, `Scope \`${name}\` not found`)
     }
 
     const skipDefault = isFunction(scope) ? false : scope.skipDefault
-    if (!skipDefault && name != null) {
+    if (!skipDefault && name !== '$default') {
       this.callScopeEnsure(entity, '$default', context)
     }
     
