@@ -23,16 +23,16 @@ export interface Logger {
 }
 
 const config: Config = {
-  defaultPageSize:     50,
+  defaultPageSize:     25,
   allowedContentTypes: ['application/vnd.api+json', 'application/json'],
 
   wellKnownParams: {
-    'scope': 'scope',
-    'search': 'search',
+    'scope':   'scope',
+    'search':  'search',
     'filters': 'filters',
-    'sorts': 'sorts',
-    'skip': 'skip',
-    'take': 'take',
+    'sorts':   'sorts',
+    'skip':    'skip',
+    'take':    'take',
   },
 
   openapi: {

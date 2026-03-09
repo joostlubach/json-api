@@ -2,6 +2,7 @@ import { singularize } from 'inflected'
 import { isArray, isFunction, mapValues } from 'lodash'
 import { isPlainObject, objectEntries } from 'ytil'
 import { z } from 'zod'
+
 import APIError from './APIError'
 import Adapter, { GetResponse } from './Adapter'
 import Collection from './Collection'
@@ -426,7 +427,7 @@ export default class Resource<Entity, Query, ID> {
       return await this.config.list.call(this, getAdapter, context, options)
     }
 
-    if (context.take == null && this.config.forcePagination) {
+    if (context.take == null && this.config.forcePagination !== false) {
       context.setParams({[config.wellKnownParams.take]: this.pageSize})
     }
 
