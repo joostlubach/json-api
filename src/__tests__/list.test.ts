@@ -409,7 +409,7 @@ describe("list", () => {
 
     it("should allow sorting", async () => {
       const ctx = context('list')
-      ctx.setParams({sorts: [{field: 'name', direction: -1}]})
+      ctx.setParams({sort: '-name'})
 
       const pack = await jsonAPI.list('parents', ctx)
       const out = pack.serialize()
@@ -427,12 +427,7 @@ describe("list", () => {
       db('parents').get('frank')!.name = "Eve"
 
       const ctx = context('list')
-      ctx.setParams({
-        sorts: [
-          {field: 'name', direction: -1},
-          {field: 'age', direction: 1},
-        ],
-      })
+      ctx.setParams({sort: '-name,age'})
       const pack = await jsonAPI.list('parents', ctx)
       const out = pack.serialize()
 

@@ -1,10 +1,11 @@
 import { Request } from 'express'
 import { omit } from 'lodash'
 import { Deps } from 'ydeps'
-import { Constructor, objectKeys } from 'ytil'
+import { Constructor, objectKeys, safeParseInt, sparse } from 'ytil'
 import { z } from 'zod'
 import APIError from './APIError'
 import config from './config'
+import { Filters, Sort } from './types'
 
 export default class RequestContext<P extends Record<string, any> = Record<string, any>> {
 
@@ -58,32 +59,85 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
 
   // #region Well known params
 
-  public get type() {
+  public type() {
     return this.param('$type') as string
   }
 
-  public get scope() {
-    return this.param(config.wellKnownParams.scope, $wellKnownParams.scope)
+  public scope() {
+    if (config.paramExtractors.scope != null) {
+      return config.paramExtractors.scope(this)
+    } else {
+      return this.param('scope', $wellKnownParams.scope)
+    }
   }
 
-  public get search() {
-    return this.param(config.wellKnownParams.search, $wellKnownParams.search)
+  public search() {
+    if (config.paramExtractors.search != null) {
+      return config.paramExtractors.search(this)
+    } else {
+      return this.param('search', $wellKnownParams.search)
+    }
   }
 
-  public get filters() {
-    return this.param(config.wellKnownParams.filters, $wellKnownParams.filters)
+  public filters(): Filters {
+    if (config.paramExtractors.filters != null) {
+      return config.paramExtractors.filters(this)
+    } else {
+      return this.param('filters', $wellKnownParams.filters)
+    }
   }
 
-  public get sorts() {
-    return this.param(config.wellKnownParams.sorts, $wellKnownParams.sorts)
+  public sorts(): Sort[] {
+    if (config.paramExtractors.sorts != null) {
+      return config.paramExtractors.sorts(this)
+    } else {
+      const sort = this.param('sort', z.string().optional())
+      if (sort == null) { return [] }
+
+      return sparse(sort.split(',').map(part => {
+        part = part.trim()
+        if (part.length === 0) { return null }
+
+        let direction: 1 | -1 = 1
+        if (part.startsWith('-')) {
+          direction = -1
+          part = part.substring(1)
+        } else if (part.startsWith('+')) {
+          part = part.substring(1)
+        }
+
+        return {field: part, direction}
+      }))
+    }
   }
 
-  public get skip() {
-    return this.param(config.wellKnownParams.skip, $wellKnownParams.skip)
+  public skip(): number {
+    if (config.paramExtractors.skip != null) {
+      return config.paramExtractors.skip(this)
+    } else {
+      const raw = this.param('skip')
+      const num = typeof raw === 'string' ? safeParseInt(raw) : raw
+      return $wellKnownParams.skip.parse(num)
+    }
   }
 
-  public get take() {
-    return this.param(config.wellKnownParams.take, $wellKnownParams.take)
+  public take(defaultPageSize: number | null) {
+    const take = this.takeMaybe
+    if (take == null && defaultPageSize !== undefined) {
+      return defaultPageSize
+    } else {
+      return take
+    }
+  }
+
+  private get takeMaybe() {
+    if (config.paramExtractors.take != null) {
+      return config.paramExtractors.take(this)
+    } else {
+      const raw = this.param('take')
+      const num = typeof raw === 'string' ? safeParseInt(raw) : raw
+      return $wellKnownParams.take.parse(num)
+    }
   }
 
   // #endregion

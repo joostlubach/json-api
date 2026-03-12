@@ -18,11 +18,11 @@ describe("custom actions", () => {
 
     jsonAPI.registry.modify('parents', cfg => {
       cfg.collectionActions = {
-        test: handler,
+        test: handler as any
       }
 
       cfg.documentActions = {
-        test: handler,
+        test: handler as any
       }
     })
   })
@@ -36,12 +36,12 @@ describe("custom actions", () => {
     beforeEach(() => {
       handler = vi.fn()
       jsonAPI.registry.modify('parents', cfg => {
-        cfg.list = handler
-        cfg.show = handler
-        cfg.create = handler
-        cfg.replace = handler
-        cfg.update = handler
-        cfg.delete = handler
+        cfg.list = handler as any
+        cfg.show = handler as any
+        cfg.create = handler as any
+        cfg.replace = handler as any
+        cfg.update = handler as any
+        cfg.delete = handler as any
       })
 
       requestPack = new Pack<string>('request')

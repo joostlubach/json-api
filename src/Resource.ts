@@ -87,20 +87,24 @@ export default class Resource<Entity, Query, ID> {
   public async listQuery(adapter: Adapter<Entity, Query, ID>, context: RequestContext) {
     let query = adapter.query()
     query = await this.applyQueryDefaults(query, context)
-    query = await this.applyScopeQuery(query, context.scope, context)
+    query = await this.applyScopeQuery(query, context.scope(), context)
 
-    if (context.filters != null) {
-      query = await this.applyFilters(query, context.filters, adapter, context)
+    const filters = context.filters()
+    const search = context.search()
+    const sorts = context.sorts()
+    const take = context.take(this.config.forcePagination ? config.defaultPageSize : null)
+    if (filters != null) {
+      query = await this.applyFilters(query, filters, adapter, context)
     }
-    if (context.search != null) {
-      query = await this.applySearch(query, context.search, context)
+    if (search != null) {
+      query = await this.applySearch(query, search, context)
     }
-    if (context.sorts != null) {
+    if (sorts != null) {
       query = adapter.clearSorts(query)
-      query = await this.applySorts(query, context.sorts, adapter, context)
+      query = await this.applySorts(query, sorts, adapter, context)
     }
-    if (context.take != null) {
-      query = await adapter.applyPagination(query, context.take, context.skip)
+    if (take != null) {
+      query = await adapter.applyPagination(query, take, context.skip())
     }
 
     return query
@@ -195,6 +199,10 @@ export default class Resource<Entity, Query, ID> {
     } else {
       return (entity as any)[name]
     }
+  }
+
+  private setId(entity: Entity, id: ID) {
+    (entity as any).id = id
   }
 
   private async setAttributes(entity: Entity, document: Document<ID>, create: boolean, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext) {
@@ -426,10 +434,6 @@ export default class Resource<Entity, Query, ID> {
       return await this.config.list.call(this, getAdapter, context, options)
     }
 
-    if (context.take == null && this.config.forcePagination !== false) {
-      context.setParams({[config.wellKnownParams.take]: this.pageSize})
-    }
-
     const {
       totals = this.config.totals ?? true,
       include = [],
@@ -443,7 +447,7 @@ export default class Resource<Entity, Query, ID> {
     return await this.collectionPack(
       response.data,
       response.included,
-      context.skip,
+      context.skip(),
       response.total,
       adapter,
       context,
@@ -488,8 +492,12 @@ export default class Resource<Entity, Query, ID> {
     const adapter = getAdapter()
 
     const response = await adapter.create(async entity => {
+      if (document.id != null) {
+        this.setId(entity, document.id)
+      }
+
       await this.setAttributes(entity, document, true, adapter, context)
-      await this.callScopeEnsure(entity, context.scope, context)
+      await this.callScopeEnsure(entity, context.scope(), context)
     }, context, options)
     return await this.documentPack(response.data, undefined, adapter, context, options)
   }
@@ -504,14 +512,11 @@ export default class Resource<Entity, Query, ID> {
 
     const adapter = getAdapter()
     const document = this.extractRequestDocument(requestPack, id)
-    
-    // Run a loadInstance just to make sure the entity exists.
-    await this.load({id}, adapter, context)
 
     // Continue with a fresh entity.
     const response = await adapter.replace(id, async entity => {
       await this.setAttributes(entity, document, false, adapter, context)
-      await this.callScopeEnsure(entity, context.scope, context)
+      await this.callScopeEnsure(entity, context.scope(), context)
     }, context, options)
     return await this.documentPack(response.data, undefined, adapter, context, options)
   }
@@ -529,7 +534,7 @@ export default class Resource<Entity, Query, ID> {
 
     const response = await adapter.update(id, async entity => {
       await this.setAttributes(entity, document, false, adapter, context)
-      await this.callScopeEnsure(entity, context.scope, context)
+      await this.callScopeEnsure(entity, context.scope(), context)
     }, context, options)
     return await this.documentPack(response.data, undefined, adapter, context, options)
   }

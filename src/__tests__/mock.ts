@@ -177,7 +177,7 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
     return {data: inserted}
   }
 
-  public async update(id: string, cb: (entity: Entity) => Promise<void>, context: RequestContext, options: MutationOptions): Promise<UpdateResponse<Entity>> {
+  public async update(id: string, cb: (entity: Entity) => Promise<void>, context: RequestContext): Promise<UpdateResponse<Entity>> {
     const query = await this.resource.listQuery(this, context)
     const entity = db(this.resource.type).get(id, query)
     if (!entity) {
@@ -187,7 +187,7 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
     return {data: entity}
   }
 
-  public async replace(id: string, cb: (entity: Entity) => Promise<void>, context: RequestContext, options: MutationOptions): Promise<ReplaceResponse<Entity>> {
+  public async replace(id: string, cb: (entity: Entity) => Promise<void>, context: RequestContext): Promise<ReplaceResponse<Entity>> {
     const query = await this.resource.listQuery(this, context)
     if (!db(this.resource.type).get(id, query)) {
       throw new APIError(404, `Entity with id ${id} not found`)

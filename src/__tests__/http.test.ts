@@ -7,7 +7,6 @@ import { JSONAPIOptions } from '../JSONAPI'
 import Pack from '../Pack'
 import RequestContext from '../RequestContext'
 import Resource from '../Resource'
-import { CustomCollectionActionConfig, CustomDocumentActionConfig } from '../ResourceConfig'
 import { Entity, Parent, Query } from './db'
 import { context, MockAdapter, MockJSONAPI } from './mock'
 
@@ -29,6 +28,7 @@ describe("http", () => {
     router = jsonAPI.router()
 
     app = express()
+    app.set('query parser', 'extended')
     app.use(router)
     app.use((error: any, request: Request, response: Response, next: NextFunction) => {
       if (error instanceof Error) {
@@ -117,19 +117,19 @@ describe("http", () => {
       expect(spy.mock.calls[0][0]()).toBeInstanceOf(MockAdapter)
       expect(spy.mock.calls[0][1]).toBeInstanceOf(RequestContext)
       expect(spy.mock.calls[0][1].action).toEqual('list')
-      expect(spy.mock.calls[0][1].scope).toEqual(null)
-      expect(spy.mock.calls[0][1].filters).toEqual({})
-      expect(spy.mock.calls[0][1].search).toEqual(null)
-      expect(spy.mock.calls[0][1].sorts).toEqual([])
-      expect(spy.mock.calls[0][1].skip).toEqual(0)
-      expect(spy.mock.calls[0][1].take).toEqual(null)
+      expect(spy.mock.calls[0][1].scope()).toBeUndefined()
+      expect(spy.mock.calls[0][1].filters()).toEqual({})
+      expect(spy.mock.calls[0][1].search()).toBeUndefined()
+      expect(spy.mock.calls[0][1].sorts()).toEqual([])
+      expect(spy.mock.calls[0][1].skip()).toEqual(0)
+      expect(spy.mock.calls[0][1].take()).toBeUndefined()
     })
 
     it("should set all parameters appropriately", async () => {
       await request
         .get('/parents')
-        .query('filter[name]=Alice')
-        .query('filter[age]=>42')
+        .query('filters[name]=Alice')
+        .query('filters[age]=>42')
         .query('search=foo')
         .query('sort=name,-age')
         .query('skip=10')
@@ -138,12 +138,12 @@ describe("http", () => {
       expect(spy).toHaveBeenCalledTimes(1)
 
       const ctx = spy.mock.calls[0][1]
-      expect(ctx.scope).toEqual(null)
-      expect(ctx.filters).toEqual({name: "Alice", age: '>42'})
-      expect(ctx.search).toEqual('foo')
-      expect(ctx.sorts).toEqual([{field: 'name', direction: 1}, {field: 'age', direction: -1}])
-      expect(ctx.skip).toEqual(10)
-      expect(ctx.take).toEqual(20)
+      expect(ctx.scope()).toBeUndefined()
+      expect(ctx.filters()).toEqual({name: "Alice", age: '>42'})
+      expect(ctx.search()).toEqual('foo')
+      expect(ctx.sorts()).toEqual([{field: 'name', direction: 1}, {field: 'age', direction: -1}])
+      expect(ctx.skip()).toEqual(10)
+      expect(ctx.take()).toEqual(20)
     })
 
   })
@@ -166,19 +166,19 @@ describe("http", () => {
       expect(spy.mock.calls[0][0]()).toBeInstanceOf(MockAdapter)
       expect(spy.mock.calls[0][1]).toBeInstanceOf(RequestContext)
       expect(spy.mock.calls[0][1].action).toEqual('list')
-      expect(spy.mock.calls[0][1].scope).toEqual('family-a')
-      expect(spy.mock.calls[0][1].filters).toEqual({})
-      expect(spy.mock.calls[0][1].search).toEqual(null)
-      expect(spy.mock.calls[0][1].sorts).toEqual([])
-      expect(spy.mock.calls[0][1].skip).toEqual(0)
-      expect(spy.mock.calls[0][1].take).toEqual(null)
+      expect(spy.mock.calls[0][1].scope()).toEqual('family-a')
+      expect(spy.mock.calls[0][1].filters()).toEqual({})
+      expect(spy.mock.calls[0][1].search()).toBeUndefined()
+      expect(spy.mock.calls[0][1].sorts()).toEqual([])
+      expect(spy.mock.calls[0][1].skip()).toEqual(0)
+      expect(spy.mock.calls[0][1].take()).toBeUndefined()
     })
 
     it("should set all parameters appropriately", async () => {
       await request
         .get('/parents/family-a')
-        .query('filter[name]=Alice')
-        .query('filter[age]=>42')
+        .query('filters[name]=Alice')
+        .query('filters[age]=>42')
         .query('search=foo')
         .query('sort=name,-age')
         .query('skip=10')
@@ -187,12 +187,12 @@ describe("http", () => {
       expect(spy).toHaveBeenCalledTimes(1)
 
       const ctx = spy.mock.calls[0][1]
-      expect(ctx.scope).toEqual('family-a')
-      expect(ctx.filters).toEqual({name: "Alice", age: '>42'})
-      expect(ctx.search).toEqual('foo')
-      expect(ctx.sorts).toEqual([{field: 'name', direction: 1}, {field: 'age', direction: -1}])
-      expect(ctx.skip).toEqual(10)
-      expect(ctx.take).toEqual(20)
+      expect(ctx.scope()).toEqual('family-a')
+      expect(ctx.filters()).toEqual({name: "Alice", age: '>42'})
+      expect(ctx.search()).toEqual('foo')
+      expect(ctx.sorts()).toEqual([{field: 'name', direction: 1}, {field: 'age', direction: -1}])
+      expect(ctx.skip()).toEqual(10)
+      expect(ctx.take()).toEqual(20)
     })
 
   })
@@ -491,7 +491,7 @@ describe("http", () => {
 
       spy = vi.fn().mockReturnValue(Promise.resolve(mockPack()))
       jsonAPI.registry.modify('parents', cfg => {
-        (cfg.collectionActions!['test-1'] as CustomCollectionActionConfig<any, any, any>).handler = spy
+        (cfg.collectionActions!['test-1'] as any).handler = spy
       })
     })
 
@@ -522,7 +522,7 @@ describe("http", () => {
 
       spy = vi.fn().mockReturnValue(Promise.resolve(mockPack()))
       jsonAPI.registry.modify('parents', cfg => {
-        (cfg.collectionActions!['test-2'] as CustomCollectionActionConfig<any, any, any>).handler = spy
+        (cfg.collectionActions!['test-2'] as any).handler = spy
       })
     })
 
@@ -556,7 +556,7 @@ describe("http", () => {
 
       spy = vi.fn().mockReturnValue(Promise.resolve(mockPack()))
       jsonAPI.registry.modify('parents', cfg => {
-        (cfg.documentActions!['test-1'] as CustomDocumentActionConfig<any, any, any>).handler = spy
+        (cfg.documentActions!['test-1'] as any).handler = spy
       })
     })
 
@@ -588,7 +588,7 @@ describe("http", () => {
 
       spy = vi.fn().mockReturnValue(Promise.resolve(mockPack()))
       jsonAPI.registry.modify('parents', cfg => {
-        (cfg.documentActions!['test-2'] as CustomDocumentActionConfig<any, any, any>).handler = spy
+        (cfg.documentActions!['test-2'] as any).handler = spy
       })
     })
 
