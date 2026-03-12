@@ -1,7 +1,5 @@
 
-import { expectAsyncError } from 'yest'
 import { z } from 'zod'
-import APIError from '../APIError'
 import db, { Child, Query } from './db'
 import { context, mockJSONAPI } from './mock'
 
@@ -69,11 +67,9 @@ describe("scoping", () => {
       const pack = await jsonAPI.show('children', {id: 'charlie'}, ctx)
       expect(pack.serialize().data.id).toEqual('charlie')
 
-      await expectAsyncError(() => (
+      await expect(
         jsonAPI.show('children', {id: 'isaac'}, ctx)
-      ), APIError, error => {
-        expect(error.status).toEqual(404)
-      })
+      ).rejects.toMatchObject({ status: 404 })
     })
 
     it("should also work with singletons", async () => {
@@ -123,11 +119,9 @@ describe("scoping", () => {
       expect(pack.serialize().data.id).toEqual('charlie')
 
       const requestPack2 = jsonAPI.documentRequestPack('children', 'isaac', {name: "Isaac 2"})
-      await expectAsyncError(() => (
+      await expect(
         jsonAPI.replace('children', 'isaac', requestPack2, context('replace', {parent: 'alice'}))
-      ), APIError, error => {
-        expect(error.status).toEqual(404)
-      })
+      ).rejects.toMatchObject({ status: 404 })
     })
     
     it("should apply scope defaults", async () => {
@@ -165,11 +159,9 @@ describe("scoping", () => {
       expect(pack.serialize().data.id).toEqual('charlie')
 
       const requestPack2 = jsonAPI.documentRequestPack('children', 'isaac', {name: "Isaac 2"})
-      await expectAsyncError(() => (
+      await expect(
         jsonAPI.update('children', 'isaac', requestPack2, context('update', {parent: 'alice'}))
-      ), APIError, error => {
-        expect(error.status).toEqual(404)
-      })
+      ).rejects.toMatchObject({ status: 404 })
     })
     
     it("should apply scope defaults even if it's an update, to prevent any maliciously added data", async () => {

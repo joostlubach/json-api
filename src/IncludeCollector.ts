@@ -42,7 +42,7 @@ export default class IncludeCollector<Entity, Query> {
   public async collect(base: Document<unknown>[], expressions: string[]) {
     const collected: Document<unknown>[] = []
 
-    // Mark all of these as collected.
+    // Mark all of these as collected so they are excluded from includes.
     this.markCollected(base)
 
     for (const expression of expressions) {
@@ -62,8 +62,10 @@ export default class IncludeCollector<Entity, Query> {
     // Split linkages by type (relationships can be polymorphic).
     const documents = await this.collectDocuments(linkages)
 
-    // Add the newly collected documents to the collected array. Skip any previously collected documents.
-    collected.push(...documents.filter(doc => !collected.some(other => other.id === doc.id && other.resource.type === doc.resource.type)))
+    // Add the newly collected documents to the collected array. Skip any previously collected documents
+    // (including base documents, which are marked before the loop starts).
+    const isTracked = (doc: Document<unknown>) => this.collected.get(doc.resource.type)?.some(d => d.id === doc.id) ?? false
+    collected.push(...documents.filter(doc => !isTracked(doc)))
 
     // Mark all of these as collected.
     this.markCollected(documents)

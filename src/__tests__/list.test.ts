@@ -1,6 +1,5 @@
 import { omit } from 'lodash'
-import { delay } from 'yest'
-import { slugify } from 'ytil'
+import { delay, slugify } from 'ytil'
 import db from './db'
 import { context, mockJSONAPI } from './mock'
 
@@ -410,7 +409,7 @@ describe("list", () => {
 
     it("should allow sorting", async () => {
       const ctx = context('list')
-      ctx.setParams({sorts: '-name'})
+      ctx.setParams({sorts: [{field: 'name', direction: -1}]})
 
       const pack = await jsonAPI.list('parents', ctx)
       const out = pack.serialize()

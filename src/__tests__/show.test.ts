@@ -1,6 +1,4 @@
-import { delay, expectAsyncError } from 'yest'
-import { slugify } from 'ytil'
-import APIError from '../APIError'
+import { delay, slugify } from 'ytil'
 import db from './db'
 import { context, mockJSONAPI } from './mock'
 
@@ -190,11 +188,9 @@ describe("show", () => {
   })
 
   it("should raise 404 if the document was not found", async () => {
-    await expectAsyncError(() => (
+    await expect(
       jsonAPI.show('parents', {id: 'unknown'}, context('show'))
-    ), APIError, error => {
-      expect(error.status).toEqual(404)
-    })
+    ).rejects.toMatchObject({ status: 404 })
   })
 
   describe("singletons", () => {
@@ -220,11 +216,9 @@ describe("show", () => {
     })
 
     it("should raise 404 if the singleton was not configured", async () => {
-      await expectAsyncError(() => (
+      await expect(
         jsonAPI.show('children', {singleton: 'firstborn'}, context('show'))
-      ), APIError, error => {
-        expect(error.status).toEqual(404)
-      })
+      ).rejects.toMatchObject({ status: 404 })
     })
 
     it("should raise 404 if the adapter returned `null`", async () => {
@@ -234,11 +228,9 @@ describe("show", () => {
         }
       })
 
-      await expectAsyncError(() => (
+      await expect(
         jsonAPI.show('children', {singleton: 'firstborn'}, context('show'))
-      ), APIError, error => {
-        expect(error.status).toEqual(404)
-      })
+      ).rejects.toMatchObject({ status: 404 })
     })
   
   })

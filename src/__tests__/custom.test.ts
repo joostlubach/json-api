@@ -1,7 +1,5 @@
 import { isPlainObject } from 'lodash'
 import { vi } from 'vitest'
-import { expectAsyncError } from 'yest'
-import APIError from '../APIError'
 import Pack from '../Pack'
 import RequestContext from '../RequestContext'
 import Resource from '../Resource'
@@ -68,7 +66,7 @@ describe("custom actions", () => {
       const ctx = context('custom:list')
       const pack = await jsonAPI.list('parents', ctx)
       expect(handler).toHaveBeenCalledTimes(1)
-      expect(handler).toHaveBeenCalledWith(expect.any(Pack), expect.any(Function), ctx, {})
+      expect(handler).toHaveBeenCalledWith(expect.any(Function), ctx, {})
       expect(pack).toBe(responsePack)
     })
 
@@ -101,7 +99,7 @@ describe("custom actions", () => {
       const requestPack = jsonAPI.bulkSelectorPack('parents', ['alice'])
       const pack = await jsonAPI.delete('parents', requestPack, ctx)
       expect(handler).toHaveBeenCalledTimes(1)
-      expect(handler).toHaveBeenCalledWith(requestPack, expect.any(Function), ctx, {})
+      expect(handler).toHaveBeenCalledWith(requestPack, expect.any(Function), ctx)
       expect(pack).toBe(responsePack)
     })
 
@@ -118,7 +116,7 @@ describe("custom actions", () => {
       const response = await jsonAPI.collectionAction('parents', 'test', requestPack, testContext)
 
       expect(handler).toHaveBeenCalledTimes(1)
-      expect(handler).toHaveBeenCalledWith(requestPack, expect.any(Function), testContext, {})
+      expect(handler).toHaveBeenCalledWith(requestPack, expect.any(Function), testContext)
       expect(response).toBe(responsePack)
     })
 
@@ -134,11 +132,9 @@ describe("custom actions", () => {
     })
 
     it("should not allow calling an undefined action", async () => {
-      await expectAsyncError(() => (
+      await expect(
         jsonAPI.collectionAction('parents', 'doesnotexist', jsonAPI.nullPack(), context('custom:doesnotexist'))
-      ), APIError, error => {
-        expect(error.status).toEqual(405)
-      })
+      ).rejects.toMatchObject({ status: 404 })
     })
 
   })
@@ -154,7 +150,7 @@ describe("custom actions", () => {
       const response = await jsonAPI.documentAction('parents', {id: 'alice'}, 'test', requestPack, testContext)
 
       expect(handler).toHaveBeenCalledTimes(1)
-      expect(handler).toHaveBeenCalledWith({id: 'alice'}, requestPack, expect.any(Function), testContext, {})
+      expect(handler).toHaveBeenCalledWith({id: 'alice'}, requestPack, expect.any(Function), testContext)
       expect(response).toBe(responsePack)
     })
 
@@ -170,11 +166,9 @@ describe("custom actions", () => {
     })
 
     it("should not allow calling an undefined action", async () => {
-      await expectAsyncError(() => (
+      await expect(
         jsonAPI.documentAction('parents', {id: 'alice'}, 'doesnotexist', jsonAPI.nullPack(), context('custom:doesnotexist'))
-      ), APIError, error => {
-        expect(error.status).toEqual(405)
-      })
+      ).rejects.toMatchObject({ status: 404 })
     })
   })
 

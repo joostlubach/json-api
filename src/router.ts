@@ -219,7 +219,6 @@ function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
       const adapter = () => resource.adapter(context)
 
       const options = extractListActionOptions(context)
-      options.totals = context.param('totals', z.boolean())
 
       const pack = await resource.list(adapter, context, options)
       response.json(pack.serialize())

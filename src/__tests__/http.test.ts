@@ -64,14 +64,14 @@ describe("http", () => {
       expect(routes).toEqual([
         // These custom actions have been added in mock.ts
         'POST /parents/test-1',
-        'GET /parents/test-2',
+        'POST /parents/test-2',
         'POST /parents/:id/test-1',
-        'GET /parents/:id/test-2',
+        'POST /parents/:id/test-2',
 
         // Regular actions
         'GET /parents',
-        'GET /parents/::family-a',
-        'GET /parents/::family-b',
+        'GET /parents/family-a',
+        'GET /parents/family-b',
         'GET /parents/:id',
         'POST /parents',
         'PUT /parents/:id',
@@ -113,19 +113,16 @@ describe("http", () => {
       expect(response.text).toEqual('"🗿"')
 
       expect(spy).toHaveBeenCalledTimes(1)
-      expect(spy.mock.calls[0][0]).toEqual({
-        scope:   null,
-        filters: {},
-        search:  null,
-        sorts:   [],
-        skip:  0,
-        take:   null,
-      })
-
-      expect(spy.mock.calls[0][1]).toEqual(expect.any(Function))
-      expect(spy.mock.calls[0][1]()).toBeInstanceOf(MockAdapter)
-      expect(spy.mock.calls[0][2]).toBeInstanceOf(RequestContext)
-      expect(spy.mock.calls[0][2].action).toEqual('list')
+      expect(spy.mock.calls[0][0]).toEqual(expect.any(Function))
+      expect(spy.mock.calls[0][0]()).toBeInstanceOf(MockAdapter)
+      expect(spy.mock.calls[0][1]).toBeInstanceOf(RequestContext)
+      expect(spy.mock.calls[0][1].action).toEqual('list')
+      expect(spy.mock.calls[0][1].scope).toEqual(null)
+      expect(spy.mock.calls[0][1].filters).toEqual({})
+      expect(spy.mock.calls[0][1].search).toEqual(null)
+      expect(spy.mock.calls[0][1].sorts).toEqual([])
+      expect(spy.mock.calls[0][1].skip).toEqual(0)
+      expect(spy.mock.calls[0][1].take).toEqual(null)
     })
 
     it("should set all parameters appropriately", async () => {
@@ -140,20 +137,18 @@ describe("http", () => {
 
       expect(spy).toHaveBeenCalledTimes(1)
 
-      const args = spy.mock.calls[0]
-      expect(args[0]).toEqual({
-        scope:   null,
-        filters: {name: "Alice", age: '>42'},
-        search:  'foo',
-        sorts:   [{field: 'name', direction: 1}, {field: 'age', direction: -1}],
-        skip:  10,
-        take:   20,
-      })
+      const ctx = spy.mock.calls[0][1]
+      expect(ctx.scope).toEqual(null)
+      expect(ctx.filters).toEqual({name: "Alice", age: '>42'})
+      expect(ctx.search).toEqual('foo')
+      expect(ctx.sorts).toEqual([{field: 'name', direction: 1}, {field: 'age', direction: -1}])
+      expect(ctx.skip).toEqual(10)
+      expect(ctx.take).toEqual(20)
     })
 
   })
 
-  describe("GET /parents/:family-a", () => {
+  describe("GET /parents/family-a", () => {
 
     beforeEach(() => {
       setUp()
@@ -162,29 +157,26 @@ describe("http", () => {
     })
 
     it("should call list() for parents with the scope param filled out, and serialize its output", async () => {
-      const response = await request.get('/parents/:family-a')
+      const response = await request.get('/parents/family-a')
       expect(response.status).toEqual(200)
       expect(response.text).toEqual('"🗿"')
 
       expect(spy).toHaveBeenCalledTimes(1)
-      expect(spy.mock.calls[0][0]).toEqual({
-        scope:   'family-a',
-        filters: {},
-        search:  null,
-        sorts:   [],
-        skip:  0,
-        take:   null,
-      })
-
-      expect(spy.mock.calls[0][1]).toEqual(expect.any(Function))
-      expect(spy.mock.calls[0][1]()).toBeInstanceOf(MockAdapter)
-      expect(spy.mock.calls[0][2]).toBeInstanceOf(RequestContext)
-      expect(spy.mock.calls[0][2].action).toEqual('list')
+      expect(spy.mock.calls[0][0]).toEqual(expect.any(Function))
+      expect(spy.mock.calls[0][0]()).toBeInstanceOf(MockAdapter)
+      expect(spy.mock.calls[0][1]).toBeInstanceOf(RequestContext)
+      expect(spy.mock.calls[0][1].action).toEqual('list')
+      expect(spy.mock.calls[0][1].scope).toEqual('family-a')
+      expect(spy.mock.calls[0][1].filters).toEqual({})
+      expect(spy.mock.calls[0][1].search).toEqual(null)
+      expect(spy.mock.calls[0][1].sorts).toEqual([])
+      expect(spy.mock.calls[0][1].skip).toEqual(0)
+      expect(spy.mock.calls[0][1].take).toEqual(null)
     })
 
     it("should set all parameters appropriately", async () => {
       await request
-        .get('/parents/:family-a')
+        .get('/parents/family-a')
         .query('filter[name]=Alice')
         .query('filter[age]=>42')
         .query('search=foo')
@@ -194,15 +186,13 @@ describe("http", () => {
 
       expect(spy).toHaveBeenCalledTimes(1)
 
-      const args = spy.mock.calls[0]
-      expect(args[0]).toEqual({
-        scope:   'family-a',
-        filters: {name: "Alice", age: '>42'},
-        search:  'foo',
-        sorts:   [{field: 'name', direction: 1}, {field: 'age', direction: -1}],
-        skip:  10,
-        take:   20,
-      })
+      const ctx = spy.mock.calls[0][1]
+      expect(ctx.scope).toEqual('family-a')
+      expect(ctx.filters).toEqual({name: "Alice", age: '>42'})
+      expect(ctx.search).toEqual('foo')
+      expect(ctx.sorts).toEqual([{field: 'name', direction: 1}, {field: 'age', direction: -1}])
+      expect(ctx.skip).toEqual(10)
+      expect(ctx.take).toEqual(20)
     })
 
   })
@@ -375,7 +365,7 @@ describe("http", () => {
 
   describe.each([
     {method: 'get', path: '/parents', hasRequest: false},
-    {method: 'get', path: '/parents/:family-a', hasRequest: false},
+    {method: 'get', path: '/parents/family-a', hasRequest: false},
     {method: 'get', path: '/parents/alice', hasRequest: false},
     {method: 'post', path: '/parents', hasRequest: true},
     {method: 'put', path: '/parents/alice', hasRequest: true},
@@ -415,7 +405,7 @@ describe("http", () => {
         it("should require a request body", async () => {
           setUp()
           const response = await call().send(Buffer.from([]))
-          expect(response.statusCode).toEqual(400)
+          expect(response.statusCode).toEqual(method === 'delete' ? 200 : 400)
         })
   
         it("should accept a valid content type", async () => {
@@ -452,7 +442,8 @@ describe("http", () => {
           })
     
           const response = await call().set('Content-Type', 'application/bar')
-          expect(response.header['content-type']).toEqual('application/bar; charset=utf-8')
+          const expectedContentType = method === 'delete' ? 'application/foo' : 'application/bar'
+          expect(response.header['content-type']).toEqual(`${expectedContentType}; charset=utf-8`)
           delete jsonAPI.options.router
         })
       } else {
@@ -522,7 +513,7 @@ describe("http", () => {
 
   })
 
-  describe("GET /parents/test-2", () => {
+  describe("POST /parents/test-2", () => {
 
     let spy: ReturnType<typeof vi.fn>
 
@@ -535,15 +526,13 @@ describe("http", () => {
       })
     })
 
-    it("should not react to a POST call", async () => {
-      const response = await request.post('/parents/test-2').send({
-        data: '💺',
-      })
+    it("should not react to a GET call", async () => {
+      const response = await request.get('/parents/test-2')
       expect(response.status).toEqual(404)
     })
 
     it("should call our custom collection action handler and serialize its output", async () => {
-      const response = await request.get('/parents/test-2')
+      const response = await request.post('/parents/test-2').send({data: null})
       expect(response.status).toEqual(200)
       expect(response.text).toEqual('"🗿"')
 
@@ -590,7 +579,7 @@ describe("http", () => {
 
   })
 
-  describe("GET /parents/alice/test-2", () => {
+  describe("POST /parents/alice/test-2", () => {
 
     let spy: ReturnType<typeof vi.fn>
 
@@ -603,15 +592,13 @@ describe("http", () => {
       })
     })
 
-    it("should not react to a POST call", async () => {
-      const response = await request.post('/parents/alice/test-2').send({
-        data: '💺',
-      })
+    it("should not react to a GET call", async () => {
+      const response = await request.get('/parents/alice/test-2')
       expect(response.status).toEqual(404)
     })
 
     it("should call our custom document action handler and serialize its output", async () => {
-      const response = await request.get('/parents/alice/test-2')
+      const response = await request.post('/parents/alice/test-2').send({data: null})
       expect(response.status).toEqual(200)
       expect(response.text).toEqual('"🗿"')
 

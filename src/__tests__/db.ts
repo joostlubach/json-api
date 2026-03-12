@@ -64,7 +64,7 @@ export class Db {
   }
 
   public build() {
-    return {} as Entity
+    return {children: [], parents: [], spouse: null} as Entity
   }
 
   public insert(...items: Record<string, any>[]) {

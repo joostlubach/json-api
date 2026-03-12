@@ -1,4 +1,3 @@
-import APIError from '../APIError'
 import Pack from '../Pack'
 import db from './db'
 import { context, mockJSONAPI } from './mock'
@@ -51,24 +50,16 @@ describe("create", () => {
       age:  10,
     })
 
-    await expectAsyncError(() => (
-      jsonAPI.create('parents', requestPack, context('create'))
-    ), APIError, error => {
-      expect(error.status).toEqual(409)
-    })
+    await expect(jsonAPI.create('parents', requestPack, context('create'))).rejects.toMatchObject({ status: 409 })
 
     expect(db('parents').get('alice')).toBeNull()
     expect(db('children').get('alice')).toBeNull()
   })
 
   it("should not accept an array for data", async () => {
-    await expectAsyncError(() => (
-      jsonAPI.create('parents', Pack.deserialize(jsonAPI.registry, {
-        data: [],
-      }), context('create'))
-    ), APIError, error => {
-      expect(error.status).toEqual(400)
-    })
+    await expect(jsonAPI.create('parents', Pack.deserialize(jsonAPI.registry, {
+      data: [],
+    }), context('create'))).rejects.toMatchObject({ status: 400 })
   })
 
   it("should not allow specifying an unconfigured attribute", async () => {
@@ -77,11 +68,7 @@ describe("create", () => {
       hobbies: ["soccer", "piano"],
     })
 
-    await expectAsyncError(() => (
-      jsonAPI.create('parents', requestPack, context('create'))
-    ), APIError, error => {
-      expect(error.status).toEqual(403)
-    })
+    await expect(jsonAPI.create('parents', requestPack, context('create'))).rejects.toMatchObject({ status: 403 })
 
     expect(db('parents').get('alice')).toBeNull()
   })
@@ -96,11 +83,7 @@ describe("create", () => {
       age:  40,
     })
 
-    await expectAsyncError(() => (
-      jsonAPI.create('parents', requestPack, context('create'))
-    ), APIError, error => {
-      expect(error.status).toEqual(403)
-    })
+    await expect(jsonAPI.create('parents', requestPack, context('create'))).rejects.toMatchObject({ status: 403 })
 
     expect(db('parents').get('alice')).toBeNull()
   })
@@ -115,11 +98,7 @@ describe("create", () => {
       age:  40,
     })
 
-    await expectAsyncError(() => (
-      jsonAPI.create('parents', requestPack, context('create'))
-    ), APIError, error => {
-      expect(error.status).toEqual(403)
-    })
+    await expect(jsonAPI.create('parents', requestPack, context('create'))).rejects.toMatchObject({ status: 403 })
 
     expect(db('parents').get('alice')).toBeNull()
   })

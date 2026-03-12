@@ -1,5 +1,3 @@
-import { expectAsyncError } from 'yest'
-import APIError from '../APIError'
 import db from './db'
 import { context, mockJSONAPI } from './mock'
 
@@ -104,11 +102,9 @@ describe("delete", () => {
 
   it("should not accept a mismatch between pack type and document", async () => {
     const requestPack = jsonAPI.bulkSelectorPack('children', ['alice'])
-    await expectAsyncError(() => (
+    await expect(
       jsonAPI.delete('parents', requestPack, context('delete'))
-    ), APIError, error => {
-      expect(error.status).toEqual(409)
-    })
+    ).rejects.toMatchObject({ status: 409 })
     expect(db('parents').ids()).toEqual(['alice', 'bob', 'eve', 'frank'])
   })
 

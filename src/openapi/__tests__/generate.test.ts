@@ -71,10 +71,10 @@ describe("openapi", () => {
           post:   expect.any(Object),
           delete: expect.any(Object),
         },
-        '/parents/:family-a': {
+        '/parents/family-a': {
           get: expect.any(Object),
         },
-        '/parents/:family-b': {
+        '/parents/family-b': {
           get: expect.any(Object),
         },
         '/parents/{id}': {
@@ -94,10 +94,10 @@ describe("openapi", () => {
           post:   expect.any(Object),
           delete: expect.any(Object),
         },
-        '/parents/:family-a': {
+        '/parents/family-a': {
           get: expect.any(Object),
         },
-        '/parents/:family-b': {
+        '/parents/family-b': {
           get: expect.any(Object),
         },
         '/parents/{id}': {
@@ -148,10 +148,10 @@ describe("openapi", () => {
           post:   expect.any(Object),
           delete: expect.any(Object),
         },
-        '/parents/:family-a': {
+        '/parents/family-a': {
           get: expect.any(Object),
         },
-        '/parents/:family-b': {
+        '/parents/family-b': {
           get: expect.any(Object),
         },
         '/parents/{id}': {
@@ -171,10 +171,10 @@ describe("openapi", () => {
           get:    expect.any(Object),
           delete: expect.any(Object),
         },
-        '/parents/:family-a': {
+        '/parents/family-a': {
           get: expect.any(Object),
         },
-        '/parents/:family-b': {
+        '/parents/family-b': {
           get: expect.any(Object),
         },
         '/parents/{id}': {
@@ -196,10 +196,10 @@ describe("openapi", () => {
           post:   expect.any(Object),
           delete: expect.any(Object),
         },
-        '/parents/:family-a': {
+        '/parents/family-a': {
           get: expect.any(Object),
         },
-        '/parents/:family-b': {
+        '/parents/family-b': {
           get: expect.any(Object),
         },
         '/parents/{id}': {
@@ -220,10 +220,10 @@ describe("openapi", () => {
           post:   expect.any(Object),
           delete: expect.any(Object),
         },
-        '/parents/:family-a': {
+        '/parents/family-a': {
           get: expect.any(Object),
         },
-        '/parents/:family-b': {
+        '/parents/family-b': {
           get: expect.any(Object),
         },
         '/parents/{id}': {
@@ -243,10 +243,10 @@ describe("openapi", () => {
           get:  expect.any(Object),
           post: expect.any(Object),
         },
-        '/parents/:family-a': {
+        '/parents/family-a': {
           get: expect.any(Object),
         },
-        '/parents/:family-b': {
+        '/parents/family-b': {
           get: expect.any(Object),
         },
         '/parents/{id}': {
@@ -266,8 +266,8 @@ describe("openapi", () => {
       it("should not require any input", async () => {
         const spec = await jsonAPI.openAPISpec(context('__openapi__'))
         expect(spec.paths?.['/parents']?.get?.requestBody).toBeUndefined()
-        expect(spec.paths?.['/parents/:family-a']?.get?.requestBody).toBeUndefined()
-        expect(spec.paths?.['/parents/:family-b']?.get?.requestBody).toBeUndefined()
+        expect(spec.paths?.['/parents/family-a']?.get?.requestBody).toBeUndefined()
+        expect(spec.paths?.['/parents/family-b']?.get?.requestBody).toBeUndefined()
       })
   
       it("should accept list parameters", async () => {
@@ -282,8 +282,8 @@ describe("openapi", () => {
         ])
 
         expect(spec.paths?.['/parents']?.get?.parameters).toEqual(expected())
-        expect(spec.paths?.['/parents/:family-a']?.get?.parameters).toEqual(expected())
-        expect(spec.paths?.['/parents/:family-b']?.get?.parameters).toEqual(expected())
+        expect(spec.paths?.['/parents/family-a']?.get?.parameters).toEqual(expected())
+        expect(spec.paths?.['/parents/family-b']?.get?.parameters).toEqual(expected())
       })
   
       it("should in the case of 200 respond with a list pack of the resource", async () => {
@@ -319,8 +319,8 @@ describe("openapi", () => {
         })
   
         expect<any>(spec.paths?.['/parents']?.get?.responses['200']).toEqual(expected())
-        expect<any>(spec.paths?.['/parents/:family-a']?.get?.responses['200']).toEqual(expected())
-        expect<any>(spec.paths?.['/parents/:family-b']?.get?.responses['200']).toEqual(expected())
+        expect<any>(spec.paths?.['/parents/family-a']?.get?.responses['200']).toEqual(expected())
+        expect<any>(spec.paths?.['/parents/family-b']?.get?.responses['200']).toEqual(expected())
       })
   
     })
@@ -620,7 +620,7 @@ describe("openapi", () => {
   
       describe.each([
         {action: 'list', get: (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents']?.get},
-        {action: 'list-scope', get: (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/:family-a']?.get},
+        {action: 'list-scope', get: (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/family-a']?.get},
         {action: 'show', get: (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/{id}']?.get},
         {action: 'create', get: (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents']?.post},
         {action: 'replace', get: (spec: OpenAPIV3_1.Document) => spec.paths?.['/parents/{id}']?.put},

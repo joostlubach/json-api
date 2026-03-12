@@ -2,7 +2,6 @@ import { singularize } from 'inflected'
 import { isArray, isFunction, mapValues } from 'lodash'
 import { isPlainObject, objectEntries } from 'ytil'
 import { z } from 'zod'
-
 import APIError from './APIError'
 import Adapter, { GetResponse } from './Adapter'
 import Collection from './Collection'
@@ -527,6 +526,7 @@ export default class Resource<Entity, Query, ID> {
 
     const adapter = getAdapter()
     const document = this.extractRequestDocument(requestPack, id)
+
     const response = await adapter.update(id, async entity => {
       await this.setAttributes(entity, document, false, adapter, context)
       await this.callScopeEnsure(entity, context.scope, context)
