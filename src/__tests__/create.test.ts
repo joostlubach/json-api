@@ -1,4 +1,3 @@
-import { expectAsyncError } from 'yest'
 import APIError from '../APIError'
 import Pack from '../Pack'
 import db from './db'

@@ -1,4 +1,5 @@
 import { isPlainObject } from 'lodash'
+import { vi } from 'vitest'
 import { expectAsyncError } from 'yest'
 import APIError from '../APIError'
 import Pack from '../Pack'
@@ -10,12 +11,12 @@ import { context, MockAdapter, mockJSONAPI } from './mock'
 describe("custom actions", () => {
 
   const jsonAPI = mockJSONAPI()
-  let handler: jest.Mock
+  let handler: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
     db.seed()
 
-    handler = jest.fn()
+    handler = vi.fn()
 
     jsonAPI.registry.modify('parents', cfg => {
       cfg.collectionActions = {
@@ -30,12 +31,12 @@ describe("custom actions", () => {
 
   describe("overriding common actions", () => {
 
-    let handler: jest.Mock
+    let handler: ReturnType<typeof vi.fn>
     let requestPack: Pack<string>
     let responsePack: Pack<string>
     
     beforeEach(() => {
-      handler = jest.fn()
+      handler = vi.fn()
       jsonAPI.registry.modify('parents', cfg => {
         cfg.list = handler
         cfg.show = handler
