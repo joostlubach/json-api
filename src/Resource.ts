@@ -99,7 +99,7 @@ export default class Resource<Entity, Query, ID> {
     if (search != null) {
       query = await this.applySearch(query, search, context)
     }
-    if (sorts != null) {
+    if (sorts.length > 0) {
       query = adapter.clearSorts(query)
       query = await this.applySorts(query, sorts, adapter, context)
     }
