@@ -596,7 +596,7 @@ export default class Resource<Entity, Query, ID> {
     return pack
   }
 
-  private async resolveIncluded(base: Document<ID>[], includedModels: Entity[] | undefined, context: RequestContext, options: RetrievalActionOptions): Promise<Collection<unknown> | undefined> {
+  public async resolveIncluded(base: Document<ID>[], includedModels: Entity[] | undefined, context: RequestContext, options: RetrievalActionOptions): Promise<Collection<unknown> | undefined> {
     const collector = new IncludeCollector(this.jsonAPI, context)
     const documents =
       includedModels != null ? await collector.wrap(includedModels) :
