@@ -1,7 +1,7 @@
 import { Request } from 'express'
 import { omit } from 'lodash'
 import { Deps } from 'ydeps'
-import { Constructor, objectKeys, safeParseInt, sparse } from 'ytil'
+import { Constructor, objectKeys, sparse } from 'ytil'
 import { z } from 'zod'
 import APIError from './APIError'
 import config from './config'
@@ -111,35 +111,6 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
     }
   }
 
-  public skip(): number {
-    if (config.paramExtractors.skip != null) {
-      return config.paramExtractors.skip(this)
-    } else {
-      const raw = this.param('skip')
-      const num = typeof raw === 'string' ? safeParseInt(raw) : raw
-      return $wellKnownParams.skip.parse(num)
-    }
-  }
-
-  public take(defaultPageSize: number | null) {
-    const take = this.takeMaybe
-    if (take == null && defaultPageSize !== undefined) {
-      return defaultPageSize
-    } else {
-      return take
-    }
-  }
-
-  private get takeMaybe() {
-    if (config.paramExtractors.take != null) {
-      return config.paramExtractors.take(this)
-    } else {
-      const raw = this.param('take')
-      const num = typeof raw === 'string' ? safeParseInt(raw) : raw
-      return $wellKnownParams.take.parse(num)
-    }
-  }
-
   // #endregion
 
   // #region Dependencies
@@ -170,17 +141,17 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
 }
 
 export const $wellKnownParams = {
-  scope: z.string().optional(),
-  filters: z.record(z.string(), z.unknown()).default(() => ({})),
-  search: z.string().optional(),
-  sorts: z.array(sort()).default(() => []),
-  skip: z.number().int().default(0),
-  take: z.number().int().optional(),
+  scope:     z.string().optional(),
+  filters:   z.record(z.string(), z.unknown()).default(() => ({})),
+  search:    z.string().optional(),
+  sorts:     z.array(sort()).default(() => []),
+  pageToken: z.string().nullable().default(null),
+  take:      z.number().int().optional(),
 }
 
 function sort() {
   return z.object({
-    field: z.string(),
+    field:     z.string(),
     direction: z.number().int().refine(n => n === 1 || n === -1, {message: 'Must be 1 (ascending) or -1 (descending)'}) as z.ZodType<-1 | 1>,
   })
 }

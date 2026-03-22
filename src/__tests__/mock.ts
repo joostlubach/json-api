@@ -161,7 +161,7 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
     if (options.totals === false) { return {data: models} }
 
     const total = db(this.resource.type).count({...query, skip: 0, take: null})
-    return {data: models, total}
+    return {data: models, meta: {total}}
   }
   
   public async get(query: Query, id: string): Promise<GetResponse<Entity>> {
@@ -206,8 +206,8 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
     return {
       filters: {},
       sorts:   [],
-      skip:  null,
-      take:   null,
+      skip:    null,
+      take:    null,
     }
   }
   

@@ -173,7 +173,7 @@ export default abstract class JSONAPI<Entity, Query, ID> {
 
     const resource = this.resourceForEntity(entities[0])
     const adapter = resource.maybeAdapter(context)
-    return await resource.collectionPack(entities, options.included, undefined, undefined, adapter, context, options)
+    return await resource.collectionPack(entities, options.included, adapter, context, options)
   }
 
   public async entitiesToCollection<E extends Entity>(resourceType: string, entities: E[], context: RequestContext, options: EntitiesToCollectionOptions<E> = {}) {

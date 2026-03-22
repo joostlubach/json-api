@@ -25,8 +25,7 @@ export default interface Adapter<Entity, Query, ID> {
   applyFilter(query: Query, field: string, value: any): Query | Promise<Query>
   clearSorts(query: Query): Query
   applySort(query: Query, sort: Sort): Query | Promise<Query>
-  applyPagination(query: Query, take: number, skip?: number): Query | Promise<Query>
-
+  
   // #endregion
   
   // #region (De)serialization
@@ -68,7 +67,6 @@ export interface MutationOptions {
 
 export interface ListResponse<E> {
   data:      E[]
-  total?:    number
   included?: any[]
   meta?:     Meta
 }

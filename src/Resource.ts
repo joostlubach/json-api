@@ -92,7 +92,7 @@ export default class Resource<Entity, Query, ID> {
     const filters = context.filters()
     const search = context.search()
     const sorts = context.sorts()
-    const take = context.take(this.config.forcePagination ? config.defaultPageSize : null)
+    
     if (filters != null) {
       query = await this.applyFilters(query, filters, adapter, context)
     }
@@ -102,9 +102,6 @@ export default class Resource<Entity, Query, ID> {
     if (sorts.length > 0) {
       query = adapter.clearSorts(query)
       query = await this.applySorts(query, sorts, adapter, context)
-    }
-    if (take != null) {
-      query = await adapter.applyPagination(query, take, context.skip())
     }
 
     return query
@@ -375,49 +372,6 @@ export default class Resource<Entity, Query, ID> {
 
   // #endregion
 
-  // #region Pagination
-
-  private get pageSize(): number {
-    if (this.config.pageSize != null) {
-      return this.config.pageSize
-    } else {
-      return config.defaultPageSize
-    }
-  }
-
-  /**
-   * Injects proper pagination metadata in a pack containing this resource.
-   *
-   * @param pack The result pack.
-   * @param context The request context.
-   * @param pagination Supplied pagination parameters.
-   */
-  private async injectPaginationMeta(pack: Pack<ID>, skip: number | undefined, total: number | undefined, context: RequestContext) {
-    const count = pack.data instanceof Collection ? pack.data.length : 1
-
-    skip ??= 0
-
-    if (total == null) {
-      Object.assign(pack.meta, {
-        skip,
-        count,
-        nextOffset: skip + count,
-      })
-    } else {
-      const nextOffset = skip + count >= total ? null : skip + count
-      Object.assign(pack.meta, {
-        skip,
-        count,
-        total,
-        nextOffset,
-        isFirst: skip === 0,
-        isLast:  nextOffset == null,
-      })
-    }
-  }
-
-  // #endregion
-
   // #region Actions
 
   public async runBeforeHandlers(context: RequestContext) {
@@ -442,16 +396,14 @@ export default class Resource<Entity, Query, ID> {
 
     const adapter = getAdapter()
     const query = await this.listQuery(adapter, context)
-    const response = await adapter.list(query, {totals})
+    const {data, included, meta} = await adapter.list(query, {totals})
 
     return await this.collectionPack(
-      response.data,
-      response.included,
-      context.skip(),
-      response.total,
+      data,
+      included,
       adapter,
       context,
-      {include, detail},
+      {include, detail, meta},
     )
   }
 
@@ -559,7 +511,7 @@ export default class Resource<Entity, Query, ID> {
     return pack
   }
 
-  public async collectionPack(entities: Entity[], includedModels: Entity[] | undefined, skip: number | undefined, total: number | undefined, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: CollectionPackOptions<Entity, any> = {}) {
+  public async collectionPack(entities: Entity[], includedModels: Entity[] | undefined, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: CollectionPackOptions<Entity, any> = {}) {
     const {
       include = [],
       detail = true,
@@ -571,7 +523,6 @@ export default class Resource<Entity, Query, ID> {
 
     const included = await this.resolveIncluded(collection.documents, includedModels, context, {include, detail})
     const pack = new Pack<ID>(collection, included, meta)
-    await this.injectPaginationMeta(pack, skip, total, context)
     await this.injectPackMeta(pack, null, context)
 
     return pack

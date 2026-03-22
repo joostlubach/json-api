@@ -4,7 +4,6 @@ import { DoctextOptions } from './openapi'
 import { Sort } from './types'
 
 export interface Config {
-  defaultPageSize:     number
   allowedContentTypes: string[]
 
   openapi: {
@@ -17,8 +16,6 @@ export interface Config {
     filters?: (context: RequestContext) => Record<string, unknown>
     search?: (context: RequestContext) => string | undefined
     sorts?: (context: RequestContext) => Sort[]
-    skip?: (context: RequestContext) => number
-    take?: (context: RequestContext) => number | undefined
   },
 
   logger: Logger
@@ -32,7 +29,6 @@ export interface Logger {
 }
 
 const config: Config = {
-  defaultPageSize:     25,
   allowedContentTypes: ['application/vnd.api+json', 'application/json'],
 
   paramExtractors: {},

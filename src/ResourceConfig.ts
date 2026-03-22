@@ -89,16 +89,6 @@ export interface ResourceConfig<Entity, Query, ID> {
 
   // #endregion
 
-  // #region Pagination
-
-  /** Whether a request without a 'page' parameter should still be paginated. */
-  forcePagination?: boolean
-
-  /** The page size to use for this resource. */
-  pageSize?: number
-
-  // #endregion
-
   // #region Actions
 
   /** A function called before any request for this resource is executed. */
