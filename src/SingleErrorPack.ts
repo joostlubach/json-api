@@ -1,12 +1,13 @@
 import { Response } from 'express'
-
 import { Meta } from './types'
 
-export default class ErrorPack {
+export default class SingleErrorPack {
 
   constructor(
     public readonly status: number,
-    public readonly message: string,
+    public readonly title: string,
+    public readonly detail: string | null,
+    public readonly extra: Record<string, unknown> = {},
     public readonly meta: Meta = {},
   ) {}
 
@@ -14,7 +15,9 @@ export default class ErrorPack {
     return {
       errors: [{
         status:  this.status,
-        message: this.message,
+        title: this.title,
+        detail: this.detail,
+        ...this.extra,
       }],
       meta: this.meta,
     }
