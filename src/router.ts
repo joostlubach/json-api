@@ -238,7 +238,7 @@ function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
     async create(resource: Resource<M, Q, I>, request: Request, response: Response, context: RequestContext) {
       const requestPack = Pack.deserialize(jsonAPI.registry, request.body)
       const adapter = () => resource.adapter(context)
-      const options = extractCreateActionOptions(context)
+      const options = extractCreateActionOptions(requestPack, context)
 
       const responsePack = await resource.create(requestPack, adapter, context, options)
 
@@ -251,7 +251,7 @@ function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
       const locator = resource.extractDocumentLocator(context, false)
       const requestPack = Pack.deserialize(jsonAPI.registry, request.body)
       const adapter = () => resource.adapter(context)
-      const options = extractReplaceActionOptions(context)
+      const options = extractReplaceActionOptions(requestPack, context)
 
       const responsePack = await resource.replace(locator.id, requestPack, adapter, context, options)
     
@@ -263,7 +263,7 @@ function buildActions<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>) {
       const locator = resource.extractDocumentLocator(context, false)
       const requestPack = Pack.deserialize(jsonAPI.registry, request.body)
       const adapter = () => resource.adapter(context)
-      const options = extractUpdateActionOptions(context)
+      const options = extractUpdateActionOptions(requestPack, context)
 
       const responsePack = await resource.update(locator.id, requestPack, adapter, context, options)
 
@@ -344,19 +344,19 @@ export function extractShowActionOptions(context: RequestContext): ShowActionOpt
   return {include, detail}
 }
 
-export function extractCreateActionOptions(context: RequestContext): CreateActionOptions {
+export function extractCreateActionOptions(requestPack: Pack<any>, context: RequestContext): CreateActionOptions {
   const dryRun = context.param('dryrun', booleanQueryParam.default(false))
-  return {dryRun}
+  return {dryRun, meta: requestPack.meta}
 }
 
-export function extractReplaceActionOptions(context: RequestContext): ReplaceActionOptions {
+export function extractReplaceActionOptions(requestPack: Pack<any>, context: RequestContext): ReplaceActionOptions {
   const dryRun = context.param('dryrun', booleanQueryParam.default(false))
-  return {dryRun}
+  return {dryRun, meta: requestPack.meta}
 }
 
-export function extractUpdateActionOptions(context: RequestContext): UpdateActionOptions {
+export function extractUpdateActionOptions(requestPack: Pack<any>, context: RequestContext): UpdateActionOptions {
   const dryRun = context.param('dryrun', booleanQueryParam.default(false))
-  return {dryRun}
+  return {dryRun, meta: requestPack.meta}
 }
 
 const booleanQueryParam = z.union([z.string(), z.boolean()]).transform(val => {

@@ -63,6 +63,7 @@ export interface ListOptions {
 
 export interface MutationOptions {
   dryRun?: boolean
+  meta?: Record<string, unknown>
 }
 
 export interface ListResponse<E> {

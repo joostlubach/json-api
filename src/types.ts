@@ -76,16 +76,19 @@ export interface ShowActionOptions extends RetrievalActionOptions {
 export interface CreateActionOptions {
   detail?:  boolean
   dryRun?:  boolean
+  meta?:    Record<string, unknown>
 }
 
 export interface ReplaceActionOptions {
   detail?:  boolean
   dryRun?:  boolean
+  meta?:    Record<string, unknown>
 }
 
 export interface UpdateActionOptions {
   detail?:  boolean
   dryRun?:  boolean
+  meta?:    Record<string, unknown>
 }
 
 export interface EntityToDocumentOptions {
