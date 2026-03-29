@@ -18,6 +18,13 @@ export type EntityOf<R extends Resource<any, any, any>> = R extends Resource<inf
 export type QueryOf<R extends Resource<any, any, any>> = R extends Resource<any, infer Q, any> ? Q : never
 export type IDOf<R extends Resource<any, any, any>> = R extends Resource<any, any, infer I> ? I : never
 
+export enum ActionClass {
+  Read = 'read',
+  Write = 'write',
+  Delete = 'delete',
+  Unknown = 'unknown',
+}
+
 // Can be extended by client code.
 export interface ConfigExtra {}
 

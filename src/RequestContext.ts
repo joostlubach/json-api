@@ -5,7 +5,7 @@ import { Constructor, objectKeys, sparse } from 'ytil'
 import { z } from 'zod'
 import APIError from './APIError'
 import config from './config'
-import { Filters, Sort } from './types'
+import { ActionClass, Filters, Sort } from './types'
 
 export default class RequestContext<P extends Record<string, any> = Record<string, any>> {
 
@@ -24,6 +24,22 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
     const params = resetWellKnownParams ? omit(this.params, objectKeys($wellKnownParams)) : this.params
     return new RequestContext(this.action, params, this.request, this.deps)
   }
+
+  // #region Actions
+
+  public get actionClass() {
+    if (this.action === 'list' || this.action === 'show') {
+      return ActionClass.Read
+    } else if (this.action === 'create' || this.action === 'update') {
+      return ActionClass.Write
+    } else if (this.action === 'delete') {
+      return ActionClass.Delete
+    } else {
+      return ActionClass.Unknown
+    }
+  }
+
+  // #endregion
 
   // #region Parameters
 
