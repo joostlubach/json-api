@@ -25,6 +25,10 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
     return new RequestContext(this.action, params, this.request, this.deps)
   }
 
+  public type() {
+    return this.param('$type') as string
+  }
+
   // #region Actions
 
   public get actionClass() {
@@ -75,11 +79,20 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
 
   // #region Well known params
 
-  public type() {
-    return this.param('$type') as string
+  private _scope: string | undefined
+  private _search: string | undefined
+  private _filters: Filters | undefined
+  private _sorts: Sort[] | undefined
+
+  public scope(scope?: string) {
+    if (scope != null) {
+      this._scope = scope
+    }
+
+    return this._scope ?? this.defaultScope()
   }
 
-  public scope() {
+  private defaultScope() {
     if (config.paramExtractors.scope != null) {
       return config.paramExtractors.scope(this)
     } else {
@@ -87,7 +100,15 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
     }
   }
 
-  public search() {
+  public search(search?: string) {
+    if (search != null) {
+      this._search = search
+    }
+
+    return this._search ?? this.defaultSearch()
+  }
+
+  private defaultSearch() {
     if (config.paramExtractors.search != null) {
       return config.paramExtractors.search(this)
     } else {
@@ -96,6 +117,20 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
   }
 
   public filters(): Filters {
+    return {
+      ...this._filters,
+      ...this.defaultFilters()
+    }
+  }
+
+  public filter(filters: Partial<Filters>) {
+    this._filters = {
+      ...this._filters,
+      ...filters,
+    }
+  }
+
+  private defaultFilters() {
     if (config.paramExtractors.filters != null) {
       return config.paramExtractors.filters(this)
     } else {
@@ -103,7 +138,15 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
     }
   }
 
-  public sorts(): Sort[] {
+  public sorts(sorts?: Sort[]): Sort[] {
+    if (sorts != null) {
+      this._sorts = sorts
+    }
+
+    return this._sorts ?? this.defaultSorts()
+  }
+
+  private defaultSorts() {
     if (config.paramExtractors.sorts != null) {
       return config.paramExtractors.sorts(this)
     } else {
