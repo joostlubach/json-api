@@ -451,7 +451,12 @@ export default class Resource<Entity, Query, ID> {
       await this.setAttributes(entity, document, true, adapter, context)
       await this.callScopeEnsure(entity, context.scope(), context)
     }, context, options)
-    return await this.documentPack(response.data, undefined, adapter, context, options)
+
+    if (options.dryRun) {
+      return new Pack(null)
+    } else {
+      return await this.documentPack(response.data, undefined, adapter, context, options)
+    }
   }
 
   public async replace(id: ID, requestPack: Pack<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: ReplaceActionOptions = {}): Promise<Pack<ID>> {
@@ -470,7 +475,12 @@ export default class Resource<Entity, Query, ID> {
       await this.setAttributes(entity, document, false, adapter, context)
       await this.callScopeEnsure(entity, context.scope(), context)
     }, context, options)
-    return await this.documentPack(response.data, undefined, adapter, context, options)
+
+    if (options.dryRun) {
+      return new Pack(null)
+    } else {
+      return await this.documentPack(response.data, undefined, adapter, context, options)
+    }
   }
 
   public async update(id: ID, requestPack: Pack<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext, options: UpdateActionOptions = {}): Promise<Pack<ID>> {
@@ -488,7 +498,12 @@ export default class Resource<Entity, Query, ID> {
       await this.setAttributes(entity, document, false, adapter, context)
       await this.callScopeEnsure(entity, context.scope(), context)
     }, context, options)
-    return await this.documentPack(response.data, undefined, adapter, context, options)
+
+    if (options.dryRun) {
+      return new Pack(null)
+    } else {
+      return await this.documentPack(response.data, undefined, adapter, context, options)
+    }
   }
 
   public async delete(requestPack: Pack<ID>, getAdapter: () => Adapter<Entity, Query, ID>, context: RequestContext): Promise<Pack<ID>> {
