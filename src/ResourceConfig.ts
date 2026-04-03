@@ -84,7 +84,7 @@ export interface ResourceConfig<Entity, Query, ID> {
 
   // #region Meta
 
-  meta?:         Meta | DynamicMeta<Entity, Query, ID>
+  meta?:         DynamicMeta<Entity, Query, ID>
   documentMeta?: DynamicDocumentMeta<Entity, Query, ID>
 
   // #endregion
