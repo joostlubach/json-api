@@ -607,13 +607,14 @@ export default class Resource<Entity, Query, ID> {
       throw new APIError(404, `Scope \`${name}\` not found`)
     }
 
+    const apply = isFunction(scope) ? scope : scope.query
+    query = await apply.call(this, query, context)
+
     const skipDefault = isFunction(scope) ? false : scope.skipDefault
     if (!skipDefault && name != null && name !== '$default') {
       query = await this.applyScopeQuery(query, '$default', context)
     }
-
-    const apply = isFunction(scope) ? scope : scope.query
-    return await apply.call(this, query, context)
+    return query
   }
 
   private callScopeEnsure(entity: Entity, name: string = '$default', context: RequestContext) {
