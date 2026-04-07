@@ -197,6 +197,20 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
 
   // #endregion
 
+  // #region Custom data
+
+  private customData = new Map<string, any>()
+
+  public getCustom<T>(key: string): T | undefined {
+    return this.customData.get(key) as T | undefined
+  } 
+
+  public setCustom(key: string, value: unknown) {
+    this.customData.set(key, value)
+  }
+
+  // #endregion
+
 }
 
 export const $wellKnownParams = {
