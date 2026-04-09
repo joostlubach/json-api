@@ -16,6 +16,7 @@ export interface Config {
     filters?: (context: RequestContext) => Record<string, unknown>
     search?: (context: RequestContext) => string | undefined
     sorts?: (context: RequestContext) => Sort[]
+    dryRun?: (context: RequestContext) => boolean
   },
 
   logger: Logger

@@ -452,7 +452,7 @@ export default class Resource<Entity, Query, ID> {
       await this.callScopeEnsure(entity, context.scope(), context)
     }, context, options)
 
-    if (options.dryRun) {
+    if (context.isDryRun) {
       return new Pack(null)
     } else {
       return await this.documentPack(response.data, undefined, adapter, context, options)
@@ -476,7 +476,7 @@ export default class Resource<Entity, Query, ID> {
       await this.callScopeEnsure(entity, context.scope(), context)
     }, context, options)
 
-    if (options.dryRun) {
+    if (context.isDryRun) {
       return new Pack(null)
     } else {
       return await this.documentPack(response.data, undefined, adapter, context, options)
@@ -499,7 +499,7 @@ export default class Resource<Entity, Query, ID> {
       await this.callScopeEnsure(entity, context.scope(), context)
     }, context, options)
 
-    if (options.dryRun) {
+    if (context.isDryRun) {
       return new Pack(null)
     } else {
       return await this.documentPack(response.data, undefined, adapter, context, options)

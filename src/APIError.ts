@@ -1,7 +1,4 @@
-import SingleErrorPack from './SingleErrorPack'
 import { Meta } from './types'
-
-const DEV = process.env.NODE_ENV !== 'production'
 
 export default class APIError extends Error {
 
@@ -14,15 +11,12 @@ export default class APIError extends Error {
     super(title)
   }
 
-  public toErrorPack() {
-    return new SingleErrorPack(this.status, this.title, this.detail ?? null, {
-      ...this.meta,
-      ...DEV ? {stack: this.stack} : {},
-    })
-  }
-
   public toJSON() {
-    return this.toErrorPack().serialize()
+    return {
+      status:  this.status,
+      title: this.title,
+      detail: this.detail,
+    }
   }
 
 }

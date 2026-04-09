@@ -3,9 +3,9 @@ import { omit } from 'lodash'
 import { Deps } from 'ydeps'
 import { Constructor, objectKeys, sparse } from 'ytil'
 import { z } from 'zod'
-import APIError from './APIError'
 import config from './config'
 import { ActionClass, Filters, Sort } from './types'
+import { booleanQueryParam } from './util'
 
 export default class RequestContext<P extends Record<string, any> = Record<string, any>> {
 
@@ -61,7 +61,8 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
 
     const result = schema.safeParse(value)
     if (result.error != null) {
-      throw new APIError(500, `Parameter \`${name}\`: ${result.error.message}`)
+      const issues = result.error.issues.map(issue => ({...issue, path: [name, ...issue.path]}))
+      throw new z.ZodError(issues)
     }
 
     return result.data
@@ -83,6 +84,7 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
   private _search: string | undefined
   private _filters: Filters | undefined
   private _sorts: Sort[] | undefined
+  private _dryRun: boolean | undefined
 
   public scope(scope?: string) {
     if (scope != null) {
@@ -170,6 +172,22 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
     }
   }
 
+  public get isDryRun() {
+    if (this._dryRun != null) {
+      return this._dryRun
+    } else {
+      return this.defaultDryRun()
+    }
+  }
+
+  private defaultDryRun() {
+    if (config.paramExtractors.dryRun != null) {
+      return config.paramExtractors.dryRun(this)
+    } else {
+      return this.param('dryrun', booleanQueryParam().default(false))
+    }
+  }
+
   // #endregion
 
   // #region Dependencies
@@ -219,7 +237,7 @@ export const $wellKnownParams = {
   search:    z.string().optional(),
   sorts:     z.array(sort()).default(() => []),
   pageToken: z.string().nullable().default(null),
-  take:      z.number().int().optional(),
+  dryRun:    booleanQueryParam().default(false),
 }
 
 function sort() {

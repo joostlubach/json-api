@@ -10,6 +10,7 @@ import Pack from './Pack'
 import RequestContext from './RequestContext'
 import Resource from './Resource'
 import { CustomCollectionAction, CustomDocumentAction } from './ResourceConfig'
+import ErrorPack from './SingleErrorPack'
 import {
   AnyResource,
   CreateActionOptions,
@@ -21,6 +22,7 @@ import {
   ShowActionOptions,
   UpdateActionOptions,
 } from './types'
+import { booleanQueryParam } from './util'
 
 export function router<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
   const router = Router()
@@ -110,7 +112,7 @@ export function router<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
         await action(resource, request, response, context)
       } catch (error: any) {
         if (error instanceof APIError) {
-          const pack = error.toErrorPack()
+          const pack = new ErrorPack([error])
           pack.serializeToResponse(response)
 
           // In the case of a server error, log the error here as well.
@@ -335,7 +337,7 @@ export function extractRetrievalActionOptions(context: RequestContext, defaultDe
 
 export function extractListActionOptions(context: RequestContext): ListActionOptions {
   const {include, detail} = extractRetrievalActionOptions(context, false)
-  const totals = context.param('totals', booleanQueryParam.default(true))
+  const totals = context.param('totals', booleanQueryParam().default(true))
   return {include, totals, detail}
 }
 
@@ -345,25 +347,16 @@ export function extractShowActionOptions(context: RequestContext): ShowActionOpt
 }
 
 export function extractCreateActionOptions(requestPack: Pack<any>, context: RequestContext): CreateActionOptions {
-  const dryRun = context.param('dryrun', booleanQueryParam.default(false))
-  return {dryRun, meta: requestPack.meta}
+  return {meta: requestPack.meta}
 }
 
 export function extractReplaceActionOptions(requestPack: Pack<any>, context: RequestContext): ReplaceActionOptions {
-  const dryRun = context.param('dryrun', booleanQueryParam.default(false))
-  return {dryRun, meta: requestPack.meta}
+  return {meta: requestPack.meta}
 }
 
 export function extractUpdateActionOptions(requestPack: Pack<any>, context: RequestContext): UpdateActionOptions {
-  const dryRun = context.param('dryrun', booleanQueryParam.default(false))
-  return {dryRun, meta: requestPack.meta}
+  return {meta: requestPack.meta}
 }
-
-const booleanQueryParam = z.union([z.string(), z.boolean()]).transform(val => {
-  if (val === true || val === false) { return val }
-  if (val === '0' || val === 'false' || val === 'no' || val === '') { return false }
-  return true
-})
 
 // #endregion
 
