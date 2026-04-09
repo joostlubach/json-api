@@ -1,4 +1,4 @@
-import chalk from 'chalk'
+import chalk from 'chalk-template'
 import { DoctextReader } from 'doctext'
 import { get, set } from 'lodash'
 import * as Path from 'path'

@@ -1,4 +1,4 @@
-import chalk from 'chalk'
+import chalk from 'chalk-template'
 import { Deps } from 'ydeps'
 import APIError from './APIError'
 import JSONAPI from './JSONAPI'
