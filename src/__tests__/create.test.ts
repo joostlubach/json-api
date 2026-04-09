@@ -1,3 +1,4 @@
+import Document from '../Document'
 import Pack from '../Pack'
 import db from './db'
 import { context, mockJSONAPI } from './mock'
@@ -137,6 +138,90 @@ describe("create", () => {
       name: "Alice",
       age:  40,
     }))
+  })
+
+  describe("scopes", () => {
+
+    it("should not ensure the family if no scope was specified", async () => {
+      const requestPack = jsonAPI.documentRequestPack('parents', null, {
+        name: "Dolores",
+        age:  30,
+      })
+
+      const ctx = context('list')
+      const pack = await jsonAPI.create('parents', requestPack, ctx)
+      expect((pack.data as Document<number>).attributes.family).toBeUndefined()
+    })
+
+    it("should ensure the family if a scope was specified", async () => {
+      const requestPack = jsonAPI.documentRequestPack('parents', null, {
+        name: "Dolores",
+        age:  30,
+      })
+
+      const ctx = context('list')
+      ctx.setParams({scope: 'family-b'})
+
+      const pack = await jsonAPI.create('parents', requestPack, ctx)
+      expect((pack.data as Document<number>).attributes.family).toEqual('b')
+    })
+
+    describe("default scope", () => {
+
+      beforeEach(() => {
+        jsonAPI.registry.modify('parents', cfg => {
+          cfg.scopes ??= {}
+          cfg.scopes.$default = {
+            query: query => query,
+            ensure: parent => {
+              parent.age = Math.max(parent.age ?? 0, 60)
+            }
+          }
+        })
+      })
+
+      it("should allow a default scope that is always applied", async () => {
+        const requestPack = jsonAPI.documentRequestPack('parents', null, {
+          name: "Dolores",
+          age:  30,
+        })
+
+        const pack1 = await jsonAPI.create('parents', requestPack, context('list'))
+        expect((pack1.data as Document<number>).attributes.age).toEqual(60)
+      })
+
+      it("should combine a named scope with a default scope", async () => {
+        const requestPack = jsonAPI.documentRequestPack('parents', null, {
+          name: "Dolores",
+          age:  30,
+        })
+
+        const ctx = context('list')
+        ctx.setParams({scope: 'family-a'})
+        const pack2 = await jsonAPI.create('parents', requestPack, ctx)
+        expect((pack2.data as Document<number>).attributes.family).toEqual('a')
+        expect((pack2.data as Document<number>).attributes.age).toEqual(60)
+      })
+
+      it("should allow skipping the default scope in a named scope", async () => {
+        jsonAPI.registry.modify('parents', cfg => {
+          (cfg.scopes!['family-a'] as any).skipDefault = true
+        })
+
+        const requestPack = jsonAPI.documentRequestPack('parents', null, {
+          name: "Dolores",
+          age:  30,
+        })
+
+        const ctx2 = context('list')
+        ctx2.setParams({scope: 'family-a'})
+        const pack2 = await jsonAPI.create('parents', requestPack, ctx2)
+        expect((pack2.data as Document<number>).attributes.family).toEqual('a')
+        expect((pack2.data as Document<number>).attributes.age).toEqual(30)
+      })
+          
+    })
+
   })
 
 })

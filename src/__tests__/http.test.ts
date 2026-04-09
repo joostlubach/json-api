@@ -121,8 +121,6 @@ describe("http", () => {
       expect(spy.mock.calls[0][1].filters()).toEqual({})
       expect(spy.mock.calls[0][1].search()).toBeUndefined()
       expect(spy.mock.calls[0][1].sorts()).toEqual([])
-      expect(spy.mock.calls[0][1].skip()).toEqual(0)
-      expect(spy.mock.calls[0][1].take()).toBeUndefined()
     })
 
     it("should set all parameters appropriately", async () => {
@@ -132,8 +130,6 @@ describe("http", () => {
         .query('filters[age]=>42')
         .query('search=foo')
         .query('sort=name,-age')
-        .query('skip=10')
-        .query('take=20')
 
       expect(spy).toHaveBeenCalledTimes(1)
 
@@ -142,8 +138,6 @@ describe("http", () => {
       expect(ctx.filters()).toEqual({name: "Alice", age: '>42'})
       expect(ctx.search()).toEqual('foo')
       expect(ctx.sorts()).toEqual([{field: 'name', direction: 1}, {field: 'age', direction: -1}])
-      expect(ctx.skip()).toEqual(10)
-      expect(ctx.take()).toEqual(20)
     })
 
   })
@@ -170,8 +164,6 @@ describe("http", () => {
       expect(spy.mock.calls[0][1].filters()).toEqual({})
       expect(spy.mock.calls[0][1].search()).toBeUndefined()
       expect(spy.mock.calls[0][1].sorts()).toEqual([])
-      expect(spy.mock.calls[0][1].skip()).toEqual(0)
-      expect(spy.mock.calls[0][1].take()).toBeUndefined()
     })
 
     it("should set all parameters appropriately", async () => {
@@ -181,8 +173,6 @@ describe("http", () => {
         .query('filters[age]=>42')
         .query('search=foo')
         .query('sort=name,-age')
-        .query('skip=10')
-        .query('take=20')
 
       expect(spy).toHaveBeenCalledTimes(1)
 
@@ -191,8 +181,6 @@ describe("http", () => {
       expect(ctx.filters()).toEqual({name: "Alice", age: '>42'})
       expect(ctx.search()).toEqual('foo')
       expect(ctx.sorts()).toEqual([{field: 'name', direction: 1}, {field: 'age', direction: -1}])
-      expect(ctx.skip()).toEqual(10)
-      expect(ctx.take()).toEqual(20)
     })
 
   })

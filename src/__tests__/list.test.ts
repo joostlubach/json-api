@@ -30,8 +30,8 @@ describe("list", () => {
       expect(out.data[0]).toEqual({
         type:          'parents',
         id:            'alice',
-        attributes:    {name: "Alice", age: 30},
-        relationships: expect.any(Object), // See below.
+        attributes:    {family: 'a', name: "Alice", age: 30},
+        relationships: expect.any(Object),
       })
     })
   
@@ -82,7 +82,7 @@ describe("list", () => {
 
       const pack = await jsonAPI.list('parents', context('list'))
       const out = pack.serialize()
-      expect(out.data[0].attributes).toEqual({name: "Alice"})
+      expect(out.data[0].attributes).toEqual({family: 'a', name: "Alice"})
     })
 
     it("should not include detail relationships", async () => {
@@ -111,8 +111,8 @@ describe("list", () => {
 
       const pack = await jsonAPI.list('parents', context('list'))
       const out = pack.serialize()
-      expect(out.data[0].attributes).toEqual({name: "Alice"})
-      expect(out.data[1].attributes).toEqual({name: "Bob", age: 40})
+      expect(out.data[0].attributes).toEqual({family: 'a', name: "Alice"})
+      expect(out.data[1].attributes).toEqual({family: 'a', name: "Bob", age: 40})
     })
     
     it("should handle conditional relationships", async () => {
@@ -144,8 +144,8 @@ describe("list", () => {
 
       const pack = await jsonAPI.list('parents', context('list'))
       const out = pack.serialize()
-      expect(out.data[0].attributes).toEqual({name: "Alice", foo: "ALICE", age: 30})    
-      expect(out.data[1].attributes).toEqual({name: "Bob", foo: "BOB", age: 40})    
+      expect(out.data[0].attributes).toEqual({family: 'a', name: "Alice", foo: "ALICE", age: 30})    
+      expect(out.data[1].attributes).toEqual({family: 'a', name: "Bob", foo: "BOB", age: 40})    
     })
 
     it("should handle custom relationships", async () => {
@@ -170,12 +170,7 @@ describe("list", () => {
       const pack = await jsonAPI.list('parents', context('list'))
       const out = pack.serialize()
       expect(out.meta).toEqual({
-        total:      4,
-        count:      4,
-        skip:     0,
-        nextOffset: null,
-        isFirst:    true,
-        isLast:     true,
+        total: 4,
       })
     })
 
@@ -185,20 +180,15 @@ describe("list", () => {
       const pack = await jsonAPI.list('parents', ctx)
       const out = pack.serialize()
       expect(out.meta).toEqual({
-        total:      4,
-        count:      1,
-        skip:     3,
-        nextOffset: null,
-        isFirst:    false,
-        isLast:     true,
+        total: 4,
       })
     })
 
     it("should include additional meta if configured", async () => {
       jsonAPI.registry.modify('parents', cfg => {
-        cfg.meta = {
+        cfg.meta = () => ({
           foo: 'bar',
-        }
+        })
       })
 
       const pack = await jsonAPI.list('parents', context('list'))
@@ -224,8 +214,6 @@ describe("list", () => {
       expect(out.meta).toEqual({
         action: 'my-list-action',
         total:  4,
-        count:  4,
-        skip: 0,
       })
     })
 
@@ -279,17 +267,6 @@ describe("list", () => {
       })
     })
 
-    it("should reflect changes in pagination meta appropriately", async () => {
-      expect(out.meta).toEqual({
-        count:      2,
-        isFirst:    true,
-        isLast:     true,
-        nextOffset: null,
-        skip:     0,
-        total:      2,
-      })
-    })
-
   })
 
   describe("scopes", () => {
@@ -305,52 +282,71 @@ describe("list", () => {
             },
           }
         }
-        cfg.scopes = {
-          old: query => ({
-            ...query,
-            filters: {
-              ...query.filters,
-              age: (age: number) => age >= 50,
-            },
-          }),
-        }
       })
     })
 
     it("should allow pre-defined filters through scopes", async () => {
       const ctx = context('list')
-      ctx.setParams({scope: 'old'}) 
+      ctx.setParams({scope: 'family-a'}) 
 
       const pack = await jsonAPI.list('parents', ctx)
-      expect(pack.serialize().data.map((it: any) => it.id)).toEqual(['eve', 'frank'])
+      expect(pack.serialize().data.map((it: any) => it.id)).toEqual(['alice', 'bob'])
     })
 
     it("can be combined with filters or search", async () => {
       const ctx = context('list')
-      ctx.setParams({scope: 'old', search: 'e'})
+      ctx.setParams({scope: 'family-a', search: 'e'})
       const pack1 = await jsonAPI.list('parents', ctx)
-      expect(pack1.serialize().data.map((it: any) => it.id)).toEqual(['eve'])
+      expect(pack1.serialize().data.map((it: any) => it.id)).toEqual(['alice'])
 
       const ctx2 = context('list')
-      ctx2.setParams({scope: 'old', filters: {name: "Frank"}})
+      ctx2.setParams({scope: 'family-a', filters: {name: "Bob"}})
       const pack2 = await jsonAPI.list('parents', ctx2)
-      expect(pack2.serialize().data.map((it: any) => it.id)).toEqual(['frank'])
+      expect(pack2.serialize().data.map((it: any) => it.id)).toEqual(['bob'])
     })
 
-    it("should update pagination accordingly", async () => {
-      const ctx = context('list')
-      ctx.setParams({scope: 'old'})
-      const pack = await jsonAPI.list('parents', ctx)
-      expect(pack.serialize().meta).toEqual({
-        count:      2,
-        isFirst:    true,
-        isLast:     true,
-        nextOffset: null,
-        skip:     0,
-        total:      2,
+    describe("default scope", () => {
+
+      beforeEach(() => {
+        jsonAPI.registry.modify('parents', cfg => {
+          cfg.scopes ??= {}
+          cfg.scopes.$default = {
+            query: query => ({
+              ...query,
+              filters: {
+                ...query.filters,
+                name: (name: string) => name.length === 3,
+              },
+            }),
+          }
+        })
       })
+
+      it("should allow a default scope that is always applied", async () => {
+        const pack1 = await jsonAPI.list('parents', context('list'))
+        expect(pack1.serialize().data.map((it: any) => it.id)).toEqual(['bob', 'eve'])
+      })
+
+      it("should combine a named scope with a default scope", async () => {
+        const ctx2 = context('list')
+        ctx2.setParams({scope: 'family-a'})
+        const pack2 = await jsonAPI.list('parents', ctx2)
+        expect(pack2.serialize().data.map((it: any) => it.id)).toEqual(['bob'])
+      })
+
+      it("should allow skipping the default scope in a named scope", async () => {
+        jsonAPI.registry.modify('parents', cfg => {
+          (cfg.scopes!['family-a'] as any).skipDefault = true
+        })
+
+        const ctx2 = context('list')
+        ctx2.setParams({scope: 'family-a'})
+        const pack2 = await jsonAPI.list('parents', ctx2)
+        expect(pack2.serialize().data.map((it: any) => it.id)).toEqual(['alice', 'bob'])
+      })
+          
     })
-  
+
   })
 
   describe("searching", () => {
@@ -383,23 +379,6 @@ describe("list", () => {
         ],
         meta:     expect.any(Object),
         included: [],
-      })
-    })
-
-    it("should reflect changes in pagination meta appropriately", async () => {
-      const ctx = context('list')
-      ctx.setParams({
-        search: "e",
-      })
-      const pack = await jsonAPI.list('parents', ctx)
-
-      expect(pack.serialize().meta).toEqual({
-        count:      2,
-        isFirst:    true,
-        isLast:     true,
-        nextOffset: null,
-        skip:     0,
-        total:      2,
       })
     })
 

@@ -1,6 +1,7 @@
 import SwaggerParser from '@apidevtools/swagger-parser'
 import { OpenAPIV3_1 } from 'openapi-types'
 import { vi } from 'vitest'
+import { select } from 'ytil'
 import { context, MockAdapter, mockJSONAPI } from '../../__tests__/mock'
 import { OpenAPIGeneratorOptions } from '../types'
 
@@ -812,12 +813,18 @@ describe("openapi", () => {
 
     describe("attributes", () => {
 
+      let familySchema: OpenAPIV3_1.SchemaObject
       let nameSchema: OpenAPIV3_1.SchemaObject
       let ageSchema: OpenAPIV3_1.SchemaObject
       let nameRequired: boolean
       let ageRequired: boolean
 
       beforeEach(() => {
+        familySchema = {
+          type: 'string',
+          enum: ['a', 'b'],
+        },
+
         nameSchema = {
           type: 'string',
         }
@@ -832,10 +839,18 @@ describe("openapi", () => {
         ageRequired = false
 
         vi.spyOn(MockAdapter.prototype, 'openAPISchemaForAttribute')
-          .mockImplementation(name => name === 'name' ? nameSchema : ageSchema)
+          .mockImplementation(name => select(name as any, {
+            family: familySchema,
+            name: nameSchema,
+            age:  ageSchema,
+          }))
 
-        vi.spyOn(MockAdapter.prototype, 'attributeRequired')
-          .mockImplementation(name => name === 'name' ? nameRequired : ageRequired)
+          vi.spyOn(MockAdapter.prototype, 'attributeRequired')
+          .mockImplementation(name => select(name as any, {
+            family: false,
+            name: nameRequired,
+            age:  ageRequired,
+          }))
       })
 
       afterEach(() => {
@@ -847,8 +862,9 @@ describe("openapi", () => {
           type: 'object',
 
           properties: {
-            name: {type: 'string'},
-            age:  {type: 'integer', minimum: 0, maximum: 100},
+            family: {type: 'string', enum: ['a', 'b']},
+            name:   {type: 'string'},
+            age:    {type: 'integer', minimum: 0, maximum: 100},
           },
           required: ['name'],
         })
@@ -871,17 +887,26 @@ describe("openapi", () => {
 
       it("should allow the adapter to return the metadata asynchronously", async () => {
         vi.spyOn(MockAdapter.prototype, 'openAPISchemaForAttribute')
-          .mockImplementation(async name => name === 'name' ? nameSchema : ageSchema)
+          .mockImplementation(async name => select(name as any, {
+            family: familySchema,
+            name: nameSchema,
+            age:  ageSchema,
+          }))
 
         vi.spyOn(MockAdapter.prototype, 'attributeRequired')
-          .mockImplementation(async name => name === 'name' ? nameRequired : ageRequired)
+          .mockImplementation(async name => select(name as any, {
+            family: false,
+            name: nameRequired,
+            age:  ageRequired,
+          }))
 
         expect(await getAttributesSchema()).toEqual({
           type: 'object',
 
           properties: {
-            name: {type: 'string'},
-            age:  {type: 'integer', minimum: 0, maximum: 100},
+            family: {type: 'string', enum: ['a', 'b']},
+            name:   {type: 'string'},
+            age:    {type: 'integer', minimum: 0, maximum: 100},
           },
           required: ['name'],
         })

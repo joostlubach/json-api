@@ -25,7 +25,7 @@ describe("show", () => {
     expect(out.data).toEqual({
       type:          'parents',
       id:            id,
-      attributes:    {name, age},
+      attributes:    {family: 'a', name, age},
       relationships: expect.any(Object), // See below.
     })
   })
@@ -49,7 +49,7 @@ describe("show", () => {
 
     const pack = await jsonAPI.show('parents', {id: 'alice'}, context('show'))
     const out = pack.serialize()
-    expect(out.data.attributes).toEqual({name: "Alice", age: 30})
+    expect(out.data.attributes).toEqual({family: 'a', name: "Alice", age: 30})
   })
 
   it("should include detail relationships", async () => {
@@ -78,11 +78,11 @@ describe("show", () => {
 
     const pack1 = await jsonAPI.show('parents', {id: 'alice'}, context('show'))
     const out1 = pack1.serialize()
-    expect(out1.data.attributes).toEqual({name: "Alice"})
+    expect(out1.data.attributes).toEqual({family: 'a', name: "Alice"})
 
     const pack2 = await jsonAPI.show('parents', {id: 'bob'}, context('show'))
     const out2 = pack2.serialize()
-    expect(out2.data.attributes).toEqual({name: "Bob", age: 40})
+    expect(out2.data.attributes).toEqual({family: 'a', name: "Bob", age: 40})
   })
   
   it("should handle conditional relationships", async () => {
@@ -117,7 +117,7 @@ describe("show", () => {
 
     const pack = await jsonAPI.show('parents', {id: 'bob'}, context('show'))
     const out = pack.serialize()
-    expect(out.data.attributes).toEqual({name: "Bob", foo: "BOB", age: 40})    
+    expect(out.data.attributes).toEqual({family: 'a', name: "Bob", foo: "BOB", age: 40})    
   })
 
   it("should handle custom relationships", async () => {
@@ -140,9 +140,9 @@ describe("show", () => {
 
   it("should include additional meta if configured", async () => {
     jsonAPI.registry.modify('parents', cfg => {
-      cfg.meta = {
+      cfg.meta = () => ({
         foo: 'bar',
-      }
+      })
     })
 
     const pack = await jsonAPI.show('parents', {id: 'bob'}, context('show'))

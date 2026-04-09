@@ -90,8 +90,24 @@ export class MockJSONAPI extends JSONAPI<Entity, Query, string> {
       entity: 'Parent',
 
       scopes: {
-        'family-a': query => ({...query, filters: {...query.filters, family: 'a'}}),
-        'family-b': query => ({...query, filters: {...query.filters, family: 'b'}}),
+        'family-a': {
+          query: query => ({
+            ...query,
+            filters: {...query.filters, family: 'a'}
+          }),
+          ensure: parent => {
+            parent.family = 'a'
+          }
+        },
+        'family-b': {
+          query: query => ({
+            ...query,
+            filters: {...query.filters, family: 'b'}
+          }),
+          ensure: parent => {
+            parent.family = 'b'
+          }
+        },
       },
 
       collectionActions: {
@@ -119,8 +135,9 @@ export class MockJSONAPI extends JSONAPI<Entity, Query, string> {
       },
 
       attributes: {
-        name: true,
-        age:  true,
+        family: true,
+        name:   true,
+        age:    true,
       },
       relationships: {
         spouse: {

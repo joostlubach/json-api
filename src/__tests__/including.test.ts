@@ -32,6 +32,7 @@ describe("including", () => {
           id:   'bob',
 
           attributes: {
+            family: 'a',
             name: "Bob",
             age:  40,
           },
