@@ -12,8 +12,8 @@ export default interface Adapter<Entity, Query, ID> {
   get(query: Query, id: ID): Promise<GetResponse<Entity>>
 
   create(cb: (entity: Entity) => Promise<void>, context: RequestContext, options: MutationOptions): Promise<CreateResponse<Entity>>
-  update(id: ID, cb: (entity: Entity) => Promise<void>, context: RequestContext, options: MutationOptions): Promise<UpdateResponse<Entity>>
-  replace(id: ID, cb: (entity: Entity) => Promise<void>, context: RequestContext, options: MutationOptions): Promise<ReplaceResponse<Entity>>
+  update(entity: Entity, cb: (entity: Entity) => Promise<void>, context: RequestContext, options: MutationOptions): Promise<UpdateResponse<Entity>>
+  replace(entity: Entity, cb: (entity: Entity) => Promise<void>, context: RequestContext, options: MutationOptions): Promise<ReplaceResponse<Entity>>
   delete(query: Query, context: RequestContext, options: MutationOptions): Promise<Array<Entity | ID>>
 
   // #endregion

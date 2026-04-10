@@ -471,7 +471,8 @@ export default class Resource<Entity, Query, ID> {
     const document = this.extractRequestDocument(requestPack, id)
 
     // Continue with a fresh entity.
-    const response = await adapter.replace(id, async entity => {
+    const {data: entity} = await this.load({id}, adapter, context)
+    const response = await adapter.replace(entity, async entity => {
       await this.setAttributes(entity, document, false, adapter, context)
       await this.callScopeEnsure(entity, context.scope(), context)
     }, context, options)
@@ -494,7 +495,8 @@ export default class Resource<Entity, Query, ID> {
     const adapter = getAdapter()
     const document = this.extractRequestDocument(requestPack, id)
 
-    const response = await adapter.update(id, async entity => {
+    const {data: entity} = await this.load({id}, adapter, context)
+    const response = await adapter.update(entity, async entity => {
       await this.setAttributes(entity, document, false, adapter, context)
       await this.callScopeEnsure(entity, context.scope(), context)
     }, context, options)
