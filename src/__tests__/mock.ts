@@ -1,7 +1,6 @@
 import { isArray, isPlainObject } from 'lodash'
 import { OpenAPIV3_1 } from 'openapi-types'
 import { dynamicProxy } from 'yest'
-import APIError from '../APIError'
 import Adapter, {
   CreateResponse,
   GetResponse,
@@ -194,22 +193,13 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
     return {data: inserted}
   }
 
-  public async update(id: string, cb: (entity: Entity) => Promise<void>, context: RequestContext): Promise<UpdateResponse<Entity>> {
-    const query = await this.resource.listQuery(this, context)
-    const entity = db(this.resource.type).get(id, query)
-    if (!entity) {
-      throw new APIError(404, `Entity with id ${id} not found`)
-    }
+  public async update(entity: Entity, cb: (entity: Entity) => Promise<void>, context: RequestContext): Promise<UpdateResponse<Entity>> {
     await cb(entity)
     return {data: entity}
   }
 
-  public async replace(id: string, cb: (entity: Entity) => Promise<void>, context: RequestContext): Promise<ReplaceResponse<Entity>> {
-    const query = await this.resource.listQuery(this, context)
-    if (!db(this.resource.type).get(id, query)) {
-      throw new APIError(404, `Entity with id ${id} not found`)
-    }
-    const entity = {...db(this.resource.type).build(), id} as Entity
+  public async replace(existing: Entity, cb: (entity: Entity) => Promise<void>, context: RequestContext): Promise<ReplaceResponse<Entity>> {
+    const entity = {...db(this.resource.type).build(), id: existing.id} as Entity
     await cb(entity)
     db(this.resource.type).insert(entity)
     return {data: entity}
