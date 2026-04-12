@@ -29,7 +29,7 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
     return this.param('$type') as string
   }
 
-  // #region Actions
+  // #region Action related info
 
   public get actionClass() {
     if (this.action === 'list' || this.action === 'show') {
@@ -41,6 +41,10 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
     } else {
       return ActionClass.Unknown
     }
+  }
+
+  public get isMutating() {
+    return this.actionClass === ActionClass.Write || this.actionClass === ActionClass.Delete
   }
 
   // #endregion
