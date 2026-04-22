@@ -8,7 +8,7 @@ export default interface Adapter<Entity, Query, ID> {
 
   // #region Actions
 
-  list(query: Query, options: ListOptions): Promise<ListResponse<Entity>>
+  list(query: Query, options?: ListOptions): Promise<ListResponse<Entity>>
   get(query: Query, id: ID): Promise<GetResponse<Entity>>
 
   create(cb: (entity: Entity) => Promise<void>, context: RequestContext, options: MutationOptions): Promise<CreateResponse<Entity>>
@@ -58,7 +58,7 @@ export type OpenAPIDocumentation = Pick<OpenAPIV3_1.SchemaObject,
 >
 
 export interface ListOptions {
-  totals?: boolean
+  collectingIncludes?: boolean
 }
 
 export interface MutationOptions {

@@ -104,7 +104,7 @@ export default class IncludeCollector<Entity, Query> {
       documents.push(...existingDocuments)
 
       const query = await resource.applyFilters(adapter.query(), {id: newIDs}, adapter, this.context)
-      const response = await adapter.list(query, {totals: false})
+      const response = await adapter.list(query, {collectingIncludes: true})
       for (const entity of response.data) {
         const document = await resource.entityToDocument(entity, adapter, this.context)
         documents.push(document)

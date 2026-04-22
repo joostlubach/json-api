@@ -1,5 +1,5 @@
 import { singularize } from 'inflected'
-import { isArray, isFunction, mapValues } from 'lodash'
+import { isArray, isFunction, mapValues, uniq } from 'lodash'
 import { isPlainObject, objectEntries } from 'ytil'
 import { z } from 'zod'
 import APIError from './APIError'
@@ -389,14 +389,13 @@ export default class Resource<Entity, Query, ID> {
     }
 
     const {
-      totals = this.config.totals ?? true,
       include = [],
       detail = false,
     } = options
 
     const adapter = getAdapter()
     const query = await this.listQuery(adapter, context)
-    const {data, included, meta} = await adapter.list(query, {totals})
+    const {data, included, meta} = await adapter.list(query)
 
     return await this.collectionPack(
       data,
@@ -530,12 +529,14 @@ export default class Resource<Entity, Query, ID> {
 
   public async collectionPack(entities: Entity[], includedModels: Entity[] | undefined, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: CollectionPackOptions<Entity, any> = {}) {
     const {
-      include = [],
       detail = true,
       meta = {},
     } = options
-    include.push(...this.getAutoIncludes(detail))
 
+    const include = uniq([
+      ...(options.include ?? []),
+      ...this.getAutoIncludes(detail),
+    ])
     const collection = await this.entitiesToCollection(entities, adapter, context, {detail})
 
     const included = await this.resolveIncluded(collection.documents, includedModels, context, {include, detail})
@@ -547,12 +548,14 @@ export default class Resource<Entity, Query, ID> {
 
   public async documentPack(entity: Entity, includedModels: Entity[] | undefined, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: DocumentPackOptions<Entity, any> = {}) {
     const {
-      include = [],
       detail = true,
       meta = {},
     } = options
-    include.push(...this.getAutoIncludes(detail))
 
+    const include = uniq([
+      ...(options.include ?? []),
+      ...this.getAutoIncludes(detail),
+    ])
     const document = await this.entityToDocument(entity, adapter, context, {detail})
 
     const included = await this.resolveIncluded([document], includedModels, context, {include, detail})

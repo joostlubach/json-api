@@ -125,7 +125,7 @@ export default class RequestContext<P extends Record<string, any> = Record<strin
   public filters(): Filters {
     return {
       ...this._filters,
-      ...this.defaultFilters()
+      ...this.defaultFilters(),
     }
   }
 

@@ -42,9 +42,6 @@ export interface ResourceConfig<Entity, Query, ID> {
   /** If true, this resource won't be resolved as the default resource for the given entity class. */
   auxiliary?: boolean
 
-  /** Whether to include totals. */
-  totals?: boolean
-
   // #endregion
 
   // #region Attributes & relationships
