@@ -74,7 +74,6 @@ export interface RetrievalActionOptions {
 }
 
 export interface ListActionOptions extends RetrievalActionOptions {
-  totals?:  boolean
 }
 
 export interface ShowActionOptions extends RetrievalActionOptions {

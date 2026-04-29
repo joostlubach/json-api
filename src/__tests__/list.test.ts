@@ -166,24 +166,6 @@ describe("list", () => {
       })
     })
 
-    it("should include pagination info in the meta", async () => {
-      const pack = await jsonAPI.list('parents', context('list'))
-      const out = pack.serialize()
-      expect(out.meta).toEqual({
-        total: 4,
-      })
-    })
-
-    it("should reflect proper pagination info if skip and take are given", async () => {
-      const ctx = context('list')
-      ctx.setParams({skip: 3, take: 2})
-      const pack = await jsonAPI.list('parents', ctx)
-      const out = pack.serialize()
-      expect(out.meta).toEqual({
-        total: 4,
-      })
-    })
-
     it("should include additional meta if configured", async () => {
       jsonAPI.registry.modify('parents', cfg => {
         cfg.meta = () => ({
@@ -213,7 +195,6 @@ describe("list", () => {
       const out = pack.serialize()
       expect(out.meta).toEqual({
         action: 'my-list-action',
-        total:  4,
       })
     })
 

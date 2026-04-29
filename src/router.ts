@@ -22,7 +22,6 @@ import {
   ShowActionOptions,
   UpdateActionOptions,
 } from './types'
-import { booleanQueryParam } from './util'
 
 export function router<M, Q, I>(jsonAPI: JSONAPI<M, Q, I>): Router {
   const router = Router()
@@ -337,8 +336,7 @@ export function extractRetrievalActionOptions(context: RequestContext, defaultDe
 
 export function extractListActionOptions(context: RequestContext): ListActionOptions {
   const {include, detail} = extractRetrievalActionOptions(context, false)
-  const totals = context.param('totals', booleanQueryParam().default(true))
-  return {include, totals, detail}
+  return {include, detail}
 }
 
 export function extractShowActionOptions(context: RequestContext): ShowActionOptions {

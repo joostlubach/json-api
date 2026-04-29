@@ -174,10 +174,7 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
 
   public async list(query: Query, options: ListActionOptions): Promise<ListResponse<Entity>> {
     const models = db(this.resource.type).list(query)
-    if (options.totals === false) { return {data: models} }
-
-    const total = db(this.resource.type).count({...query, skip: 0, take: null})
-    return {data: models, meta: {total}}
+    return {data: models}
   }
   
   public async get(query: Query, id: string): Promise<GetResponse<Entity>> {
