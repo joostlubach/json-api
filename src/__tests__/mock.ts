@@ -4,6 +4,7 @@ import { dynamicProxy } from 'yest'
 import Adapter, {
   CreateResponse,
   GetResponse,
+  ListOptions,
   ListResponse,
   ReplaceResponse,
   UpdateResponse,
@@ -13,7 +14,7 @@ import Pack from '../Pack'
 import RequestContext from '../RequestContext'
 import Resource from '../Resource'
 import { AttributeConfig, RelationshipConfig } from '../ResourceConfig'
-import { ListActionOptions, Relationship, RelationshipDataLike, Sort } from '../types'
+import { Relationship, RelationshipDataLike, Sort } from '../types'
 import db, { Entity, Query } from './db'
 
 export function mockJSONAPI(options?: JSONAPIOptions<Entity, Query, string>) {
@@ -172,7 +173,7 @@ export class MockAdapter implements Adapter<Entity, Query, string> {
     private readonly context: RequestContext,
   ) {}
 
-  public async list(query: Query, options: ListActionOptions): Promise<ListResponse<Entity>> {
+  public async list(query: Query, options?: ListOptions): Promise<ListResponse<Entity>> {
     const models = db(this.resource.type).list(query)
     return {data: models}
   }
