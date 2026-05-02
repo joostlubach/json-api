@@ -1,4 +1,3 @@
-import { omit } from 'lodash'
 import { delay, slugify } from 'ytil'
 import db from './db'
 import { context, mockJSONAPI } from './mock'
@@ -185,7 +184,7 @@ describe("list", () => {
         cfg.meta = async (meta, _, context) => {
           await delay(10)
           return {
-            ...omit(meta, 'isFirst', 'isLast', 'nextOffset'),
+            ...meta,
             action: context.action,
           }
         }
