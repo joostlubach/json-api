@@ -174,6 +174,8 @@ export interface ValidationError {
     pointer?:   string
     parameter?: string
   }
+
+  extra?: Record<string, unknown>
 }
 
 // #endregion
