@@ -13,8 +13,8 @@ export default class APIError extends Error {
 
   public toJSON() {
     return {
-      status:  this.status,
-      title: this.title,
+      status: this.status,
+      title:  this.title,
       detail: this.detail,
     }
   }

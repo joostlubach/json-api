@@ -21,8 +21,8 @@ describe("update", () => {
 
         attributes: {
           family: 'a',
-          name: "Alice",
-          age:  40,
+          name:   "Alice",
+          age:    40,
         },
         relationships: {
           spouse:   expect.any(Object),
@@ -46,37 +46,37 @@ describe("update", () => {
   it("should require an ID", async () => {
     const requestPack = jsonAPI.documentRequestPack('parents', null, {})
     await expect(
-      jsonAPI.update('parents', 'alice', requestPack, context('update'))
-    ).rejects.toMatchObject({ status: 400 })
+      jsonAPI.update('parents', 'alice', requestPack, context('update')),
+    ).rejects.toMatchObject({status: 400})
   })
 
   it("should not accept a mismatch between pack type and document", async () => {
     const requestPack = jsonAPI.documentRequestPack('children', 'alice', {})
     await expect(
-      jsonAPI.update('parents', 'alice', requestPack, context('update'))
-    ).rejects.toMatchObject({ status: 409 })
+      jsonAPI.update('parents', 'alice', requestPack, context('update')),
+    ).rejects.toMatchObject({status: 409})
   })
 
   it("should not accept a mismatch between locator and document", async () => {
     const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {})
     await expect(
-      jsonAPI.update('parents', 'bob', requestPack, context('update'))
-    ).rejects.toMatchObject({ status: 409 })
+      jsonAPI.update('parents', 'bob', requestPack, context('update')),
+    ).rejects.toMatchObject({status: 409})
   })
 
   it("should not allow replacing a document that does not exist", async () => {
     const requestPack = jsonAPI.documentRequestPack('parents', 'zachary', {})
     await expect(
-      jsonAPI.update('parents', 'zachary', requestPack, context('update'))
-    ).rejects.toMatchObject({ status: 404 })
+      jsonAPI.update('parents', 'zachary', requestPack, context('update')),
+    ).rejects.toMatchObject({status: 404})
   })
 
   it("should not accept an array for data", async () => {
     await expect(
       jsonAPI.update('parents', 'alice', Pack.deserialize(jsonAPI.registry, {
         data: [],
-      }), context('update'))
-    ).rejects.toMatchObject({ status: 400 })
+      }), context('update')),
+    ).rejects.toMatchObject({status: 400})
   })
 
   it("should not allow specifying an unconfigured attribute", async () => {
@@ -86,8 +86,8 @@ describe("update", () => {
     })
 
     await expect(
-      jsonAPI.update('parents', 'alice', requestPack, context('update'))
-    ).rejects.toMatchObject({ status: 403 })
+      jsonAPI.update('parents', 'alice', requestPack, context('update')),
+    ).rejects.toMatchObject({status: 403})
 
     expect((db('parents').get('alice') as any).hobbies).toBeUndefined()
   })
@@ -103,8 +103,8 @@ describe("update", () => {
     })
 
     await expect(
-      jsonAPI.update('parents', 'alice', requestPack, context('update'))
-    ).rejects.toMatchObject({ status: 403 })
+      jsonAPI.update('parents', 'alice', requestPack, context('update')),
+    ).rejects.toMatchObject({status: 403})
 
     expect((db('parents').get('alice') as any).age).toEqual(30)
   })
@@ -120,8 +120,8 @@ describe("update", () => {
     })
 
     await expect(
-      jsonAPI.update('parents', 'alice', requestPack, context('update'))
-    ).rejects.toMatchObject({ status: 403 })
+      jsonAPI.update('parents', 'alice', requestPack, context('update')),
+    ).rejects.toMatchObject({status: 403})
 
     expect((db('parents').get('alice') as any).age).toEqual(30)
   })
@@ -137,8 +137,8 @@ describe("update", () => {
     })
 
     await expect(
-      jsonAPI.update('parents', 'alice', requestPack, context('update'))
-    ).rejects.toMatchObject({ status: 403 })
+      jsonAPI.update('parents', 'alice', requestPack, context('update')),
+    ).rejects.toMatchObject({status: 403})
 
     expect((db('parents').get('alice') as any).age).toEqual(30)
   })
@@ -147,8 +147,8 @@ describe("update", () => {
 
     it("should not ensure the family if no scope was specified", async () => {
       const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {
-        name: "Alice",
-        age:  40,
+        name:   "Alice",
+        age:    40,
         family: null,
       })
 
@@ -159,9 +159,9 @@ describe("update", () => {
 
     it("should use the scope for a filter when finding the existing item", async () => {
       const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {
-        name: "Alice",
-        age:  40,
-          family: null,
+        name:   "Alice",
+        age:    40,
+        family: null,
       })
 
       const ctx = context('list')
@@ -169,13 +169,13 @@ describe("update", () => {
 
       expect(async () => {
         await jsonAPI.update('parents', 'alice', requestPack, ctx)
-      }).rejects.toMatchObject({ status: 404 })
+      }).rejects.toMatchObject({status: 404})
     })
 
     it("should ensure the family", async () => {
       const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {
-        name: "Alice",
-        age:  40,
+        name:   "Alice",
+        age:    40,
         family: null,
       })
 
@@ -192,18 +192,18 @@ describe("update", () => {
         jsonAPI.registry.modify('parents', cfg => {
           cfg.scopes ??= {}
           cfg.scopes.$default = {
-            query: query => query,
+            query:  query => query,
             ensure: parent => {
               parent.age = Math.max(parent.age ?? 0, 60)
-            }
+            },
           }
         })
       })
 
       it("should allow a default scope that is always applied", async () => {
         const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {
-          name: "Alice",
-          age:  40,
+          name:   "Alice",
+          age:    40,
           family: null,
         })
 
@@ -213,8 +213,8 @@ describe("update", () => {
 
       it("should combine a named scope with a default scope", async () => {
         const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {
-          name: "Alice",
-          age:  40,
+          name:   "Alice",
+          age:    40,
           family: null,
         })
 
@@ -231,8 +231,8 @@ describe("update", () => {
         })
 
         const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {
-          name: "Alice",
-          age:  40,
+          name:   "Alice",
+          age:    40,
           family: null,
         })
 

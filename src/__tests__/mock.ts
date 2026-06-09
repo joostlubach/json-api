@@ -93,20 +93,20 @@ export class MockJSONAPI extends JSONAPI<Entity, Query, string> {
         'family-a': {
           query: query => ({
             ...query,
-            filters: {...query.filters, family: 'a'}
+            filters: {...query.filters, family: 'a'},
           }),
           ensure: parent => {
             parent.family = 'a'
-          }
+          },
         },
         'family-b': {
           query: query => ({
             ...query,
-            filters: {...query.filters, family: 'b'}
+            filters: {...query.filters, family: 'b'},
           }),
           ensure: parent => {
             parent.family = 'b'
-          }
+          },
         },
       },
 

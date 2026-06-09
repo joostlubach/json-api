@@ -103,8 +103,8 @@ describe("delete", () => {
   it("should not accept a mismatch between pack type and document", async () => {
     const requestPack = jsonAPI.bulkSelectorPack('children', ['alice'])
     await expect(
-      jsonAPI.delete('parents', requestPack, context('delete'))
-    ).rejects.toMatchObject({ status: 409 })
+      jsonAPI.delete('parents', requestPack, context('delete')),
+    ).rejects.toMatchObject({status: 409})
     expect(db('parents').ids()).toEqual(['alice', 'bob', 'eve', 'frank'])
   })
 

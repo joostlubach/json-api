@@ -10,7 +10,7 @@ export default class ErrorPack {
   public serialize(): any {
     return {
       errors: this.errors.map(error => error.toJSON()),
-      meta: {}
+      meta:   {},
     }
   }
 

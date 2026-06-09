@@ -18,11 +18,11 @@ describe("custom actions", () => {
 
     jsonAPI.registry.modify('parents', cfg => {
       cfg.collectionActions = {
-        test: handler as any
+        test: handler as any,
       }
 
       cfg.documentActions = {
-        test: handler as any
+        test: handler as any,
       }
     })
   })
@@ -133,8 +133,8 @@ describe("custom actions", () => {
 
     it("should not allow calling an undefined action", async () => {
       await expect(
-        jsonAPI.collectionAction('parents', 'doesnotexist', jsonAPI.nullPack(), context('custom:doesnotexist'))
-      ).rejects.toMatchObject({ status: 404 })
+        jsonAPI.collectionAction('parents', 'doesnotexist', jsonAPI.nullPack(), context('custom:doesnotexist')),
+      ).rejects.toMatchObject({status: 404})
     })
 
   })
@@ -167,8 +167,8 @@ describe("custom actions", () => {
 
     it("should not allow calling an undefined action", async () => {
       await expect(
-        jsonAPI.documentAction('parents', {id: 'alice'}, 'doesnotexist', jsonAPI.nullPack(), context('custom:doesnotexist'))
-      ).rejects.toMatchObject({ status: 404 })
+        jsonAPI.documentAction('parents', {id: 'alice'}, 'doesnotexist', jsonAPI.nullPack(), context('custom:doesnotexist')),
+      ).rejects.toMatchObject({status: 404})
     })
   })
 

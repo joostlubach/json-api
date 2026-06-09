@@ -51,7 +51,7 @@ describe("create", () => {
       age:  10,
     })
 
-    await expect(jsonAPI.create('parents', requestPack, context('create'))).rejects.toMatchObject({ status: 409 })
+    await expect(jsonAPI.create('parents', requestPack, context('create'))).rejects.toMatchObject({status: 409})
 
     expect(db('parents').get('alice')).toBeNull()
     expect(db('children').get('alice')).toBeNull()
@@ -60,7 +60,7 @@ describe("create", () => {
   it("should not accept an array for data", async () => {
     await expect(jsonAPI.create('parents', Pack.deserialize(jsonAPI.registry, {
       data: [],
-    }), context('create'))).rejects.toMatchObject({ status: 400 })
+    }), context('create'))).rejects.toMatchObject({status: 400})
   })
 
   it("should not allow specifying an unconfigured attribute", async () => {
@@ -69,7 +69,7 @@ describe("create", () => {
       hobbies: ["soccer", "piano"],
     })
 
-    await expect(jsonAPI.create('parents', requestPack, context('create'))).rejects.toMatchObject({ status: 403 })
+    await expect(jsonAPI.create('parents', requestPack, context('create'))).rejects.toMatchObject({status: 403})
 
     expect(db('parents').get('alice')).toBeNull()
   })
@@ -84,7 +84,7 @@ describe("create", () => {
       age:  40,
     })
 
-    await expect(jsonAPI.create('parents', requestPack, context('create'))).rejects.toMatchObject({ status: 403 })
+    await expect(jsonAPI.create('parents', requestPack, context('create'))).rejects.toMatchObject({status: 403})
 
     expect(db('parents').get('alice')).toBeNull()
   })
@@ -99,7 +99,7 @@ describe("create", () => {
       age:  40,
     })
 
-    await expect(jsonAPI.create('parents', requestPack, context('create'))).rejects.toMatchObject({ status: 403 })
+    await expect(jsonAPI.create('parents', requestPack, context('create'))).rejects.toMatchObject({status: 403})
 
     expect(db('parents').get('alice')).toBeNull()
   })
@@ -172,10 +172,10 @@ describe("create", () => {
         jsonAPI.registry.modify('parents', cfg => {
           cfg.scopes ??= {}
           cfg.scopes.$default = {
-            query: query => query,
+            query:  query => query,
             ensure: parent => {
               parent.age = Math.max(parent.age ?? 0, 60)
-            }
+            },
           }
         })
       })

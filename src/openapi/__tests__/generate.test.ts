@@ -841,15 +841,15 @@ describe("openapi", () => {
         vi.spyOn(MockAdapter.prototype, 'openAPISchemaForAttribute')
           .mockImplementation(name => select(name as any, {
             family: familySchema,
-            name: nameSchema,
-            age:  ageSchema,
+            name:   nameSchema,
+            age:    ageSchema,
           }))
 
-          vi.spyOn(MockAdapter.prototype, 'attributeRequired')
+        vi.spyOn(MockAdapter.prototype, 'attributeRequired')
           .mockImplementation(name => select(name as any, {
             family: false,
-            name: nameRequired,
-            age:  ageRequired,
+            name:   nameRequired,
+            age:    ageRequired,
           }))
       })
 
@@ -889,15 +889,15 @@ describe("openapi", () => {
         vi.spyOn(MockAdapter.prototype, 'openAPISchemaForAttribute')
           .mockImplementation(async name => select(name as any, {
             family: familySchema,
-            name: nameSchema,
-            age:  ageSchema,
+            name:   nameSchema,
+            age:    ageSchema,
           }))
 
         vi.spyOn(MockAdapter.prototype, 'attributeRequired')
           .mockImplementation(async name => select(name as any, {
             family: false,
-            name: nameRequired,
-            age:  ageRequired,
+            name:   nameRequired,
+            age:    ageRequired,
           }))
 
         expect(await getAttributesSchema()).toEqual({

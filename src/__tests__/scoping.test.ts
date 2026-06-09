@@ -29,7 +29,7 @@ describe("scoping", () => {
           ensure: (entity, context) => {
             entity.parents = [context.param('parent', z.string())]
           },
-        }
+        },
       }
     })
   
@@ -68,8 +68,8 @@ describe("scoping", () => {
       expect(pack.serialize().data.id).toEqual('charlie')
 
       await expect(
-        jsonAPI.show('children', {id: 'isaac'}, ctx)
-      ).rejects.toMatchObject({ status: 404 })
+        jsonAPI.show('children', {id: 'isaac'}, ctx),
+      ).rejects.toMatchObject({status: 404})
     })
 
     it("should also work with singletons", async () => {
@@ -120,8 +120,8 @@ describe("scoping", () => {
 
       const requestPack2 = jsonAPI.documentRequestPack('children', 'isaac', {name: "Isaac 2"})
       await expect(
-        jsonAPI.replace('children', 'isaac', requestPack2, context('replace', {parent: 'alice'}))
-      ).rejects.toMatchObject({ status: 404 })
+        jsonAPI.replace('children', 'isaac', requestPack2, context('replace', {parent: 'alice'})),
+      ).rejects.toMatchObject({status: 404})
     })
     
     it("should apply scope defaults", async () => {
@@ -160,8 +160,8 @@ describe("scoping", () => {
 
       const requestPack2 = jsonAPI.documentRequestPack('children', 'isaac', {name: "Isaac 2"})
       await expect(
-        jsonAPI.update('children', 'isaac', requestPack2, context('update', {parent: 'alice'}))
-      ).rejects.toMatchObject({ status: 404 })
+        jsonAPI.update('children', 'isaac', requestPack2, context('update', {parent: 'alice'})),
+      ).rejects.toMatchObject({status: 404})
     })
     
     it("should apply scope defaults even if it's an update, to prevent any maliciously added data", async () => {

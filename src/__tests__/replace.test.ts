@@ -57,30 +57,30 @@ describe("replace", () => {
   it("should not allow replacing a document that does not exist", async () => {
     const requestPack = jsonAPI.documentRequestPack('parents', 'zachary', {})
     await expect(
-      jsonAPI.replace('parents', 'zachary', requestPack, context('replace'))
-    ).rejects.toMatchObject({ status: 404 })
+      jsonAPI.replace('parents', 'zachary', requestPack, context('replace')),
+    ).rejects.toMatchObject({status: 404})
   })
 
   it("should not accept a mismatch between pack type and document", async () => {
     const requestPack = jsonAPI.documentRequestPack('children', 'alice', {})
     await expect(
-      jsonAPI.replace('parents', 'alice', requestPack, context('replace'))
-    ).rejects.toMatchObject({ status: 409 })
+      jsonAPI.replace('parents', 'alice', requestPack, context('replace')),
+    ).rejects.toMatchObject({status: 409})
   })
 
   it("should not accept a mismatch between locator and document", async () => {
     const requestPack = jsonAPI.documentRequestPack('parents', 'alice', {})
     await expect(
-      jsonAPI.update('parents', 'bob', requestPack, context('update'))
-    ).rejects.toMatchObject({ status: 409 })
+      jsonAPI.update('parents', 'bob', requestPack, context('update')),
+    ).rejects.toMatchObject({status: 409})
   })
 
   it("should not accept an array for data", async () => {
     await expect(
       jsonAPI.replace('parents', 'alice', Pack.deserialize(jsonAPI.registry, {
         data: [],
-      }), context('replace'))
-    ).rejects.toMatchObject({ status: 400 })
+      }), context('replace')),
+    ).rejects.toMatchObject({status: 400})
   })
 
   it("should not allow specifying an unconfigured attribute", async () => {
@@ -90,8 +90,8 @@ describe("replace", () => {
     })
 
     await expect(
-      jsonAPI.replace('parents', 'alice', requestPack, context('replace'))
-    ).rejects.toMatchObject({ status: 403 })
+      jsonAPI.replace('parents', 'alice', requestPack, context('replace')),
+    ).rejects.toMatchObject({status: 403})
 
     expect((db('parents').get('alice') as any).hobbies).toBeUndefined()
   })
@@ -107,8 +107,8 @@ describe("replace", () => {
     })
 
     await expect(
-      jsonAPI.replace('parents', 'alice', requestPack, context('replace'))
-    ).rejects.toMatchObject({ status: 403 })
+      jsonAPI.replace('parents', 'alice', requestPack, context('replace')),
+    ).rejects.toMatchObject({status: 403})
 
     expect((db('parents').get('alice') as any).age).toEqual(30)
   })
@@ -124,8 +124,8 @@ describe("replace", () => {
     })
 
     await expect(
-      jsonAPI.replace('parents', 'alice', requestPack, context('replace'))
-    ).rejects.toMatchObject({ status: 403 })
+      jsonAPI.replace('parents', 'alice', requestPack, context('replace')),
+    ).rejects.toMatchObject({status: 403})
 
     expect((db('parents').get('alice') as any).age).toEqual(30)
   })
@@ -141,8 +141,8 @@ describe("replace", () => {
     })
 
     await expect(
-      jsonAPI.replace('parents', 'alice', requestPack, context('replace'))
-    ).rejects.toMatchObject({ status: 403 })
+      jsonAPI.replace('parents', 'alice', requestPack, context('replace')),
+    ).rejects.toMatchObject({status: 403})
 
     expect((db('parents').get('alice') as any).age).toEqual(30)
   })
@@ -171,7 +171,7 @@ describe("replace", () => {
 
       expect(async () => {
         await jsonAPI.replace('parents', 'alice', requestPack, ctx)
-      }).rejects.toMatchObject({ status: 404 })
+      }).rejects.toMatchObject({status: 404})
     })
 
     it("should ensure the family", async () => {
@@ -193,10 +193,10 @@ describe("replace", () => {
         jsonAPI.registry.modify('parents', cfg => {
           cfg.scopes ??= {}
           cfg.scopes.$default = {
-            query: query => query,
+            query:  query => query,
             ensure: parent => {
               parent.age = Math.max(parent.age ?? 0, 60)
-            }
+            },
           }
         })
       })

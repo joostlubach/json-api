@@ -66,8 +66,8 @@ export class Db {
   public build() {
     return {
       children: [], 
-      parents: [], 
-      spouse: null
+      parents:  [], 
+      spouse:   null,
     } as unknown as Entity
   }
 
