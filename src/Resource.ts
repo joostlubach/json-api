@@ -529,14 +529,11 @@ export default class Resource<Entity, Query, ID> {
 
   public async collectionPack(entities: Entity[], includedModels: Entity[] | undefined, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: CollectionPackOptions<Entity, any> = {}) {
     const {
-      detail = true,
+      include,
+      detail = false,
       meta = {},
     } = options
 
-    const include = uniq([
-      ...(options.include ?? []),
-      ...this.getAutoIncludes(detail),
-    ])
     const collection = await this.entitiesToCollection(entities, adapter, context, {detail})
 
     const included = await this.resolveIncluded(collection.documents, includedModels, context, {include, detail})
@@ -548,14 +545,11 @@ export default class Resource<Entity, Query, ID> {
 
   public async documentPack(entity: Entity, includedModels: Entity[] | undefined, adapter: Adapter<Entity, Query, ID> | undefined, context: RequestContext, options: DocumentPackOptions<Entity, any> = {}) {
     const {
+      include,
       detail = true,
       meta = {},
     } = options
 
-    const include = uniq([
-      ...(options.include ?? []),
-      ...this.getAutoIncludes(detail),
-    ])
     const document = await this.entityToDocument(entity, adapter, context, {detail})
 
     const included = await this.resolveIncluded([document], includedModels, context, {include, detail})
@@ -569,11 +563,17 @@ export default class Resource<Entity, Query, ID> {
 
   public async resolveIncluded(base: Document<ID>[], includedModels: Entity[] | undefined, context: RequestContext, options: RetrievalActionOptions): Promise<Collection<unknown> | undefined> {
     const collector = new IncludeCollector(this.jsonAPI, context)
-    const documents =
-      includedModels != null ? await collector.wrap(includedModels) :
-        options.include != null ? await collector.collect(base, options.include) :
-          []
+    if (includedModels != null) {
+      const documents = await collector.wrap(includedModels)
+      return new Collection(documents)
+    }
 
+    const include = uniq([
+      ...(options.include ?? []),
+      ...this.getAutoIncludes(options.detail ?? false),
+    ])
+
+    const documents = await collector.collect(base, include)
     return new Collection(documents)
   }
 
